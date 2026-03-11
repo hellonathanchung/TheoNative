@@ -1,0 +1,18 @@
+export const Colors = {
+  cream: '#F5FAF5',
+  beige: '#E8F0E8',
+  softGreen: '#C8E6C9',
+  mediumGreen: '#A5D6A7',
+  green: '#81C784',
+  deepGreen: '#4CAF50',
+  textPrimary: '#2E3B2E',
+  textSecondary: '#5A6B5A',
+  textMuted: '#8A9B8A',
+  danger: '#D32F2F',
+  white: '#FFFFFF',
+  softCoral: '#A5D6A7',
+  terracotta: '#4CAF50',
+  warmAmber: '#81C784',
+  warmBeige: '#E8F0E8',
+  softPeach: '#C8E6C9',
+};
