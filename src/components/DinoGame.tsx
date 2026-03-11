@@ -15,16 +15,11 @@ import {
 } from '@shopify/react-native-skia';
 import { Colors } from '../theme';
 import { loadDinoHigh, saveDinoHigh } from '../utils/storage';
+import type { DinoConfig } from '../utils/gameConfig';
 
 const GAME_WIDTH = Dimensions.get('window').width - 40;
 const GAME_HEIGHT = 180;
 const GROUND_Y = 145;
-const GRAVITY = 0.6;
-const JUMP_FORCE = -11;
-const BASE_SPEED = 3.5;
-const SPEED_INCREMENT = 0.0008;
-const OBSTACLE_GAP_MIN = 90;
-const OBSTACLE_GAP_MAX = 180;
 
 interface Obstacle {
   x: number;
@@ -54,7 +49,15 @@ interface GameState {
   gameOver: boolean;
 }
 
-export function DinoGame() {
+interface DinoGameProps {
+  config: DinoConfig;
+  headerExtra?: React.ReactNode;
+}
+
+export function DinoGame({ config, headerExtra }: DinoGameProps) {
+  const configRef = useRef(config);
+  configRef.current = config;
+
   const stateRef = useRef<GameState>({
     running: false,
     score: 0,
@@ -69,7 +72,7 @@ export function DinoGame() {
       { x: 290, y: 35, w: 35 },
     ],
     frame: 0,
-    speed: BASE_SPEED,
+    speed: config.baseSpeed,
     nextObstacle: 80,
     gameOver: false,
   });
@@ -94,7 +97,7 @@ export function DinoGame() {
       { x: 290, y: 35, w: 35 },
     ];
     s.frame = 0;
-    s.speed = BASE_SPEED;
+    s.speed = configRef.current.baseSpeed;
     s.nextObstacle = 80;
     s.gameOver = false;
     s.running = true;
@@ -114,7 +117,7 @@ export function DinoGame() {
       return;
     }
     if (!s.jumping) {
-      s.sproutVy = JUMP_FORCE;
+      s.sproutVy = configRef.current.jumpForce;
       s.jumping = true;
     }
   }, [resetGame]);
@@ -125,7 +128,8 @@ export function DinoGame() {
 
       if (s.running && !s.gameOver) {
         s.frame++;
-        s.speed = BASE_SPEED + s.frame * SPEED_INCREMENT;
+        const cfg = configRef.current;
+        s.speed = cfg.baseSpeed + s.frame * cfg.speedIncrement;
 
         // Move clouds
         for (const c of s.clouds) c.x -= s.speed * 0.15;
@@ -139,7 +143,7 @@ export function DinoGame() {
         }
 
         // Physics
-        s.sproutVy += GRAVITY;
+        s.sproutVy += cfg.gravity;
         s.sproutY += s.sproutVy;
         if (s.sproutY >= GROUND_Y) {
           s.sproutY = GROUND_Y;
@@ -162,8 +166,8 @@ export function DinoGame() {
             type === 'bush' ? 22 + Math.random() * 10 : 14 + Math.random() * 8;
           s.obstacles.push({ x: GAME_WIDTH + 10, w, h, type });
           s.nextObstacle =
-            OBSTACLE_GAP_MIN +
-            Math.random() * (OBSTACLE_GAP_MAX - OBSTACLE_GAP_MIN);
+            cfg.obstacleGapMin +
+            Math.random() * (cfg.obstacleGapMax - cfg.obstacleGapMin);
         }
 
         // Move obstacles
@@ -307,6 +311,7 @@ export function DinoGame() {
     <View>
       <View style={styles.headerRow}>
         <Text style={styles.headerLabel}>SPROUT JUMP</Text>
+        {headerExtra}
         <View style={styles.scoresRow}>
           <Text style={styles.scoreLabel}>
             {String(displayScore).padStart(4, '0')}

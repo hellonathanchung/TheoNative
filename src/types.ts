@@ -10,6 +10,8 @@ export interface Contraction {
 
 export type Preset = '5-1-1' | '4-1-1' | '3-1-1' | 'custom';
 
+export type GameDifficulty = 'easy' | 'normal' | 'hard';
+
 export interface Settings {
   preset: Preset;
   frequencyMinutes: number;
@@ -18,6 +20,8 @@ export interface Settings {
   notificationsEnabled: boolean;
   hapticEnabled: boolean;
   intensityEnabled: boolean;
+  dinoDifficulty: GameDifficulty;
+  bubbleDifficulty: GameDifficulty;
 }
 
 export interface Session {

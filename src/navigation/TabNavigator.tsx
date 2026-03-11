@@ -35,7 +35,7 @@ export function TabNavigator({ app }: Props) {
         },
         tabBarLabelStyle: {
           fontSize: 10,
-          marginTop: -2,
+          marginTop: 2,
         },
       }}
     >

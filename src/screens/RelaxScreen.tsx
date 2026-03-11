@@ -8,6 +8,9 @@ import type { useContractions } from '../hooks/useContractions';
 import { FunFacts } from '../components/FunFacts';
 import { DinoGame } from '../components/DinoGame';
 import { BubbleGame } from '../components/BubbleGame';
+import { DifficultySelector } from '../components/DifficultySelector';
+import { DINO_CONFIGS, BUBBLE_CONFIGS } from '../utils/gameConfig';
+import type { GameDifficulty } from '../types';
 
 interface Props {
   app: ReturnType<typeof useContractions>;
@@ -28,12 +31,13 @@ export function RelaxScreen({ app }: Props) {
           {app.isActive ? (
             <>
               <View style={s.liveDot} />
-              <Text style={s.timerBarText}>{formatDuration(elapsed)}</Text>
+              <Text style={s.timerBarTextActive}>{formatDuration(elapsed)}</Text>
             </>
           ) : (
-            <Text style={s.timerBarText}>
-              {app.contractions.length} contraction
-              {app.contractions.length !== 1 ? 's' : ''}
+            <Text style={s.timerBarTextIdle}>
+              {app.contractions.length > 0
+                ? `${app.contractions.length} contraction${app.contractions.length !== 1 ? 's' : ''}`
+                : 'No contractions yet'}
             </Text>
           )}
         </View>
@@ -60,14 +64,30 @@ export function RelaxScreen({ app }: Props) {
 
         <View style={s.divider} />
 
-        <DinoGame />
+        <DinoGame
+          config={DINO_CONFIGS[app.settings.dinoDifficulty]}
+          headerExtra={
+            <DifficultySelector
+              value={app.settings.dinoDifficulty}
+              onChange={(d: GameDifficulty) => app.updateSettings({ dinoDifficulty: d })}
+            />
+          }
+        />
 
         <View style={s.divider} />
 
-        <BubbleGame />
+        <BubbleGame
+          config={BUBBLE_CONFIGS[app.settings.bubbleDifficulty]}
+          headerExtra={
+            <DifficultySelector
+              value={app.settings.bubbleDifficulty}
+              onChange={(d: GameDifficulty) => app.updateSettings({ bubbleDifficulty: d })}
+            />
+          }
+        />
 
         <Text style={s.footer}>
-          Take a deep breath. You're doing amazing.
+          Take a deep breath. You're doing amazing. 🌿
         </Text>
       </ScrollView>
     </View>
@@ -80,22 +100,22 @@ const s = StyleSheet.create({
     backgroundColor: Colors.cream,
   },
   title: {
-    fontSize: 22,
+    fontSize: 20,
     fontWeight: '600',
     color: Colors.textPrimary,
     paddingHorizontal: 20,
-    marginBottom: 12,
+    marginBottom: 8,
   },
   timerBar: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     backgroundColor: Colors.beige,
-    marginHorizontal: 20,
+    marginHorizontal: 16,
     paddingVertical: 10,
-    paddingHorizontal: 16,
+    paddingHorizontal: 14,
     borderRadius: 14,
-    marginBottom: 16,
+    marginBottom: 12,
   },
   timerBarLeft: {
     flexDirection: 'row',
@@ -103,16 +123,20 @@ const s = StyleSheet.create({
     gap: 8,
   },
   liveDot: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
+    width: 8,
+    height: 8,
+    borderRadius: 4,
     backgroundColor: Colors.danger,
   },
-  timerBarText: {
-    fontSize: 15,
+  timerBarTextActive: {
+    fontSize: 22,
     fontWeight: '500',
     color: Colors.textPrimary,
     fontVariant: ['tabular-nums'],
+  },
+  timerBarTextIdle: {
+    fontSize: 13,
+    color: Colors.textMuted,
   },
   timerBarButton: {
     paddingVertical: 8,
@@ -128,19 +152,21 @@ const s = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    paddingHorizontal: 20,
-    paddingBottom: 32,
+    paddingHorizontal: 16,
+    paddingBottom: 24,
   },
   divider: {
     height: 1,
     backgroundColor: Colors.beige,
-    marginVertical: 20,
+    marginTop: 8,
+    marginBottom: 16,
   },
   footer: {
     fontSize: 14,
     color: Colors.textMuted,
     textAlign: 'center',
-    marginTop: 24,
-    fontStyle: 'italic',
+    paddingTop: 16,
+    paddingBottom: 24,
+    lineHeight: 22,
   },
 });

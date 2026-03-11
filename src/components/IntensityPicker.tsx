@@ -58,7 +58,9 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.cream,
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
-    padding: 24,
+    paddingTop: 24,
+    paddingHorizontal: 20,
+    paddingBottom: 32,
   },
   title: {
     textAlign: 'center',
@@ -75,13 +77,16 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: Colors.beige,
     borderRadius: 16,
-    paddingVertical: 20,
+    paddingVertical: 16,
+    paddingHorizontal: 8,
     alignItems: 'center',
     gap: 8,
   },
   dotsContainer: {
     flexDirection: 'row',
-    gap: 6,
+    gap: 4,
+    height: 12,
+    alignItems: 'center',
   },
   dot: {
     width: 10,
@@ -89,7 +94,7 @@ const styles = StyleSheet.create({
     borderRadius: 5,
   },
   optionLabel: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '500',
     color: Colors.textSecondary,
   },

@@ -17,6 +17,8 @@ const DEFAULT_SETTINGS: Settings = {
   notificationsEnabled: true,
   hapticEnabled: true,
   intensityEnabled: true,
+  dinoDifficulty: 'normal',
+  bubbleDifficulty: 'normal',
 };
 
 export function loadContractions(): Contraction[] {

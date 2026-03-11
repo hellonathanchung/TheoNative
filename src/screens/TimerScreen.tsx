@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { View, Text, Pressable, FlatList, Alert, StyleSheet } from 'react-native';
+import React, { useState, useRef, useEffect } from 'react';
+import { View, Text, Pressable, FlatList, Alert, StyleSheet, Animated } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTimer, useTimeSinceLast } from '../hooks/useTimer';
 import { formatDuration, formatTime, formatInterval } from '../utils/format';
@@ -29,11 +29,32 @@ export function TimerScreen({ app }: Props) {
 
   const urgency = app.getUrgencyState();
   const buttonBg =
-    app.isActive
-      ? Colors.terracotta
-      : urgency === 'approaching'
-        ? Colors.softCoral
+    urgency === 'approaching'
+      ? Colors.softCoral
+      : app.isActive
+        ? Colors.terracotta
         : Colors.warmAmber;
+
+  // Animated breathing for active button
+  const scale = useRef(new Animated.Value(1)).current;
+  const animRef = useRef<any>(null);
+
+  useEffect(() => {
+    if (app.isActive) {
+      // loop between 1.05 and 1.08
+      animRef.current = Animated.loop(
+        Animated.sequence([
+          Animated.timing(scale, { toValue: 1.08, duration: 1000, useNativeDriver: true }),
+          Animated.timing(scale, { toValue: 1.05, duration: 1000, useNativeDriver: true }),
+        ]),
+      );
+      animRef.current.start();
+    } else {
+      animRef.current?.stop?.();
+      Animated.timing(scale, { toValue: 1, duration: 150, useNativeDriver: true }).start();
+    }
+    return () => { animRef.current?.stop?.(); };
+  }, [app.isActive, scale]);
 
   return (
     <View style={[styles.container, { paddingTop: insets.top + 16 }]}>
@@ -151,15 +172,26 @@ export function TimerScreen({ app }: Props) {
 
       {/* Big Start/Stop button */}
       <View style={styles.buttonWrapper}>
-        <Pressable
-          style={[styles.bigButton, { backgroundColor: buttonBg }]}
-          onPress={app.isActive ? app.stopContraction : app.startContraction}
+        <Animated.View
+          style={[
+            styles.bigButton,
+            {
+              backgroundColor: buttonBg,
+              shadowColor: app.isActive ? Colors.deepGreen : Colors.warmAmber,
+              transform: [{ scale }],
+            },
+          ]}
         >
-          <Text style={styles.bigButtonLabel}>TAP TO</Text>
-          <Text style={styles.bigButtonAction}>
-            {app.isActive ? 'Stop' : 'Start'}
-          </Text>
-        </Pressable>
+          <Pressable
+            style={{ flex: 1, alignItems: 'center', justifyContent: 'center', borderRadius: 80, backgroundColor: 'transparent' }}
+            onPress={app.isActive ? app.stopContraction : app.startContraction}
+          >
+            <Text style={styles.bigButtonLabel}>TAP TO</Text>
+            <Text style={styles.bigButtonAction}>
+              {app.isActive ? 'Stop' : 'Start'}
+            </Text>
+          </Pressable>
+        </Animated.View>
       </View>
 
       {/* Intensity picker */}
@@ -247,7 +279,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   rowTime: {
-    width: 75,
+    width: 70,
     fontSize: 14,
     color: Colors.textSecondary,
   },
@@ -289,7 +321,8 @@ const styles = StyleSheet.create({
   },
   buttonWrapper: {
     alignItems: 'center',
-    paddingVertical: 12,
+    paddingTop: 8,
+    paddingBottom: 12,
   },
   bigButton: {
     width: 160,

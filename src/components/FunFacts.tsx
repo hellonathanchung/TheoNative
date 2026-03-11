@@ -148,10 +148,10 @@ const s = StyleSheet.create({
   navBtn: { fontSize: 12, color: Colors.terracotta, fontWeight: '500' },
   shareBtn: { paddingVertical: 4, paddingHorizontal: 12, borderRadius: 8, backgroundColor: Colors.beige },
   shareBtnText: { fontSize: 12, color: Colors.textSecondary, fontWeight: '500' },
-  card: { backgroundColor: Colors.beige, borderRadius: 16, padding: 20, alignItems: 'center', justifyContent: 'center', minHeight: 120 },
+  card: { backgroundColor: Colors.beige, borderRadius: 16, paddingVertical: 20, paddingHorizontal: 16, alignItems: 'center', justifyContent: 'center', minHeight: 100 },
   emoji: { fontSize: 28, marginBottom: 8 },
   factText: { fontSize: 14, color: Colors.textSecondary, lineHeight: 22, textAlign: 'center', maxWidth: 280 },
-  sourceText: { fontSize: 11, color: Colors.textMuted, fontStyle: 'italic', marginTop: 8, textAlign: 'center', maxWidth: 260 },
+  sourceText: { fontSize: 11, color: Colors.textMuted, fontStyle: 'italic', marginTop: 4, textAlign: 'center', maxWidth: 260, lineHeight: 16 },
   dotsRow: { flexDirection: 'row', justifyContent: 'center', gap: 4, marginTop: 8 },
   dot: { width: 6, height: 6, borderRadius: 3 },
 });
