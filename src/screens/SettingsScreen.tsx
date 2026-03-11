@@ -6,7 +6,6 @@ import * as Clipboard from 'expo-clipboard';
 import { Colors } from '../theme';
 import type { Preset } from '../types';
 import type { useContractions } from '../hooks/useContractions';
-import { ScreenBackground } from '../components/ScreenBackground';
 
 interface Props {
   app: ReturnType<typeof useContractions>;
@@ -123,11 +122,10 @@ export function SettingsScreen({ app }: Props) {
   };
 
   return (
-    <ScreenBackground active={app.isActive}>
-      <ScrollView
-        style={[s.container, { paddingTop: insets.top }]}
-        contentContainerStyle={{ paddingBottom: 40 + insets.bottom }}
-      >
+    <ScrollView
+      style={[s.container, { paddingTop: insets.top }]}
+      contentContainerStyle={{ paddingBottom: 40 + insets.bottom }}
+    >
         <Text style={s.title}>Settings</Text>
 
       {/* Preset picker */}
@@ -286,8 +284,7 @@ export function SettingsScreen({ app }: Props) {
           </View>
         </View>
       </Modal>
-      </ScrollView>
-    </ScreenBackground>
+    </ScrollView>
   );
 }
 

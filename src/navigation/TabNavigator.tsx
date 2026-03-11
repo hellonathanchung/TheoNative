@@ -1,6 +1,15 @@
-import React from "react";
-import { Text } from "react-native";
-import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  Text,
+  View,
+  Pressable,
+  StyleSheet,
+  Animated,
+  PanResponder,
+  useWindowDimensions,
+} from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { ScreenBackground } from "../components/ScreenBackground";
 import { TimerScreen } from "../screens/TimerScreen";
 import { HistoryScreen } from "../screens/HistoryScreen";
 import { RelaxScreen } from "../screens/RelaxScreen";
@@ -15,72 +24,162 @@ export type TabParamList = {
   Settings: undefined;
 };
 
-const Tab = createBottomTabNavigator<TabParamList>();
+type TabKey = keyof TabParamList;
 
 interface Props {
   app: ReturnType<typeof useContractions>;
 }
 
 export function TabNavigator({ app }: Props) {
+  const insets = useSafeAreaInsets();
+  const { width } = useWindowDimensions();
+  const [index, setIndex] = useState(0);
+  const translateX = useRef(new Animated.Value(0)).current;
+  const offsetX = useRef(0);
+
+  const tabs = useMemo(
+    () => [
+      { key: "Track" as TabKey, label: "Track", icon: "⏱", Screen: TimerScreen },
+      { key: "History" as TabKey, label: "History", icon: "📋", Screen: HistoryScreen },
+      { key: "Relax" as TabKey, label: "Relax", icon: "🌿", Screen: RelaxScreen },
+      { key: "Settings" as TabKey, label: "Settings", icon: "⚙️", Screen: SettingsScreen },
+    ],
+    [],
+  );
+
+  const clamp = useCallback((value: number, min: number, max: number) => {
+    return Math.min(max, Math.max(min, value));
+  }, []);
+
+  const animateToIndex = useCallback(
+    (nextIndex: number) => {
+      const nextOffset = -nextIndex * width;
+      offsetX.current = nextOffset;
+      Animated.spring(translateX, {
+        toValue: nextOffset,
+        useNativeDriver: true,
+        damping: 24,
+        stiffness: 200,
+        mass: 0.8,
+      }).start();
+    },
+    [translateX, width],
+  );
+
+  useEffect(() => {
+    animateToIndex(index);
+  }, [index, width, animateToIndex]);
+
+  const panResponder = useRef(
+    PanResponder.create({
+      onMoveShouldSetPanResponder: (_, gesture) => {
+        if (gesture.numberActiveTouches > 1) return false;
+        const isHorizontal = Math.abs(gesture.dx) > 12;
+        const isPrimary = Math.abs(gesture.dx) > Math.abs(gesture.dy) * 1.2;
+        return isHorizontal && isPrimary;
+      },
+      onPanResponderGrant: () => {
+        translateX.stopAnimation((value) => {
+          offsetX.current = value;
+        });
+      },
+      onPanResponderMove: (_, gesture) => {
+        const min = -(tabs.length - 1) * width;
+        const max = 0;
+        const next = clamp(offsetX.current + gesture.dx, min, max);
+        translateX.setValue(next);
+      },
+      onPanResponderRelease: (_, gesture) => {
+        const min = -(tabs.length - 1) * width;
+        const max = 0;
+        const nextOffset = clamp(offsetX.current + gesture.dx, min, max);
+        const nextIndex = clamp(
+          Math.round(-nextOffset / width),
+          0,
+          tabs.length - 1,
+        );
+        setIndex(nextIndex);
+      },
+    })
+  ).current;
+
   return (
-    <Tab.Navigator
-      screenOptions={{
-        headerShown: false,
-        tabBarActiveTintColor: Colors.deepGreen,
-        tabBarInactiveTintColor: Colors.textMuted,
-        tabBarStyle: {
-          backgroundColor: Colors.cream,
-          borderTopColor: Colors.beige,
-          borderTopWidth: 1,
-          height: 64,
-          paddingTop: 6,
-        },
-        tabBarLabelStyle: {
-          fontSize: 10,
-          marginTop: 2,
-        },
-      }}
-    >
-      <Tab.Screen
-        name="Track"
-        options={{
-          tabBarIcon: ({ color }) => (
-            <Text style={{ fontSize: 20, color }}>⏱</Text>
-          ),
-        }}
-      >
-        {() => <TimerScreen app={app} />}
-      </Tab.Screen>
-      <Tab.Screen
-        name="History"
-        options={{
-          tabBarIcon: ({ color }) => (
-            <Text style={{ fontSize: 20, color }}>📋</Text>
-          ),
-        }}
-      >
-        {() => <HistoryScreen app={app} />}
-      </Tab.Screen>
-      <Tab.Screen
-        name="Relax"
-        options={{
-          tabBarIcon: ({ color }) => (
-            <Text style={{ fontSize: 20, color }}>🌿</Text>
-          ),
-        }}
-      >
-        {() => <RelaxScreen app={app} />}
-      </Tab.Screen>
-      <Tab.Screen
-        name="Settings"
-        options={{
-          tabBarIcon: ({ color }) => (
-            <Text style={{ fontSize: 20, color }}>⚙️</Text>
-          ),
-        }}
-      >
-        {() => <SettingsScreen app={app} />}
-      </Tab.Screen>
-    </Tab.Navigator>
+    <ScreenBackground active={app.isActive}>
+      <View style={styles.container}>
+        <View style={styles.pager} {...panResponder.panHandlers}>
+          <Animated.View
+            style={[
+              styles.pagerRow,
+              { width: width * tabs.length, transform: [{ translateX }] },
+            ]}
+          >
+            {tabs.map((tab) => {
+              const Screen = tab.Screen;
+              return (
+                <View key={tab.key} style={{ width, flex: 1 }}>
+                  <Screen app={app} />
+                </View>
+              );
+            })}
+          </Animated.View>
+        </View>
+        <View
+          style={[
+            styles.tabBar,
+            { height: 64 + insets.bottom, paddingBottom: insets.bottom },
+          ]}
+        >
+          {tabs.map((tab, i) => {
+            const active = i === index;
+            const color = active ? Colors.deepGreen : Colors.textMuted;
+            return (
+              <Pressable
+                key={tab.key}
+                style={styles.tabItem}
+                onPress={() => setIndex(i)}
+              >
+                <Text style={[styles.tabIcon, { color }]}>{tab.icon}</Text>
+                <Text style={[styles.tabLabel, { color }]}>{tab.label}</Text>
+              </Pressable>
+            );
+          })}
+        </View>
+      </View>
+    </ScreenBackground>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
+  pager: {
+    flex: 1,
+    overflow: "hidden",
+  },
+  pagerRow: {
+    flex: 1,
+    flexDirection: "row",
+  },
+  tabBar: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-around",
+    backgroundColor: Colors.cream,
+    borderTopColor: Colors.beige,
+    borderTopWidth: 1,
+    paddingTop: 6,
+  },
+  tabItem: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 2,
+  },
+  tabIcon: {
+    fontSize: 20,
+  },
+  tabLabel: {
+    fontSize: 10,
+  },
+});

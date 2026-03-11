@@ -13,7 +13,6 @@ import { Colors } from "../theme";
 import type { Contraction, Session } from "../types";
 import type { useContractions } from "../hooks/useContractions";
 import { ContractionDetailModal } from "../components/ContractionDetailModal";
-import { ScreenBackground } from "../components/ScreenBackground";
 
 interface Props {
   app: ReturnType<typeof useContractions>;
@@ -65,13 +64,11 @@ export function HistoryScreen({ app }: Props) {
   const maxInterval = Math.max(60, ...intervals);
 
   const reversedContractions = [...contractions].reverse();
-  const topSectionHeight =
-    (contractions.length > 0 ? 240 : 160) + insets.top;
+  const topSectionHeight = contractions.length > 0 ? 240 : 160;
 
   return (
-    <ScreenBackground active={app.isActive}>
-      <View style={s.container}>
-        <View style={[s.topSection, { height: topSectionHeight }]}>
+    <View style={s.container}>
+      <View style={[s.topSection, { height: topSectionHeight, paddingTop: insets.top }]}>
           <View style={s.sectionWrap}>
           <Text style={s.title}>History</Text>
           </View>
@@ -277,8 +274,7 @@ export function HistoryScreen({ app }: Props) {
           onUpdate={app.updateContraction}
           onDelete={app.deleteContraction}
         />
-      </View>
-    </ScreenBackground>
+    </View>
   );
 }
 

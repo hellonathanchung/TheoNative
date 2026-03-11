@@ -8,7 +8,6 @@ import type { Contraction } from '../types';
 import type { useContractions } from '../hooks/useContractions';
 import { IntensityPicker } from '../components/IntensityPicker';
 import { ContractionDetailModal } from '../components/ContractionDetailModal';
-import { ScreenBackground } from '../components/ScreenBackground';
 
 interface Props {
   app: ReturnType<typeof useContractions>;
@@ -89,8 +88,7 @@ export function TimerScreen({ app }: Props) {
   }, [app.isActive, app.activeStart, elapsed]);
 
   return (
-    <ScreenBackground active={app.isActive}>
-      <View style={[styles.container, { paddingTop: insets.top + 16 }]}>
+    <View style={[styles.container, { paddingTop: insets.top + 16 }]}>
       {/* Counter */}
       {app.contractions.length > 0 && (
         <Text style={styles.counter}>
@@ -271,8 +269,7 @@ export function TimerScreen({ app }: Props) {
           </View>
         </View>
       </Modal>
-      </View>
-    </ScreenBackground>
+    </View>
   );
 }
 

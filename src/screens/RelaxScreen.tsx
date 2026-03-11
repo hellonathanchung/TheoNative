@@ -11,7 +11,6 @@ import { BubbleGame } from '../components/BubbleGame';
 import { DifficultySelector } from '../components/DifficultySelector';
 import { DINO_CONFIGS, BUBBLE_CONFIGS } from '../utils/gameConfig';
 import type { GameDifficulty } from '../types';
-import { ScreenBackground } from '../components/ScreenBackground';
 
 interface Props {
   app: ReturnType<typeof useContractions>;
@@ -24,8 +23,7 @@ export function RelaxScreen({ app }: Props) {
   const bubbleConfig = BUBBLE_CONFIGS[app.settings.bubbleDifficulty] ?? BUBBLE_CONFIGS.normal;
 
   return (
-    <ScreenBackground active={app.isActive}>
-      <View style={[s.container, { paddingTop: insets.top + 16 }]}>
+    <View style={[s.container, { paddingTop: insets.top + 16 }]}>
         {/* Title */}
         <Text style={s.title}>Relax</Text>
 
@@ -99,7 +97,6 @@ export function RelaxScreen({ app }: Props) {
         </Text>
       </ScrollView>
     </View>
-  </ScreenBackground>
   );
 }
 
