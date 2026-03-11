@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { Vibration, Platform } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import * as Notifications from 'expo-notifications';
@@ -56,6 +56,12 @@ export function useContractions() {
   const [pendingIntensityId, setPendingIntensityId] = useState<string | null>(null);
   const [persistenceEnabled, setPersistenceEnabled] = useState(true);
   const [onboardingResetAt, setOnboardingResetAt] = useState<number | null>(null);
+  const [undoState, setUndoState] = useState<{
+    type: 'contraction' | 'session';
+    item: Contraction | Session;
+    index: number;
+  } | null>(null);
+  const undoTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Restore active state on mount
   useEffect(() => {
@@ -64,6 +70,12 @@ export function useContractions() {
       setIsActive(true);
       setActiveStart(saved.activeStart);
     }
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (undoTimeoutRef.current) clearTimeout(undoTimeoutRef.current);
+    };
   }, []);
 
   // Persist contractions
@@ -154,7 +166,15 @@ export function useContractions() {
   }, [contractions]);
 
   const deleteSession = useCallback((id: string) => {
-    setSessions((prev) => prev.filter((s) => s.id !== id));
+    setSessions((prev) => {
+      const index = prev.findIndex((s) => s.id === id);
+      if (index === -1) return prev;
+      const removed = prev[index];
+      if (undoTimeoutRef.current) clearTimeout(undoTimeoutRef.current);
+      setUndoState({ type: 'session', item: removed, index });
+      undoTimeoutRef.current = setTimeout(() => setUndoState(null), 5000);
+      return prev.filter((s) => s.id !== id);
+    });
   }, []);
 
   const setIntensity = useCallback((id: string, intensity: Intensity) => {
@@ -213,7 +233,15 @@ export function useContractions() {
   }, []);
 
   const deleteContraction = useCallback((id: string) => {
-    setContractions((prev) => prev.filter((c) => c.id !== id));
+    setContractions((prev) => {
+      const index = prev.findIndex((c) => c.id === id);
+      if (index === -1) return prev;
+      const removed = prev[index];
+      if (undoTimeoutRef.current) clearTimeout(undoTimeoutRef.current);
+      setUndoState({ type: 'contraction', item: removed, index });
+      undoTimeoutRef.current = setTimeout(() => setUndoState(null), 5000);
+      return prev.filter((c) => c.id !== id);
+    });
   }, []);
 
   const dismissAlert = useCallback(() => {
@@ -222,6 +250,40 @@ export function useContractions() {
 
   const updateSettings = useCallback((partial: Partial<Settings>) => {
     setSettings((prev) => ({ ...prev, ...partial }));
+  }, []);
+
+  const undoLast = useCallback(() => {
+    if (!undoState) return;
+    if (undoTimeoutRef.current) {
+      clearTimeout(undoTimeoutRef.current);
+      undoTimeoutRef.current = null;
+    }
+    if (undoState.type === 'contraction') {
+      const item = undoState.item as Contraction;
+      setContractions((prev) => {
+        const next = [...prev];
+        const index = Math.min(undoState.index, next.length);
+        next.splice(index, 0, item);
+        return next;
+      });
+    } else {
+      const item = undoState.item as Session;
+      setSessions((prev) => {
+        const next = [...prev];
+        const index = Math.min(undoState.index, next.length);
+        next.splice(index, 0, item);
+        return next;
+      });
+    }
+    setUndoState(null);
+  }, [undoState]);
+
+  const clearUndo = useCallback(() => {
+    if (undoTimeoutRef.current) {
+      clearTimeout(undoTimeoutRef.current);
+      undoTimeoutRef.current = null;
+    }
+    setUndoState(null);
   }, []);
 
   const disablePersistence = useCallback(() => {
@@ -235,6 +297,11 @@ export function useContractions() {
   const resetAllData = useCallback(() => {
     setPersistenceEnabled(false);
     clearAllData();
+    if (undoTimeoutRef.current) {
+      clearTimeout(undoTimeoutRef.current);
+      undoTimeoutRef.current = null;
+    }
+    setUndoState(null);
     setContractions([]);
     setSessions([]);
     setSettings({ ...DEFAULT_SETTINGS });
@@ -280,5 +347,8 @@ export function useContractions() {
     disablePersistence,
     enablePersistence,
     onboardingResetAt,
+    undoState,
+    undoLast,
+    clearUndo,
   };
 }

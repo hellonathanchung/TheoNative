@@ -24,7 +24,7 @@ export function RelaxScreen({ app }: Props) {
   const bubbleConfig = BUBBLE_CONFIGS[app.settings.bubbleDifficulty] ?? BUBBLE_CONFIGS.normal;
 
   return (
-    <ScreenBackground>
+    <ScreenBackground active={app.isActive}>
       <View style={[s.container, { paddingTop: insets.top + 16 }]}>
         {/* Title */}
         <Text style={s.title}>Relax</Text>

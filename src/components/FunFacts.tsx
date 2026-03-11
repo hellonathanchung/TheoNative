@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { View, Text, Pressable, StyleSheet, PanResponder, Dimensions } from 'react-native';
+import { View, Text, Pressable, StyleSheet, ScrollView, Dimensions } from 'react-native';
 import * as Clipboard from 'expo-clipboard';
 import { Colors } from '../theme';
 
@@ -38,25 +38,39 @@ const FACTS = [
 
 export function FunFacts() {
   const [index, setIndex] = useState(() => Math.floor(Math.random() * FACTS.length));
-  const [fading, setFading] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
   const [shared, setShared] = useState(false);
+  const scrollRef = useRef<ScrollView | null>(null);
+  const cardGap = 8;
+  const cardHeight = 140;
+  const cardWidth = Dimensions.get('window').width - 32 - cardGap;
+  const pageWidth = cardWidth + cardGap;
+
+  const goToIndex = useCallback(
+    (nextIndex: number, animated = true) => {
+      const normalized = (nextIndex + FACTS.length) % FACTS.length;
+      scrollRef.current?.scrollTo({ x: pageWidth * normalized, animated });
+      setIndex(normalized);
+    },
+    [pageWidth],
+  );
 
   const nextFact = useCallback(() => {
-    setFading(true);
-    setTimeout(() => {
-      setIndex((prev) => (prev + 1) % FACTS.length);
-      setFading(false);
-    }, 300);
-  }, []);
+    goToIndex(index + 1);
+  }, [goToIndex, index]);
 
   const prevFact = useCallback(() => {
-    setFading(true);
-    setTimeout(() => {
-      setIndex((prev) => (prev - 1 + FACTS.length) % FACTS.length);
-      setFading(false);
-    }, 300);
-  }, []);
+    goToIndex(index - 1);
+  }, [goToIndex, index]);
+
+  const randomFact = useCallback(() => {
+    if (FACTS.length === 1) return;
+    let nextIndex = index;
+    while (nextIndex === index) {
+      nextIndex = Math.floor(Math.random() * FACTS.length);
+    }
+    goToIndex(nextIndex);
+  }, [goToIndex, index]);
 
   const shareFact = useCallback(async () => {
     const fact = FACTS[index];
@@ -66,18 +80,6 @@ export function FunFacts() {
     setTimeout(() => setShared(false), 2000);
   }, [index]);
 
-  // Swipe handling
-  const panResponder = useRef(
-    PanResponder.create({
-      onMoveShouldSetPanResponder: (_, gestureState) =>
-        Math.abs(gestureState.dx) > 20,
-      onPanResponderRelease: (_, gestureState) => {
-        if (gestureState.dx < -40) nextFact();
-        else if (gestureState.dx > 40) prevFact();
-      },
-    })
-  ).current;
-
   // Auto-rotate
   useEffect(() => {
     if (collapsed) return;
@@ -85,7 +87,9 @@ export function FunFacts() {
     return () => clearInterval(interval);
   }, [nextFact, collapsed]);
 
-  const fact = FACTS[index];
+  useEffect(() => {
+    scrollRef.current?.scrollTo({ x: pageWidth * index, animated: false });
+  }, []);
 
   return (
     <View style={s.container}>
@@ -102,6 +106,9 @@ export function FunFacts() {
             <Pressable onPress={prevFact}>
               <Text style={s.navBtn}>{'\u2190'} Prev</Text>
             </Pressable>
+            <Pressable onPress={randomFact} style={s.randomBtn}>
+              <Text style={s.randomBtnText}>Random</Text>
+            </Pressable>
             <Pressable onPress={shareFact} style={s.shareBtn}>
               <Text style={s.shareBtnText}>{shared ? '\u2713 Copied!' : '\u2197 Share'}</Text>
             </Pressable>
@@ -110,13 +117,34 @@ export function FunFacts() {
             </Pressable>
           </View>
 
-          <View
-            {...panResponder.panHandlers}
-            style={[s.card, { opacity: fading ? 0 : 1 }]}
-          >
-            <Text style={s.emoji}>{fact.emoji}</Text>
-            <Text style={s.factText}>{fact.text}</Text>
-            <Text style={s.sourceText}>{fact.source}</Text>
+          <View style={[s.carousel, { width: pageWidth }]}>
+            <ScrollView
+              ref={scrollRef}
+              horizontal
+              pagingEnabled
+              bounces={false}
+              showsHorizontalScrollIndicator={false}
+              onMomentumScrollEnd={(e) => {
+                const nextIndex = Math.round(
+                  e.nativeEvent.contentOffset.x / pageWidth,
+                );
+                if (nextIndex !== index) setIndex(nextIndex);
+              }}
+              scrollEventThrottle={16}
+              contentOffset={{ x: pageWidth * index, y: 0 }}
+              snapToInterval={pageWidth}
+              decelerationRate="fast"
+            >
+              {FACTS.map((item, idx) => (
+                <View key={idx} style={[s.page, { width: pageWidth }]}>
+                  <View style={[s.card, { width: cardWidth, height: cardHeight }]}>
+                    <Text style={s.emoji}>{item.emoji}</Text>
+                    <Text style={s.factText}>{item.text}</Text>
+                    <Text style={s.sourceText}>{item.source}</Text>
+                  </View>
+                </View>
+              ))}
+            </ScrollView>
           </View>
 
           <View style={s.dotsRow}>
@@ -146,9 +174,13 @@ const s = StyleSheet.create({
   chevron: { fontSize: 14, color: Colors.textMuted },
   navRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
   navBtn: { fontSize: 12, color: Colors.terracotta, fontWeight: '500' },
+  randomBtn: { paddingVertical: 4, paddingHorizontal: 10, borderRadius: 8, backgroundColor: Colors.beige },
+  randomBtnText: { fontSize: 12, color: Colors.textSecondary, fontWeight: '500' },
   shareBtn: { paddingVertical: 4, paddingHorizontal: 12, borderRadius: 8, backgroundColor: Colors.beige },
   shareBtnText: { fontSize: 12, color: Colors.textSecondary, fontWeight: '500' },
-  card: { backgroundColor: Colors.beige, borderRadius: 16, paddingVertical: 20, paddingHorizontal: 16, alignItems: 'center', justifyContent: 'center', minHeight: 100 },
+  carousel: { overflow: 'hidden', borderRadius: 16 },
+  page: { paddingRight: 8 },
+  card: { backgroundColor: Colors.beige, borderRadius: 16, paddingVertical: 20, paddingHorizontal: 16, alignItems: 'center', justifyContent: 'center' },
   emoji: { fontSize: 28, marginBottom: 8 },
   factText: { fontSize: 14, color: Colors.textSecondary, lineHeight: 22, textAlign: 'center', maxWidth: 280 },
   sourceText: { fontSize: 11, color: Colors.textMuted, fontStyle: 'italic', marginTop: 4, textAlign: 'center', maxWidth: 260, lineHeight: 16 },

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, Pressable, Switch, ScrollView, Modal, Linking, StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Notifications from 'expo-notifications';
+import * as Clipboard from 'expo-clipboard';
 import { Colors } from '../theme';
 import type { Preset } from '../types';
 import type { useContractions } from '../hooks/useContractions';
@@ -36,8 +37,9 @@ const PRESETS: { id: Preset; label: string; shortDesc: string; longDesc: string;
 
 export function SettingsScreen({ app }: Props) {
   const insets = useSafeAreaInsets();
-  const { settings, updateSettings } = app;
+  const { settings, updateSettings, contractions, sessions } = app;
   const [showClearConfirm, setShowClearConfirm] = useState(false);
+  const [exported, setExported] = useState(false);
 
   const selectPreset = (p: typeof PRESETS[number]) => {
     if (p.id === 'custom') {
@@ -54,8 +56,74 @@ export function SettingsScreen({ app }: Props) {
 
   const activePreset = PRESETS.find((p) => p.id === settings.preset);
 
+  const exportCsv = async () => {
+    const formatValue = (value: string | number | null | undefined) => {
+      const text = value === null || value === undefined ? '' : String(value);
+      if (text.includes('"') || text.includes(',') || text.includes('\n')) {
+        return `"${text.replace(/"/g, '""')}"`;
+      }
+      return text;
+    };
+
+    const rows: string[] = [];
+    rows.push(
+      [
+        'session_id',
+        'session_started_at',
+        'session_ended_at',
+        'contraction_id',
+        'contraction_start_at',
+        'contraction_end_at',
+        'duration_seconds',
+        'intensity',
+      ].join(','),
+    );
+
+    const addSessionRows = (
+      sessionId: string,
+      sessionStart: number | null,
+      sessionEnd: number | null,
+      items: typeof contractions,
+    ) => {
+      items.forEach((c) => {
+        rows.push(
+          [
+            formatValue(sessionId),
+            formatValue(sessionStart ? new Date(sessionStart).toISOString() : ''),
+            formatValue(sessionEnd ? new Date(sessionEnd).toISOString() : ''),
+            formatValue(c.id),
+            formatValue(new Date(c.startTime).toISOString()),
+            formatValue(c.endTime ? new Date(c.endTime).toISOString() : ''),
+            formatValue(c.duration ?? ''),
+            formatValue(c.intensity ?? ''),
+          ].join(','),
+        );
+      });
+    };
+
+    sessions.forEach((session) => {
+      addSessionRows(
+        session.id,
+        session.startedAt,
+        session.endedAt,
+        session.contractions,
+      );
+    });
+
+    if (contractions.length > 0) {
+      const currentStart = contractions[0]?.startTime ?? null;
+      const currentEnd =
+        contractions[contractions.length - 1]?.endTime ?? null;
+      addSessionRows('current', currentStart, currentEnd, contractions);
+    }
+
+    await Clipboard.setStringAsync(rows.join('\n'));
+    setExported(true);
+    setTimeout(() => setExported(false), 2000);
+  };
+
   return (
-    <ScreenBackground>
+    <ScreenBackground active={app.isActive}>
       <ScrollView
         style={[s.container, { paddingTop: insets.top }]}
         contentContainerStyle={{ paddingBottom: 40 + insets.bottom }}
@@ -175,6 +243,14 @@ export function SettingsScreen({ app }: Props) {
         <Pressable style={s.clearBtn} onPress={() => setShowClearConfirm(true)}>
           <Text style={s.clearBtnText}>Clear All Data</Text>
         </Pressable>
+        <Pressable style={s.exportBtn} onPress={exportCsv}>
+          <Text style={s.exportBtnText}>
+            {exported ? 'CSV Copied' : 'Export CSV'}
+          </Text>
+        </Pressable>
+        <Text style={s.exportHint}>
+          Copies contractions and sessions to your clipboard.
+        </Text>
       </View>
 
       {/* Disclaimer */}
@@ -270,6 +346,9 @@ const s = StyleSheet.create({
   donateBtnText: { fontSize: 14, fontWeight: '500', color: Colors.deepGreen },
   clearBtn: { paddingVertical: 10, paddingHorizontal: 24, backgroundColor: Colors.beige, borderRadius: 12, alignSelf: 'flex-start' },
   clearBtnText: { fontSize: 14, fontWeight: '500', color: Colors.danger },
+  exportBtn: { marginTop: 10, paddingVertical: 10, paddingHorizontal: 24, backgroundColor: Colors.beige, borderRadius: 12, alignSelf: 'flex-start' },
+  exportBtnText: { fontSize: 14, fontWeight: '500', color: Colors.deepGreen },
+  exportHint: { fontSize: 11, color: Colors.textMuted, marginTop: 6 },
   disclaimer: { textAlign: 'center', fontSize: 12, color: Colors.textMuted, paddingTop: 32, paddingHorizontal: 20, lineHeight: 18 },
   version: { textAlign: 'center', fontSize: 11, color: Colors.textMuted, paddingVertical: 8, opacity: 0.6 },
   modalOverlay: { flex: 1, backgroundColor: 'rgba(46,59,46,0.4)', alignItems: 'center', justifyContent: 'center', padding: 24 },

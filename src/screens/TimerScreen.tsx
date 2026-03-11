@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { View, Text, Pressable, FlatList, StyleSheet, Animated } from 'react-native';
+import { View, Text, Pressable, FlatList, StyleSheet, Animated, Modal } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTimer, useTimeSinceLast } from '../hooks/useTimer';
 import { formatDuration, formatTime, formatInterval } from '../utils/format';
@@ -21,6 +21,7 @@ export function TimerScreen({ app }: Props) {
   const timeSinceLast = useTimeSinceLast(app.isActive, lastContraction?.endTime ?? null);
   const recent = app.contractions.slice(-5).reverse();
   const [selectedContractionId, setSelectedContractionId] = useState<string | null>(null);
+  const [showAutoPause, setShowAutoPause] = useState(false);
   const selectedContraction = selectedContractionId
     ? app.contractions.find((c) => c.id === selectedContractionId) ?? null
     : null;
@@ -43,7 +44,7 @@ export function TimerScreen({ app }: Props) {
   // Animated breathing for active button
   const scale = useRef(new Animated.Value(1)).current;
   const animRef = useRef<any>(null);
-  const bgOpacity = useRef(new Animated.Value(0)).current;
+  const autoPauseShownFor = useRef<number | null>(null);
 
   useEffect(() => {
     if (app.isActive) {
@@ -63,23 +64,6 @@ export function TimerScreen({ app }: Props) {
   }, [app.isActive, scale]);
 
   useEffect(() => {
-    if (app.isActive) {
-      bgOpacity.setValue(0);
-      Animated.timing(bgOpacity, {
-        toValue: 0.35,
-        duration: 800,
-        useNativeDriver: true,
-      }).start();
-    } else {
-      Animated.timing(bgOpacity, {
-        toValue: 0,
-        duration: 500,
-        useNativeDriver: true,
-      }).start();
-    }
-  }, [app.isActive, bgOpacity]);
-
-  useEffect(() => {
     Animated.timing(buttonTone, {
       toValue: targetTone,
       duration: 320,
@@ -87,15 +71,25 @@ export function TimerScreen({ app }: Props) {
     }).start();
   }, [buttonTone, targetTone]);
 
+  useEffect(() => {
+    if (!app.isActive) {
+      setShowAutoPause(false);
+      autoPauseShownFor.current = null;
+      return;
+    }
+    const autoPauseThreshold = 5 * 60;
+    if (
+      app.activeStart &&
+      elapsed >= autoPauseThreshold &&
+      autoPauseShownFor.current !== app.activeStart
+    ) {
+      autoPauseShownFor.current = app.activeStart;
+      setShowAutoPause(true);
+    }
+  }, [app.isActive, app.activeStart, elapsed]);
+
   return (
-    <ScreenBackground>
-      <Animated.View
-        pointerEvents="none"
-        style={[
-          StyleSheet.absoluteFillObject,
-          { backgroundColor: Colors.softGreen, opacity: bgOpacity },
-        ]}
-      />
+    <ScreenBackground active={app.isActive}>
       <View style={[styles.container, { paddingTop: insets.top + 16 }]}>
       {/* Counter */}
       {app.contractions.length > 0 && (
@@ -250,6 +244,33 @@ export function TimerScreen({ app }: Props) {
         onUpdate={app.updateContraction}
         onDelete={app.deleteContraction}
       />
+
+      <Modal visible={showAutoPause} transparent animationType="fade">
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalCard}>
+            <Text style={styles.modalTitle}>Still contracting?</Text>
+            <Text style={styles.modalBody}>
+              This contraction has been running for a while. Would you like to
+              stop it now?
+            </Text>
+            <Pressable
+              style={styles.modalPrimaryBtn}
+              onPress={() => {
+                setShowAutoPause(false);
+                app.stopContraction();
+              }}
+            >
+              <Text style={styles.modalPrimaryText}>Stop Contraction</Text>
+            </Pressable>
+            <Pressable
+              style={styles.modalSecondaryBtn}
+              onPress={() => setShowAutoPause(false)}
+            >
+              <Text style={styles.modalSecondaryText}>Still Going</Text>
+            </Pressable>
+          </View>
+        </View>
+      </Modal>
       </View>
     </ScreenBackground>
   );
@@ -391,5 +412,57 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: Colors.white,
     marginTop: 4,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(46, 59, 46, 0.4)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 24,
+  },
+  modalCard: {
+    backgroundColor: Colors.cream,
+    borderRadius: 20,
+    padding: 28,
+    width: '100%',
+    maxWidth: 320,
+    alignItems: 'center',
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: Colors.textPrimary,
+    marginBottom: 6,
+  },
+  modalBody: {
+    fontSize: 14,
+    color: Colors.textSecondary,
+    lineHeight: 21,
+    textAlign: 'center',
+    marginBottom: 18,
+  },
+  modalPrimaryBtn: {
+    width: '100%',
+    padding: 14,
+    borderRadius: 12,
+    backgroundColor: Colors.terracotta,
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  modalPrimaryText: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: Colors.white,
+  },
+  modalSecondaryBtn: {
+    width: '100%',
+    padding: 12,
+    borderRadius: 12,
+    alignItems: 'center',
+  },
+  modalSecondaryText: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: Colors.textMuted,
   },
 });

@@ -36,8 +36,9 @@ export default function App() {
   const [showStalePrompt, setShowStalePrompt] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const toastOpacity = useRef(new Animated.Value(0)).current;
+  const undoOpacity = useRef(new Animated.Value(0)).current;
   const app = useContractions();
-  const { disablePersistence, enablePersistence } = app;
+  const { disablePersistence, enablePersistence, undoState, undoLast, clearUndo } = app;
 
   useEffect(() => {
     if (showOnboarding) {
@@ -80,6 +81,23 @@ export default function App() {
     return () => clearTimeout(timer);
   }, [toastMessage, toastOpacity]);
 
+  useEffect(() => {
+    if (undoState) {
+      undoOpacity.setValue(0);
+      Animated.timing(undoOpacity, {
+        toValue: 1,
+        duration: 180,
+        useNativeDriver: true,
+      }).start();
+    } else {
+      Animated.timing(undoOpacity, {
+        toValue: 0,
+        duration: 180,
+        useNativeDriver: true,
+      }).start();
+    }
+  }, [undoState, undoOpacity]);
+
   // Check if session is stale (24+ hours since last contraction)
   useEffect(() => {
     if (showOnboarding || app.contractions.length === 0) return;
@@ -100,6 +118,8 @@ export default function App() {
   };
 
   if (showOnboarding) {
+    const undoMessage =
+      undoState?.type === 'session' ? 'Session deleted' : 'Contraction deleted';
     return (
       <SafeAreaProvider>
         <Onboarding onComplete={handleOnboardingComplete} />
@@ -108,10 +128,32 @@ export default function App() {
             <Text style={styles.toastText}>{toastMessage}</Text>
           </Animated.View>
         )}
+        {undoState && (
+          <Animated.View
+            style={[
+              styles.undoToast,
+              { opacity: undoOpacity, top: toastMessage ? 64 : 16 },
+            ]}
+          >
+            <Text style={styles.undoText}>{undoMessage}</Text>
+            <Pressable
+              style={styles.undoAction}
+              onPress={() => {
+                undoLast();
+                clearUndo();
+              }}
+            >
+              <Text style={styles.undoActionText}>Undo</Text>
+            </Pressable>
+          </Animated.View>
+        )}
         <StatusBar style="dark" />
       </SafeAreaProvider>
     );
   }
+
+  const undoMessage =
+    undoState?.type === 'session' ? 'Session deleted' : 'Contraction deleted';
 
   return (
     <SafeAreaProvider>
@@ -154,6 +196,25 @@ export default function App() {
         {toastMessage && (
           <Animated.View style={[styles.toast, { opacity: toastOpacity }]}>
             <Text style={styles.toastText}>{toastMessage}</Text>
+          </Animated.View>
+        )}
+        {undoState && (
+          <Animated.View
+            style={[
+              styles.undoToast,
+              { opacity: undoOpacity, top: toastMessage ? 64 : 16 },
+            ]}
+          >
+            <Text style={styles.undoText}>{undoMessage}</Text>
+            <Pressable
+              style={styles.undoAction}
+              onPress={() => {
+                undoLast();
+                clearUndo();
+              }}
+            >
+              <Text style={styles.undoActionText}>Undo</Text>
+            </Pressable>
           </Animated.View>
         )}
       </View>
@@ -234,5 +295,35 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '500',
     color: Colors.cream,
+  },
+  undoToast: {
+    position: 'absolute',
+    left: 20,
+    right: 20,
+    backgroundColor: Colors.cream,
+    borderRadius: 12,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    borderWidth: 1,
+    borderColor: Colors.beige,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  undoText: {
+    fontSize: 13,
+    color: Colors.textSecondary,
+    fontWeight: '500',
+  },
+  undoAction: {
+    paddingVertical: 4,
+    paddingHorizontal: 10,
+    borderRadius: 8,
+    backgroundColor: Colors.beige,
+  },
+  undoActionText: {
+    fontSize: 12,
+    color: Colors.terracotta,
+    fontWeight: '600',
   },
 });

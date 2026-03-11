@@ -48,20 +48,36 @@ export function HistoryScreen({ app }: Props) {
       ? intervals.reduce((a, b) => a + b, 0) / intervals.length
       : 0;
 
+  const sessionStart = contractions[0]?.startTime ?? null;
+  const sessionEnd =
+    contractions.length > 0
+      ? contractions[contractions.length - 1].endTime ?? null
+      : null;
+  const sessionLength =
+    sessionStart && sessionEnd ? (sessionEnd - sessionStart) / 1000 : 0;
+  const lastDuration =
+    contractions.length > 0 ? contractions[contractions.length - 1].duration ?? 0 : 0;
+  const lastInterval =
+    intervals.length > 0 ? intervals[intervals.length - 1] : 0;
+
+  const timelineDurations = contractions.map((c) => c.duration ?? 0);
+  const maxDuration = Math.max(60, ...timelineDurations);
+  const maxInterval = Math.max(60, ...intervals);
+
   const reversedContractions = [...contractions].reverse();
+  const topSectionHeight =
+    (contractions.length > 0 ? 240 : 160) + insets.top;
 
   return (
-    <ScreenBackground>
-      <ScrollView
-        style={[s.container, { paddingTop: insets.top }]}
-        contentContainerStyle={{ paddingBottom: 40 + insets.bottom }}
-      >
-        <View style={s.sectionWrap}>
+    <ScreenBackground active={app.isActive}>
+      <View style={s.container}>
+        <View style={[s.topSection, { height: topSectionHeight }]}>
+          <View style={s.sectionWrap}>
           <Text style={s.title}>History</Text>
-        </View>
+          </View>
 
-        {/* Current session stats and list */}
-        {contractions.length > 0 ? (
+        {/* Current session stats */}
+        {contractions.length > 0 && (
           <>
             <View style={s.sectionWrap}>
               <Text style={s.sectionLabel}>CURRENT SESSION</Text>
@@ -87,102 +103,171 @@ export function HistoryScreen({ app }: Props) {
               </View>
             </View>
 
-            {/* Current contractions list (reversed) */}
-            <View style={s.listSection}>
-              {reversedContractions.map((c, reversedIndex) => {
-                const originalIndex = contractions.indexOf(c);
-                const number = originalIndex + 1;
-                const prev =
-                  originalIndex > 0 ? contractions[originalIndex - 1] : null;
-                const interval = prev?.endTime
-                  ? (c.startTime - prev.endTime) / 1000
-                  : null;
+            <View style={s.statsRow}>
+              <View style={s.statCol}>
+                <Text style={s.statValue}>
+                  {sessionLength > 0 ? formatInterval(sessionLength) : "--"}
+                </Text>
+                <Text style={s.statLabel}>session length</Text>
+              </View>
+              <View style={s.statDivider} />
+              <View style={s.statCol}>
+                <Text style={s.statValue}>
+                  {lastDuration > 0 ? formatDuration(lastDuration) : "--"}
+                </Text>
+                <Text style={s.statLabel}>last duration</Text>
+              </View>
+              <View style={s.statDivider} />
+              <View style={s.statCol}>
+                <Text style={s.statValue}>
+                  {lastInterval > 0 ? formatInterval(lastInterval) : "--"}
+                </Text>
+                <Text style={s.statLabel}>last apart</Text>
+              </View>
+            </View>
+          </>
+        )}
+        </View>
 
-                return (
-                <Pressable
-                  key={c.id}
-                  style={s.row}
-                  onPress={() => setSelectedContractionId(c.id)}
-                >
-                    <Text style={s.rowNumber}>#{number}</Text>
-                    <Text style={s.rowTime}>{formatTime(c.startTime)}</Text>
-                    <View style={s.rowDetail}>
-                      <Text style={s.rowValue}>
-                        {c.duration ? formatDuration(c.duration) : "--"}
-                      </Text>
-                      <Text style={s.rowLabel}>duration</Text>
-                    </View>
-                    <View style={s.rowDetail}>
-                      <Text style={[s.rowValue, { color: Colors.deepGreen }]}>
-                        {interval !== null ? formatInterval(interval) : "--"}
-                      </Text>
-                      <Text style={s.rowLabel}>apart</Text>
-                    </View>
-                    {c.intensity && (
+        <ScrollView
+          style={s.bottomScroll}
+          contentContainerStyle={{ paddingBottom: 40 + insets.bottom }}
+        >
+          {contractions.length > 0 ? (
+            <>
+              <View style={s.sectionWrap}>
+                <Text style={s.sectionLabel}>TIMELINE</Text>
+              </View>
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={s.timelineRow}
+              >
+                {contractions.map((c, i) => {
+                  const duration = c.duration ?? 0;
+                  const prev = i > 0 ? contractions[i - 1] : null;
+                  const gap = prev?.endTime
+                    ? (c.startTime - prev.endTime) / 1000
+                    : 0;
+                  const height = 10 + (duration / maxDuration) * 36;
+                  const spacing = 6 + (gap / maxInterval) * 18;
+                  return (
+                    <View
+                      key={c.id}
+                      style={{
+                        alignItems: "center",
+                        marginRight: Math.min(24, spacing),
+                      }}
+                    >
                       <View
                         style={[
-                          s.intensityDot,
-                          {
-                            backgroundColor:
-                              c.intensity === "mild"
-                                ? Colors.intensityMild
-                                : c.intensity === "moderate"
-                                ? Colors.intensityModerate
-                                : Colors.intensityStrong,
-                          },
+                          s.timelineBar,
+                          { height: Math.min(46, Math.max(10, height)) },
                         ]}
                       />
-                    )}
-                  </Pressable>
-                );
-              })}
-            </View>
-          </>
-        ) : (
-          <View style={s.emptyState}>
-            <Text style={s.emptyTitle}>No contractions recorded yet.</Text>
-            <Text style={s.emptyDesc}>
-              Head to the Track tab to get started.
-            </Text>
-          </View>
-        )}
+                    </View>
+                  );
+                })}
+              </ScrollView>
 
-        {/* Past sessions */}
-        {sessions.length > 0 && (
-          <>
-            <View style={s.sectionWrap}>
-              <Text style={[s.sectionLabel, { marginTop: 24 }]}>
-                PAST SESSIONS
+              {/* Current contractions list (reversed) */}
+              <View style={s.listSection}>
+                {reversedContractions.map((c) => {
+                  const originalIndex = contractions.indexOf(c);
+                  const number = originalIndex + 1;
+                  const prev =
+                    originalIndex > 0 ? contractions[originalIndex - 1] : null;
+                  const interval = prev?.endTime
+                    ? (c.startTime - prev.endTime) / 1000
+                    : null;
+
+                  return (
+                    <Pressable
+                      key={c.id}
+                      style={s.row}
+                      onPress={() => setSelectedContractionId(c.id)}
+                    >
+                      <Text style={s.rowNumber}>#{number}</Text>
+                      <Text style={s.rowTime}>{formatTime(c.startTime)}</Text>
+                      <View style={s.rowDetail}>
+                        <Text style={s.rowValue}>
+                          {c.duration ? formatDuration(c.duration) : "--"}
+                        </Text>
+                        <Text style={s.rowLabel}>duration</Text>
+                      </View>
+                      <View style={s.rowDetail}>
+                        <Text style={[s.rowValue, { color: Colors.deepGreen }]}>
+                          {interval !== null ? formatInterval(interval) : "--"}
+                        </Text>
+                        <Text style={s.rowLabel}>apart</Text>
+                      </View>
+                      {c.intensity && (
+                        <View
+                          style={[
+                            s.intensityDot,
+                            {
+                              backgroundColor:
+                                c.intensity === "mild"
+                                  ? Colors.intensityMild
+                                  : c.intensity === "moderate"
+                                  ? Colors.intensityModerate
+                                  : Colors.intensityStrong,
+                            },
+                          ]}
+                        />
+                      )}
+                    </Pressable>
+                  );
+                })}
+              </View>
+            </>
+          ) : (
+            <View style={s.emptyState}>
+              <Text style={s.emptyTitle}>No contractions recorded yet.</Text>
+              <Text style={s.emptyDesc}>
+                Head to the Track tab to get started.
               </Text>
             </View>
-            {sessions.map((session) => (
-              <SessionCard
-                key={session.id}
-                session={session}
-                expanded={expandedSession === session.id}
-                onToggle={() =>
-                  setExpandedSession(
-                    expandedSession === session.id ? null : session.id
-                  )
-                }
-                onDelete={() => {
-                  Alert.alert(
-                    "Delete Session",
-                    `Delete this session with ${session.contractions.length} contractions?`,
-                    [
-                      { text: "Cancel", style: "cancel" },
-                      {
-                        text: "Delete",
-                        style: "destructive",
-                        onPress: () => app.deleteSession(session.id),
-                      },
-                    ]
-                  );
-                }}
-              />
-            ))}
-          </>
-        )}
+          )}
+
+          {/* Past sessions */}
+          {sessions.length > 0 && (
+            <>
+              <View style={s.sectionWrap}>
+                <Text style={[s.sectionLabel, { marginTop: 24 }]}>
+                  PAST SESSIONS
+                </Text>
+              </View>
+              {sessions.map((session) => (
+                <SessionCard
+                  key={session.id}
+                  session={session}
+                  expanded={expandedSession === session.id}
+                  onToggle={() =>
+                    setExpandedSession(
+                      expandedSession === session.id ? null : session.id
+                    )
+                  }
+                  onDelete={() => {
+                    Alert.alert(
+                      "Delete Session",
+                      `Delete this session with ${session.contractions.length} contractions?`,
+                      [
+                        { text: "Cancel", style: "cancel" },
+                        {
+                          text: "Delete",
+                          style: "destructive",
+                          onPress: () => app.deleteSession(session.id),
+                        },
+                      ]
+                    );
+                  }}
+                />
+              ))}
+            </>
+          )}
+
+        </ScrollView>
 
         {/* Contraction detail modal */}
         <ContractionDetailModal
@@ -192,7 +277,7 @@ export function HistoryScreen({ app }: Props) {
           onUpdate={app.updateContraction}
           onDelete={app.deleteContraction}
         />
-      </ScrollView>
+      </View>
     </ScreenBackground>
   );
 }
@@ -309,6 +394,12 @@ const s = StyleSheet.create({
     flex: 1,
     paddingHorizontal: 0,
   },
+  topSection: {
+    paddingTop: 0,
+  },
+  bottomScroll: {
+    flex: 1,
+  },
   sectionWrap: {
     paddingHorizontal: 20,
   },
@@ -358,6 +449,17 @@ const s = StyleSheet.create({
     color: Colors.textMuted,
     marginTop: 4,
     letterSpacing: 0.5,
+  },
+  timelineRow: {
+    paddingHorizontal: 20,
+    paddingBottom: 12,
+    paddingTop: 4,
+    alignItems: "flex-end",
+  },
+  timelineBar: {
+    width: 12,
+    borderRadius: 6,
+    backgroundColor: Colors.terracotta,
   },
   row: {
     flexDirection: "row",
@@ -446,7 +548,7 @@ const s = StyleSheet.create({
     marginTop: 2,
   },
   chevron: {
-    fontSize: 14,
+    fontSize: 20,
     color: Colors.textMuted,
   },
   deleteBtn: {
