@@ -1,9 +1,9 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { View, Text, Pressable, FlatList, StyleSheet, Animated, Modal } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTimer, useTimeSinceLast } from '../hooks/useTimer';
 import { formatDuration, formatTime, formatInterval } from '../utils/format';
-import { Colors } from '../theme';
+import { useTheme, type ThemeColors } from '../theme';
 import type { Contraction } from '../types';
 import type { useContractions } from '../hooks/useContractions';
 import { IntensityPicker } from '../components/IntensityPicker';
@@ -14,6 +14,8 @@ interface Props {
 }
 
 export function TimerScreen({ app }: Props) {
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const insets = useSafeAreaInsets();
   const elapsed = useTimer(app.isActive, app.activeStart);
   const lastContraction = app.contractions[app.contractions.length - 1] ?? null;
@@ -36,9 +38,9 @@ export function TimerScreen({ app }: Props) {
   const targetTone = app.isActive ? 2 : urgency === 'approaching' ? 1 : 0;
   const buttonBg = buttonTone.interpolate({
     inputRange: [0, 1, 2],
-    outputRange: [Colors.warmAmber, Colors.softCoral, Colors.terracotta],
+    outputRange: [colors.warmAmber, colors.softCoral, colors.terracotta],
   });
-  const buttonShadow = app.isActive ? Colors.deepGreen : Colors.warmAmber;
+  const buttonShadow = app.isActive ? colors.deepGreen : colors.warmAmber;
 
   // Animated breathing for active button
   const scale = useRef(new Animated.Value(1)).current;
@@ -155,7 +157,7 @@ export function TimerScreen({ app }: Props) {
                       </View>
                       <View style={styles.rowDetail}>
                         <Text
-                          style={[styles.rowValue, { color: Colors.deepGreen }]}
+                          style={[styles.rowValue, { color: colors.deepGreen }]}
                         >
                           {intervalLabel}
                         </Text>
@@ -168,10 +170,10 @@ export function TimerScreen({ app }: Props) {
                             {
                               backgroundColor:
                                 item.intensity === 'mild'
-                                  ? Colors.intensityMild
+                                  ? colors.intensityMild
                                   : item.intensity === 'moderate'
-                                    ? Colors.intensityModerate
-                                    : Colors.intensityStrong,
+                                    ? colors.intensityModerate
+                                    : colors.intensityStrong,
                             },
                           ]}
                         />
@@ -273,7 +275,7 @@ export function TimerScreen({ app }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   container: {
     flex: 1,
     paddingHorizontal: 0,
@@ -281,7 +283,7 @@ const styles = StyleSheet.create({
   counter: {
     textAlign: 'center',
     fontSize: 13,
-    color: Colors.textMuted,
+    color: colors.textMuted,
     letterSpacing: 1,
     paddingBottom: 4,
   },
@@ -291,14 +293,14 @@ const styles = StyleSheet.create({
   },
   timerLabel: {
     fontSize: 12,
-    color: Colors.textSecondary,
+    color: colors.textSecondary,
     letterSpacing: 1.5,
     marginBottom: 4,
   },
   timerValue: {
     fontSize: 56,
     fontWeight: '200',
-    color: Colors.textPrimary,
+    color: colors.textPrimary,
     fontVariant: ['tabular-nums'],
   },
   recentSection: {
@@ -312,19 +314,19 @@ const styles = StyleSheet.create({
   },
   emptyTitle: {
     fontSize: 16,
-    color: Colors.textSecondary,
+    color: colors.textSecondary,
     fontWeight: '500',
     marginBottom: 6,
   },
   emptyDesc: {
     fontSize: 13,
-    color: Colors.textMuted,
+    color: colors.textMuted,
     lineHeight: 20,
     textAlign: 'center',
   },
   sectionHeader: {
     fontSize: 11,
-    color: Colors.textMuted,
+    color: colors.textMuted,
     letterSpacing: 1.5,
     marginBottom: 8,
   },
@@ -333,16 +335,16 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 12,
     paddingHorizontal: 12,
-    backgroundColor: Colors.cream,
+    backgroundColor: colors.cream,
     borderRadius: 14,
     borderWidth: 1,
-    borderColor: Colors.beige,
+    borderColor: colors.beige,
     marginBottom: 10,
   },
   rowTime: {
     width: 84,
     fontSize: 14,
-    color: Colors.textSecondary,
+    color: colors.textSecondary,
     textAlign: 'center',
   },
   rowDetail: {
@@ -352,11 +354,11 @@ const styles = StyleSheet.create({
   rowValue: {
     fontSize: 16,
     fontWeight: '500',
-    color: Colors.textPrimary,
+    color: colors.textPrimary,
   },
   rowLabel: {
     fontSize: 10,
-    color: Colors.textMuted,
+    color: colors.textMuted,
     marginTop: 1,
   },
   intensityDot: {
@@ -372,14 +374,14 @@ const styles = StyleSheet.create({
   newSessionBtn: {
     width: '100%',
     padding: 12,
-    backgroundColor: Colors.beige,
+    backgroundColor: colors.beige,
     borderRadius: 12,
     alignItems: 'center',
   },
   newSessionText: {
     fontSize: 14,
     fontWeight: '500',
-    color: Colors.textSecondary,
+    color: colors.textSecondary,
   },
   buttonWrapper: {
     alignItems: 'center',
@@ -392,7 +394,7 @@ const styles = StyleSheet.create({
     borderRadius: 80,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: Colors.warmAmber,
+    shadowColor: colors.warmAmber,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 16,
@@ -400,14 +402,14 @@ const styles = StyleSheet.create({
   },
   bigButtonLabel: {
     fontSize: 14,
-    color: Colors.white,
+    color: colors.white,
     opacity: 0.9,
     letterSpacing: 1,
   },
   bigButtonAction: {
     fontSize: 28,
     fontWeight: '600',
-    color: Colors.white,
+    color: colors.white,
     marginTop: 4,
   },
   modalOverlay: {
@@ -418,7 +420,7 @@ const styles = StyleSheet.create({
     padding: 24,
   },
   modalCard: {
-    backgroundColor: Colors.cream,
+    backgroundColor: colors.cream,
     borderRadius: 20,
     padding: 28,
     width: '100%',
@@ -428,12 +430,12 @@ const styles = StyleSheet.create({
   modalTitle: {
     fontSize: 18,
     fontWeight: '600',
-    color: Colors.textPrimary,
+    color: colors.textPrimary,
     marginBottom: 6,
   },
   modalBody: {
     fontSize: 14,
-    color: Colors.textSecondary,
+    color: colors.textSecondary,
     lineHeight: 21,
     textAlign: 'center',
     marginBottom: 18,
@@ -442,14 +444,14 @@ const styles = StyleSheet.create({
     width: '100%',
     padding: 14,
     borderRadius: 12,
-    backgroundColor: Colors.terracotta,
+    backgroundColor: colors.terracotta,
     alignItems: 'center',
     marginBottom: 10,
   },
   modalPrimaryText: {
     fontSize: 15,
     fontWeight: '600',
-    color: Colors.white,
+    color: colors.white,
   },
   modalSecondaryBtn: {
     width: '100%',
@@ -460,6 +462,6 @@ const styles = StyleSheet.create({
   modalSecondaryText: {
     fontSize: 14,
     fontWeight: '500',
-    color: Colors.textMuted,
+    color: colors.textMuted,
   },
 });

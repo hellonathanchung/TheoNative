@@ -19,6 +19,7 @@ export const DEFAULT_SETTINGS: Settings = {
   intensityEnabled: true,
   dinoDifficulty: 'normal',
   bubbleDifficulty: 'normal',
+  themeMode: 'light',
 };
 
 export function loadContractions(): Contraction[] {

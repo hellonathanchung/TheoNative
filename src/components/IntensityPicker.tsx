@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { View, Text, Pressable, Modal, StyleSheet } from 'react-native';
-import { Colors } from '../theme';
+import { useTheme, type ThemeColors } from '../theme';
 import type { Intensity } from '../types';
 
 interface Props {
@@ -8,13 +8,22 @@ interface Props {
   onSkip: () => void;
 }
 
-const intensityOptions: { value: Intensity; label: string; dotColor: string; dotCount: number }[] = [
-  { value: 'mild', label: 'Mild', dotColor: Colors.intensityMild, dotCount: 1 },
-  { value: 'moderate', label: 'Moderate', dotColor: Colors.intensityModerate, dotCount: 2 },
-  { value: 'strong', label: 'Strong', dotColor: Colors.intensityStrong, dotCount: 3 },
-];
-
 export const IntensityPicker: React.FC<Props> = ({ onSelect, onSkip }) => {
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
+  const intensityOptions: {
+    value: Intensity;
+    label: string;
+    dotColor: string;
+    dotCount: number;
+  }[] = useMemo(
+    () => [
+      { value: 'mild', label: 'Mild', dotColor: colors.intensityMild, dotCount: 1 },
+      { value: 'moderate', label: 'Moderate', dotColor: colors.intensityModerate, dotCount: 2 },
+      { value: 'strong', label: 'Strong', dotColor: colors.intensityStrong, dotCount: 3 },
+    ],
+    [colors],
+  );
   return (
     <Modal transparent animationType="fade">
       <View style={styles.overlay}>
@@ -55,14 +64,14 @@ export const IntensityPicker: React.FC<Props> = ({ onSelect, onSkip }) => {
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   overlay: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.3)',
     justifyContent: 'flex-end',
   },
   sheet: {
-    backgroundColor: Colors.cream,
+    backgroundColor: colors.cream,
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
     paddingTop: 24,
@@ -73,7 +82,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     fontSize: 16,
     fontWeight: '600',
-    color: Colors.textPrimary,
+    color: colors.textPrimary,
     marginBottom: 20,
   },
   optionsRow: {
@@ -82,7 +91,7 @@ const styles = StyleSheet.create({
   },
   option: {
     flex: 1,
-    backgroundColor: Colors.beige,
+    backgroundColor: colors.beige,
     borderRadius: 16,
     paddingVertical: 16,
     paddingHorizontal: 8,
@@ -103,7 +112,7 @@ const styles = StyleSheet.create({
   optionLabel: {
     fontSize: 14,
     fontWeight: '500',
-    color: Colors.textSecondary,
+    color: colors.textSecondary,
   },
   skipButton: {
     marginTop: 16,
@@ -111,7 +120,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   skipText: {
-    color: Colors.textMuted,
+    color: colors.textMuted,
     fontSize: 14,
     fontWeight: '500',
   },

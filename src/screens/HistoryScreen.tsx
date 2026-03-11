@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import {
   View,
   Text,
@@ -9,7 +9,7 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { formatDuration, formatTime, formatInterval } from "../utils/format";
-import { Colors } from "../theme";
+import { useTheme, type ThemeColors } from "../theme";
 import type { Contraction, Session } from "../types";
 import type { useContractions } from "../hooks/useContractions";
 import { ContractionDetailModal } from "../components/ContractionDetailModal";
@@ -19,6 +19,8 @@ interface Props {
 }
 
 export function HistoryScreen({ app }: Props) {
+  const { colors } = useTheme();
+  const s = useMemo(() => createStyles(colors), [colors]);
   const insets = useSafeAreaInsets();
   const { contractions, sessions } = app;
   const [expandedSession, setExpandedSession] = useState<string | null>(null);
@@ -193,7 +195,7 @@ export function HistoryScreen({ app }: Props) {
                         <Text style={s.rowLabel}>duration</Text>
                       </View>
                       <View style={s.rowDetail}>
-                        <Text style={[s.rowValue, { color: Colors.deepGreen }]}>
+                        <Text style={[s.rowValue, { color: colors.deepGreen }]}>
                           {interval !== null ? formatInterval(interval) : "--"}
                         </Text>
                         <Text style={s.rowLabel}>apart</Text>
@@ -205,10 +207,10 @@ export function HistoryScreen({ app }: Props) {
                             {
                               backgroundColor:
                                 c.intensity === "mild"
-                                  ? Colors.intensityMild
+                                  ? colors.intensityMild
                                   : c.intensity === "moderate"
-                                  ? Colors.intensityModerate
-                                  : Colors.intensityStrong,
+                                  ? colors.intensityModerate
+                                  : colors.intensityStrong,
                             },
                           ]}
                         />
@@ -289,6 +291,8 @@ function SessionCard({
   onToggle: () => void;
   onDelete: () => void;
 }) {
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const date = new Date(session.startedAt).toLocaleDateString([], {
     month: "short",
     day: "numeric",
@@ -317,11 +321,11 @@ function SessionCard({
       : 0;
 
   return (
-    <View style={s.sessionCard}>
-      <Pressable style={s.sessionHeader} onPress={onToggle}>
+    <View style={styles.sessionCard}>
+      <Pressable style={styles.sessionHeader} onPress={onToggle}>
         <View>
-          <Text style={s.sessionDate}>{date}</Text>
-          <Text style={s.sessionMeta}>
+          <Text style={styles.sessionDate}>{date}</Text>
+          <Text style={styles.sessionMeta}>
             {session.contractions.length} contraction
             {session.contractions.length !== 1 ? "s" : ""}
             {avgDuration > 0
@@ -332,7 +336,7 @@ function SessionCard({
               : ""}
           </Text>
         </View>
-        <Text style={s.chevron}>{expanded ? "\u25BE" : "\u25B8"}</Text>
+        <Text style={styles.chevron}>{expanded ? "\u25BE" : "\u25B8"}</Text>
       </Pressable>
 
       {expanded && (
@@ -343,32 +347,32 @@ function SessionCard({
               ? (c.startTime - prev.endTime) / 1000
               : null;
             return (
-              <View key={c.id} style={s.row}>
-                <Text style={s.rowNumber}>#{i + 1}</Text>
-                <Text style={s.rowTime}>{formatTime(c.startTime)}</Text>
-                <View style={s.rowDetail}>
-                  <Text style={s.rowValue}>
+              <View key={c.id} style={styles.row}>
+                <Text style={styles.rowNumber}>#{i + 1}</Text>
+                <Text style={styles.rowTime}>{formatTime(c.startTime)}</Text>
+                <View style={styles.rowDetail}>
+                  <Text style={styles.rowValue}>
                     {c.duration ? formatDuration(c.duration) : "--"}
                   </Text>
-                  <Text style={s.rowLabel}>duration</Text>
+                  <Text style={styles.rowLabel}>duration</Text>
                 </View>
-                <View style={s.rowDetail}>
-                  <Text style={[s.rowValue, { color: Colors.deepGreen }]}>
+                <View style={styles.rowDetail}>
+                  <Text style={[styles.rowValue, { color: colors.deepGreen }]}>
                     {interval !== null ? formatInterval(interval) : "--"}
                   </Text>
-                  <Text style={s.rowLabel}>apart</Text>
+                  <Text style={styles.rowLabel}>apart</Text>
                 </View>
                 {c.intensity && (
                   <View
                     style={[
-                      s.intensityDot,
+                      styles.intensityDot,
                       {
                         backgroundColor:
                           c.intensity === "mild"
-                            ? Colors.intensityMild
+                            ? colors.intensityMild
                             : c.intensity === "moderate"
-                            ? Colors.intensityModerate
-                            : Colors.intensityStrong,
+                            ? colors.intensityModerate
+                            : colors.intensityStrong,
                       },
                     ]}
                   />
@@ -376,8 +380,8 @@ function SessionCard({
               </View>
             );
           })}
-          <Pressable style={s.deleteBtn} onPress={onDelete}>
-            <Text style={s.deleteText}>Delete Session</Text>
+          <Pressable style={styles.deleteBtn} onPress={onDelete}>
+            <Text style={styles.deleteText}>Delete Session</Text>
           </Pressable>
         </View>
       )}
@@ -385,7 +389,7 @@ function SessionCard({
   );
 }
 
-const s = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   container: {
     flex: 1,
     paddingHorizontal: 0,
@@ -402,13 +406,13 @@ const s = StyleSheet.create({
   title: {
     fontSize: 20,
     fontWeight: "600",
-    color: Colors.textPrimary,
+    color: colors.textPrimary,
     paddingBottom: 12,
     paddingTop: 16,
   },
   sectionLabel: {
     fontSize: 11,
-    color: Colors.textMuted,
+    color: colors.textMuted,
     letterSpacing: 1.5,
     paddingBottom: 8,
   },
@@ -418,7 +422,7 @@ const s = StyleSheet.create({
   statsRow: {
     flexDirection: "row",
     marginHorizontal: 16,
-    backgroundColor: Colors.beige,
+    backgroundColor: colors.beige,
     borderRadius: 16,
     paddingVertical: 16,
     paddingHorizontal: 0,
@@ -432,17 +436,17 @@ const s = StyleSheet.create({
   statDivider: {
     width: 1,
     height: 28,
-    backgroundColor: Colors.softPeach,
+    backgroundColor: colors.softPeach,
     marginVertical: 4,
   },
   statValue: {
     fontSize: 20,
     fontWeight: "600",
-    color: Colors.textPrimary,
+    color: colors.textPrimary,
   },
   statLabel: {
     fontSize: 10,
-    color: Colors.textMuted,
+    color: colors.textMuted,
     marginTop: 4,
     letterSpacing: 0.5,
   },
@@ -455,30 +459,30 @@ const s = StyleSheet.create({
   timelineBar: {
     width: 12,
     borderRadius: 6,
-    backgroundColor: Colors.terracotta,
+    backgroundColor: colors.terracotta,
   },
   row: {
     flexDirection: "row",
     alignItems: "center",
     paddingVertical: 12,
     paddingHorizontal: 12,
-    backgroundColor: Colors.cream,
+    backgroundColor: colors.cream,
     borderRadius: 14,
     borderWidth: 1,
-    borderColor: Colors.beige,
+    borderColor: colors.beige,
     marginBottom: 10,
   },
   rowNumber: {
     width: 36,
     fontSize: 12,
-    color: Colors.textMuted,
+    color: colors.textMuted,
     fontWeight: "500",
     textAlign: "center",
   },
   rowTime: {
     width: 84,
     fontSize: 14,
-    color: Colors.textSecondary,
+    color: colors.textSecondary,
     textAlign: "center",
   },
   rowDetail: {
@@ -488,11 +492,11 @@ const s = StyleSheet.create({
   rowValue: {
     fontSize: 16,
     fontWeight: "500",
-    color: Colors.textPrimary,
+    color: colors.textPrimary,
   },
   rowLabel: {
     fontSize: 10,
-    color: Colors.textMuted,
+    color: colors.textMuted,
     marginTop: 1,
   },
   intensityDot: {
@@ -508,22 +512,22 @@ const s = StyleSheet.create({
   emptyTitle: {
     fontSize: 16,
     fontWeight: "500",
-    color: Colors.textSecondary,
+    color: colors.textSecondary,
     marginBottom: 6,
   },
   emptyDesc: {
     fontSize: 13,
-    color: Colors.textMuted,
+    color: colors.textMuted,
     textAlign: "center",
     lineHeight: 20,
   },
   sessionCard: {
     marginHorizontal: 20,
     marginBottom: 8,
-    backgroundColor: Colors.cream,
+    backgroundColor: colors.cream,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: Colors.beige,
+    borderColor: colors.beige,
     overflow: "hidden",
   },
   sessionHeader: {
@@ -536,26 +540,26 @@ const s = StyleSheet.create({
   sessionDate: {
     fontSize: 15,
     fontWeight: "600",
-    color: Colors.textPrimary,
+    color: colors.textPrimary,
   },
   sessionMeta: {
     fontSize: 12,
-    color: Colors.textMuted,
+    color: colors.textMuted,
     marginTop: 2,
   },
   chevron: {
     fontSize: 20,
-    color: Colors.textMuted,
+    color: colors.textMuted,
   },
   deleteBtn: {
     padding: 12,
     alignItems: "center",
     borderTopWidth: 1,
-    borderTopColor: Colors.beige,
+    borderTopColor: colors.beige,
   },
   deleteText: {
     fontSize: 13,
-    color: Colors.danger,
+    color: colors.danger,
     fontWeight: "500",
   },
 });

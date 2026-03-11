@@ -1,7 +1,7 @@
-import React, { useState, useRef } from 'react';
+import React, { useMemo, useState, useRef } from 'react';
 import { View, Text, Pressable, ScrollView, Dimensions, StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Colors } from '../theme';
+import { useTheme, type ThemeColors } from '../theme';
 import type { Preset } from '../types';
 
 interface Props {
@@ -30,6 +30,8 @@ const PRESETS: { id: Exclude<Preset, 'custom'>; label: string; desc: string }[] 
 
 export function Onboarding({ onComplete }: Props) {
   const insets = useSafeAreaInsets();
+  const { colors } = useTheme();
+  const s = useMemo(() => createStyles(colors), [colors]);
   const [step, setStep] = useState(0);
   const [selectedPreset, setSelectedPreset] = useState<Exclude<Preset, 'custom'>>('5-1-1');
   const scrollRef = useRef<ScrollView>(null);
@@ -84,19 +86,19 @@ export function Onboarding({ onComplete }: Props) {
                   style={[
                     s.presetCard,
                     {
-                      backgroundColor: selectedPreset === p.id ? Colors.terracotta : Colors.warmBeige,
+                      backgroundColor: selectedPreset === p.id ? colors.terracotta : colors.warmBeige,
                     },
                   ]}
                 >
                   <Text style={[
                     s.presetLabel,
-                    { color: selectedPreset === p.id ? Colors.cream : Colors.textPrimary },
+                    { color: selectedPreset === p.id ? colors.cream : colors.textPrimary },
                   ]}>
                     {p.label}
                   </Text>
                   <Text style={[
                     s.presetDesc,
-                    { color: selectedPreset === p.id ? 'rgba(245,250,245,0.85)' : Colors.textSecondary },
+                    { color: selectedPreset === p.id ? 'rgba(245,250,245,0.85)' : colors.textSecondary },
                   ]}>
                     {p.desc}
                   </Text>
@@ -140,7 +142,7 @@ export function Onboarding({ onComplete }: Props) {
               style={[
                 s.dot,
                 {
-                  backgroundColor: step === i ? Colors.terracotta : Colors.warmBeige,
+                  backgroundColor: step === i ? colors.terracotta : colors.warmBeige,
                   width: step === i ? 24 : 8,
                 },
               ]}
@@ -163,33 +165,33 @@ export function Onboarding({ onComplete }: Props) {
   );
 }
 
-const s = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.cream },
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
+  container: { flex: 1, backgroundColor: colors.cream },
   viewport: { flex: 1 },
   screen: { height: '100%', alignItems: 'center', justifyContent: 'center', paddingHorizontal: 24 },
   screenContent: { alignItems: 'center', width: '100%', maxWidth: 340 },
   welcomeEmoji: { fontSize: 48, marginBottom: 8 },
-  appName: { fontSize: 40, fontWeight: '300', color: Colors.textPrimary, letterSpacing: 2, marginBottom: 8 },
-  tagline: { fontSize: 16, color: Colors.textSecondary, lineHeight: 24, textAlign: 'center' },
-  disclaimer: { fontSize: 12, color: Colors.textMuted, lineHeight: 18, textAlign: 'center', paddingHorizontal: 16 },
-  screenTitle: { fontSize: 22, fontWeight: '600', color: Colors.textPrimary, marginBottom: 8, textAlign: 'center' },
-  screenSubtitle: { fontSize: 14, color: Colors.textMuted, lineHeight: 22, textAlign: 'center', marginBottom: 24 },
+  appName: { fontSize: 40, fontWeight: '300', color: colors.textPrimary, letterSpacing: 2, marginBottom: 8 },
+  tagline: { fontSize: 16, color: colors.textSecondary, lineHeight: 24, textAlign: 'center' },
+  disclaimer: { fontSize: 12, color: colors.textMuted, lineHeight: 18, textAlign: 'center', paddingHorizontal: 16 },
+  screenTitle: { fontSize: 22, fontWeight: '600', color: colors.textPrimary, marginBottom: 8, textAlign: 'center' },
+  screenSubtitle: { fontSize: 14, color: colors.textMuted, lineHeight: 22, textAlign: 'center', marginBottom: 24 },
   presetList: { width: '100%', gap: 12 },
   presetCard: { padding: 16, borderRadius: 16, gap: 4 },
   presetLabel: { fontSize: 18, fontWeight: '600' },
   presetDesc: { fontSize: 13, lineHeight: 20 },
   stepsContainer: { width: '100%', gap: 20, marginTop: 16 },
   stepItem: { flexDirection: 'row', gap: 16, alignItems: 'flex-start' },
-  stepNum: { width: 36, height: 36, borderRadius: 18, backgroundColor: Colors.terracotta, alignItems: 'center', justifyContent: 'center' },
-  stepNumText: { fontSize: 16, fontWeight: '600', color: Colors.cream },
-  stepTitle: { fontSize: 16, fontWeight: '600', color: Colors.textPrimary, marginTop: 4 },
-  stepDesc: { fontSize: 14, color: Colors.textMuted, marginTop: 2 },
+  stepNum: { width: 36, height: 36, borderRadius: 18, backgroundColor: colors.terracotta, alignItems: 'center', justifyContent: 'center' },
+  stepNumText: { fontSize: 16, fontWeight: '600', color: colors.cream },
+  stepTitle: { fontSize: 16, fontWeight: '600', color: colors.textPrimary, marginTop: 4 },
+  stepDesc: { fontSize: 14, color: colors.textMuted, marginTop: 2 },
   bottomBar: { paddingHorizontal: 24, paddingBottom: 32 },
   dotsRow: { flexDirection: 'row', justifyContent: 'center', gap: 6, marginBottom: 20 },
   dot: { height: 8, borderRadius: 4 },
   btnRow: { flexDirection: 'row', gap: 12, alignItems: 'center' },
   skipBtn: { padding: 14 },
-  skipText: { fontSize: 15, color: Colors.textMuted },
-  nextBtn: { flex: 1, padding: 14, backgroundColor: Colors.terracotta, borderRadius: 12, alignItems: 'center' },
-  nextText: { fontSize: 16, fontWeight: '600', color: Colors.cream },
+  skipText: { fontSize: 15, color: colors.textMuted },
+  nextBtn: { flex: 1, padding: 14, backgroundColor: colors.terracotta, borderRadius: 12, alignItems: 'center' },
+  nextText: { fontSize: 16, fontWeight: '600', color: colors.cream },
 });

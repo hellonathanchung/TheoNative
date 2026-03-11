@@ -11,6 +11,7 @@ export interface Contraction {
 export type Preset = '5-1-1' | '4-1-1' | '3-1-1' | 'custom';
 
 export type GameDifficulty = 'easy' | 'normal' | 'hard';
+export type ThemeMode = 'light' | 'dark';
 
 export interface Settings {
   preset: Preset;
@@ -22,6 +23,7 @@ export interface Settings {
   intensityEnabled: boolean;
   dinoDifficulty: GameDifficulty;
   bubbleDifficulty: GameDifficulty;
+  themeMode: ThemeMode;
 }
 
 export interface Session {

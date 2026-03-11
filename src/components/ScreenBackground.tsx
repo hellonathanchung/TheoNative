@@ -1,7 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 import { View, StyleSheet, Animated } from 'react-native';
 import { BackgroundLeaves } from './BackgroundLeaves';
-import { Colors } from '../theme';
+import { useTheme } from '../theme';
 
 interface Props {
   children: React.ReactNode;
@@ -14,15 +14,18 @@ interface Props {
 
 export function ScreenBackground({
   children,
-  backgroundColor = Colors.cream,
+  backgroundColor,
   active = false,
-  activeOverlayColor = Colors.softGreen,
+  activeOverlayColor,
   activeOverlayOpacity = 0.35,
   style,
 }: Props) {
+  const { colors } = useTheme();
   const overlayOpacity = useRef(
     new Animated.Value(active ? activeOverlayOpacity : 0),
   ).current;
+  const baseColor = backgroundColor ?? colors.cream;
+  const overlayColor = activeOverlayColor ?? colors.softGreen;
 
   useEffect(() => {
     Animated.timing(overlayOpacity, {
@@ -33,13 +36,13 @@ export function ScreenBackground({
   }, [active, activeOverlayOpacity, overlayOpacity]);
 
   return (
-    <View style={[styles.container, { backgroundColor }, style]}>
+    <View style={[styles.container, { backgroundColor: baseColor }, style]}>
       <BackgroundLeaves />
       <Animated.View
         pointerEvents="none"
         style={[
           StyleSheet.absoluteFillObject,
-          { backgroundColor: activeOverlayColor, opacity: overlayOpacity },
+          { backgroundColor: overlayColor, opacity: overlayOpacity },
         ]}
       />
       {children}

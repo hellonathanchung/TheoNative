@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useMemo, useState, useEffect, useRef } from 'react';
 import { View, Text, Pressable, Modal, StyleSheet, Animated } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
@@ -9,7 +9,7 @@ import { Onboarding } from './src/components/Onboarding';
 import { AlertBanner } from './src/components/AlertBanner';
 import { useContractions } from './src/hooks/useContractions';
 import { loadOnboardingComplete, saveOnboardingComplete } from './src/utils/storage';
-import { Colors } from './src/theme';
+import { DarkColors, LightColors, ThemeProvider } from './src/theme';
 import type { Preset } from './src/types';
 
 // Configure notification handler
@@ -39,6 +39,9 @@ export default function App() {
   const undoOpacity = useRef(new Animated.Value(0)).current;
   const app = useContractions();
   const { disablePersistence, enablePersistence, undoState, undoLast, clearUndo } = app;
+  const mode = app.settings.themeMode ?? 'light';
+  const colors = mode === 'dark' ? DarkColors : LightColors;
+  const styles = useMemo(() => createStyles(colors, mode === 'dark'), [colors, mode]);
 
   useEffect(() => {
     if (showOnboarding) {
@@ -121,34 +124,39 @@ export default function App() {
     const undoMessage =
       undoState?.type === 'session' ? 'Session deleted' : 'Contraction deleted';
     return (
-      <SafeAreaProvider>
-        <Onboarding onComplete={handleOnboardingComplete} />
-        {toastMessage && (
-          <Animated.View style={[styles.toast, { opacity: toastOpacity }]}>
-            <Text style={styles.toastText}>{toastMessage}</Text>
-          </Animated.View>
-        )}
-        {undoState && (
-          <Animated.View
-            style={[
-              styles.undoToast,
-              { opacity: undoOpacity, top: toastMessage ? 64 : 16 },
-            ]}
-          >
-            <Text style={styles.undoText}>{undoMessage}</Text>
-            <Pressable
-              style={styles.undoAction}
-              onPress={() => {
-                undoLast();
-                clearUndo();
-              }}
+      <ThemeProvider
+        mode={mode}
+        setMode={(nextMode) => app.updateSettings({ themeMode: nextMode })}
+      >
+        <SafeAreaProvider>
+          <Onboarding onComplete={handleOnboardingComplete} />
+          {toastMessage && (
+            <Animated.View style={[styles.toast, { opacity: toastOpacity }]}>
+              <Text style={styles.toastText}>{toastMessage}</Text>
+            </Animated.View>
+          )}
+          {undoState && (
+            <Animated.View
+              style={[
+                styles.undoToast,
+                { opacity: undoOpacity, top: toastMessage ? 64 : 16 },
+              ]}
             >
-              <Text style={styles.undoActionText}>Undo</Text>
-            </Pressable>
-          </Animated.View>
-        )}
-        <StatusBar style="dark" />
-      </SafeAreaProvider>
+              <Text style={styles.undoText}>{undoMessage}</Text>
+              <Pressable
+                style={styles.undoAction}
+                onPress={() => {
+                  undoLast();
+                  clearUndo();
+                }}
+              >
+                <Text style={styles.undoActionText}>Undo</Text>
+              </Pressable>
+            </Animated.View>
+          )}
+          <StatusBar style={mode === 'dark' ? 'light' : 'dark'} />
+        </SafeAreaProvider>
+      </ThemeProvider>
     );
   }
 
@@ -156,8 +164,12 @@ export default function App() {
     undoState?.type === 'session' ? 'Session deleted' : 'Contraction deleted';
 
   return (
-    <SafeAreaProvider>
-      <View style={[styles.container, { backgroundColor: Colors.cream }]}>
+    <ThemeProvider
+      mode={mode}
+      setMode={(nextMode) => app.updateSettings({ themeMode: nextMode })}
+    >
+      <SafeAreaProvider>
+        <View style={styles.container}>
 
         {/* Alert banner */}
         {app.alertMessage && (
@@ -217,25 +229,27 @@ export default function App() {
             </Pressable>
           </Animated.View>
         )}
-      </View>
-      <StatusBar style="dark" />
-    </SafeAreaProvider>
+        </View>
+        <StatusBar style={mode === 'dark' ? 'light' : 'dark'} />
+      </SafeAreaProvider>
+    </ThemeProvider>
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: typeof LightColors, isDark: boolean) => StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: colors.cream,
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(46, 59, 46, 0.4)',
+    backgroundColor: isDark ? 'rgba(0, 0, 0, 0.6)' : 'rgba(46, 59, 46, 0.4)',
     alignItems: 'center',
     justifyContent: 'center',
     padding: 24,
   },
   modalCard: {
-    backgroundColor: Colors.cream,
+    backgroundColor: colors.cream,
     borderRadius: 20,
     padding: 28,
     width: '100%',
@@ -245,13 +259,13 @@ const styles = StyleSheet.create({
   modalTitle: {
     fontSize: 18,
     fontWeight: '600',
-    color: Colors.textPrimary,
+    color: colors.textPrimary,
     marginTop: 8,
     marginBottom: 4,
   },
   modalBody: {
     fontSize: 14,
-    color: Colors.textSecondary,
+    color: colors.textSecondary,
     lineHeight: 21,
     textAlign: 'center',
     marginBottom: 20,
@@ -260,14 +274,14 @@ const styles = StyleSheet.create({
     width: '100%',
     padding: 14,
     borderRadius: 12,
-    backgroundColor: Colors.terracotta,
+    backgroundColor: colors.terracotta,
     alignItems: 'center',
     marginBottom: 10,
   },
   modalPrimaryText: {
     fontSize: 15,
     fontWeight: '600',
-    color: Colors.white,
+    color: colors.white,
   },
   modalSecondaryBtn: {
     width: '100%',
@@ -278,14 +292,14 @@ const styles = StyleSheet.create({
   modalSecondaryText: {
     fontSize: 14,
     fontWeight: '500',
-    color: Colors.textMuted,
+    color: colors.textMuted,
   },
   toast: {
     position: 'absolute',
     left: 20,
     right: 20,
     top: 16,
-    backgroundColor: 'rgba(46, 59, 46, 0.9)',
+    backgroundColor: isDark ? 'rgba(232, 239, 232, 0.92)' : 'rgba(46, 59, 46, 0.9)',
     paddingVertical: 12,
     paddingHorizontal: 16,
     borderRadius: 12,
@@ -294,36 +308,36 @@ const styles = StyleSheet.create({
   toastText: {
     fontSize: 14,
     fontWeight: '500',
-    color: Colors.cream,
+    color: isDark ? '#1A211C' : colors.cream,
   },
   undoToast: {
     position: 'absolute',
     left: 20,
     right: 20,
-    backgroundColor: Colors.cream,
+    backgroundColor: colors.cream,
     borderRadius: 12,
     paddingVertical: 10,
     paddingHorizontal: 14,
     borderWidth: 1,
-    borderColor: Colors.beige,
+    borderColor: colors.beige,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
   },
   undoText: {
     fontSize: 13,
-    color: Colors.textSecondary,
+    color: colors.textSecondary,
     fontWeight: '500',
   },
   undoAction: {
     paddingVertical: 4,
     paddingHorizontal: 10,
     borderRadius: 8,
-    backgroundColor: Colors.beige,
+    backgroundColor: colors.beige,
   },
   undoActionText: {
     fontSize: 12,
-    color: Colors.terracotta,
+    color: colors.terracotta,
     fontWeight: '600',
   },
 });

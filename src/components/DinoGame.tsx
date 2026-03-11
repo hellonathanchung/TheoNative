@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useMemo, useState, useEffect, useRef, useCallback } from 'react';
 import { View, Text, Pressable, StyleSheet, Dimensions } from 'react-native';
 import {
   Canvas,
@@ -13,7 +13,7 @@ import {
   Oval,
   RoundedRect,
 } from '@shopify/react-native-skia';
-import { Colors } from '../theme';
+import { useTheme, type ThemeColors } from '../theme';
 import { loadDinoHigh, saveDinoHigh } from '../utils/storage';
 import type { DinoConfig } from '../utils/gameConfig';
 
@@ -55,6 +55,8 @@ interface DinoGameProps {
 }
 
 export function DinoGame({ config, headerExtra }: DinoGameProps) {
+  const { colors, mode } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const configRef = useRef(config);
   configRef.current = config;
 
@@ -237,8 +239,8 @@ export function DinoGame({ config, headerExtra }: DinoGameProps) {
       hlPath.close();
       return (
         <Group key={`obs-${idx}`}>
-          <SkiaPath path={path} color="#8A9B8A" />
-          <SkiaPath path={hlPath} color="#A5B6A5" />
+          <SkiaPath path={path} color={colors.textMuted} />
+          <SkiaPath path={hlPath} color={colors.textSecondary} />
         </Group>
       );
     }
@@ -250,7 +252,7 @@ export function DinoGame({ config, headerExtra }: DinoGameProps) {
           <Line
             p1={vec(cx, GROUND_Y + 2)}
             p2={vec(cx, GROUND_Y - obs.h + 6)}
-            color="#4CAF50"
+            color={colors.deepGreen}
             strokeWidth={2}
           />
           {[0, 1, 2, 3, 4].map((a) => {
@@ -277,25 +279,25 @@ export function DinoGame({ config, headerExtra }: DinoGameProps) {
           cx={obs.x + obs.w * 0.3}
           cy={GROUND_Y - obs.h * 0.5}
           r={obs.w * 0.35}
-          color="#81C784"
+          color={colors.green}
         />
         <Circle
           cx={obs.x + obs.w * 0.7}
           cy={GROUND_Y - obs.h * 0.5}
           r={obs.w * 0.35}
-          color="#81C784"
+          color={colors.green}
         />
         <Circle
           cx={obs.x + obs.w * 0.5}
           cy={GROUND_Y - obs.h * 0.7}
           r={obs.w * 0.3}
-          color="#81C784"
+          color={colors.green}
         />
         <Circle
           cx={obs.x + obs.w * 0.4}
           cy={GROUND_Y - obs.h * 0.55}
           r={obs.w * 0.15}
-          color="#66BB6A"
+          color={colors.mediumGreen}
         />
       </Group>
     );
@@ -340,7 +342,7 @@ export function DinoGame({ config, headerExtra }: DinoGameProps) {
               <LinearGradient
                 start={vec(0, 0)}
                 end={vec(0, GAME_HEIGHT)}
-                colors={['#F5FAF5', '#E8F0E8']}
+                colors={[colors.cream, colors.beige]}
               />
             </Rect>
 
@@ -350,12 +352,12 @@ export function DinoGame({ config, headerExtra }: DinoGameProps) {
               y={GROUND_Y + 8}
               width={GAME_WIDTH}
               height={GAME_HEIGHT - GROUND_Y}
-              color="#C8E6C9"
+              color={colors.softGreen}
             />
             <Line
               p1={vec(0, GROUND_Y + 8)}
               p2={vec(GAME_WIDTH, GROUND_Y + 8)}
-              color="#A5D6A7"
+              color={colors.mediumGreen}
               strokeWidth={1}
             />
 
@@ -365,7 +367,7 @@ export function DinoGame({ config, headerExtra }: DinoGameProps) {
                 key={`g-${i}`}
                 p1={vec(g.x1, g.y1)}
                 p2={vec(g.x2, g.y2)}
-                color="#81C784"
+                color={colors.green}
                 strokeWidth={1}
               />
             ))}
@@ -373,18 +375,18 @@ export function DinoGame({ config, headerExtra }: DinoGameProps) {
             {/* Clouds */}
             {gs.clouds.map((c, i) => (
               <Group key={`cloud-${i}`} opacity={0.7}>
-                <Circle cx={c.x} cy={c.y} r={c.w * 0.3} color="#E8F0E8" />
+                <Circle cx={c.x} cy={c.y} r={c.w * 0.3} color={colors.beige} />
                 <Circle
                   cx={c.x + c.w * 0.25}
                   cy={c.y - 5}
                   r={c.w * 0.25}
-                  color="#E8F0E8"
+                  color={colors.beige}
                 />
                 <Circle
                   cx={c.x + c.w * 0.5}
                   cy={c.y}
                   r={c.w * 0.3}
-                  color="#E8F0E8"
+                  color={colors.beige}
                 />
               </Group>
             ))}
@@ -401,16 +403,16 @@ export function DinoGame({ config, headerExtra }: DinoGameProps) {
                 width={16}
                 height={18}
                 r={3}
-                color="#A5D6A7"
+                color={colors.mediumGreen}
               />
               {/* Eyes */}
-              <Circle cx={sproutX - 3} cy={sproutY - 9} r={1.5} color="#2E3B2E" />
-              <Circle cx={sproutX + 3} cy={sproutY - 9} r={1.5} color="#2E3B2E" />
+              <Circle cx={sproutX - 3} cy={sproutY - 9} r={1.5} color={colors.textPrimary} />
+              <Circle cx={sproutX + 3} cy={sproutY - 9} r={1.5} color={colors.textPrimary} />
               {/* Stem */}
               <Line
                 p1={vec(sproutX, sproutY - 16)}
                 p2={vec(sproutX + sway * 0.5, sproutY - 30)}
-                color="#4CAF50"
+                color={colors.deepGreen}
                 strokeWidth={2}
               />
               {/* Leaves */}
@@ -419,20 +421,20 @@ export function DinoGame({ config, headerExtra }: DinoGameProps) {
                 y={sproutY - 29 - 3}
                 width={10}
                 height={6}
-                color="#4CAF50"
+                color={colors.deepGreen}
               />
               <Oval
                 x={sproutX + sway * 0.5 - 4 - 5}
                 y={sproutY - 31 - 3}
                 width={10}
                 height={6}
-                color="#4CAF50"
+                color={colors.deepGreen}
               />
               {/* Legs */}
               <Line
                 p1={vec(sproutX - 4, sproutY + 2)}
                 p2={vec(sproutX - 4 + Math.sin(legPhase) * 4, sproutY + 8)}
-                color="#5A6B5A"
+                color={colors.textSecondary}
                 strokeWidth={2}
               />
               <Line
@@ -441,7 +443,7 @@ export function DinoGame({ config, headerExtra }: DinoGameProps) {
                   sproutX + 4 + Math.sin(legPhase + Math.PI) * 4,
                   sproutY + 8,
                 )}
-                color="#5A6B5A"
+                color={colors.textSecondary}
                 strokeWidth={2}
               />
             </Group>
@@ -453,7 +455,7 @@ export function DinoGame({ config, headerExtra }: DinoGameProps) {
                 y={0}
                 width={GAME_WIDTH}
                 height={GAME_HEIGHT}
-                color="rgba(245, 250, 245, 0.6)"
+                color={mode === 'dark' ? 'rgba(0, 0, 0, 0.55)' : 'rgba(245, 250, 245, 0.6)'}
               />
             )}
           </Canvas>
@@ -485,7 +487,7 @@ export function DinoGame({ config, headerExtra }: DinoGameProps) {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   headerRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -494,7 +496,7 @@ const styles = StyleSheet.create({
   },
   headerLabel: {
     fontSize: 11,
-    color: Colors.textMuted,
+    color: colors.textMuted,
     letterSpacing: 1.5,
   },
   scoresRow: {
@@ -505,12 +507,12 @@ const styles = StyleSheet.create({
   scoreLabel: {
     fontSize: 13,
     fontWeight: '600',
-    color: Colors.textPrimary,
+    color: colors.textPrimary,
     fontVariant: ['tabular-nums'],
   },
   highLabel: {
     fontSize: 13,
-    color: Colors.textMuted,
+    color: colors.textMuted,
     fontVariant: ['tabular-nums'],
   },
   canvasWrapper: {
@@ -534,17 +536,17 @@ const styles = StyleSheet.create({
   overlayTitle: {
     fontSize: 18,
     fontWeight: '600',
-    color: '#2E3B2E',
+    color: colors.textPrimary,
   },
   overlaySubtext: {
     fontSize: 13,
-    color: '#5A6B5A',
+    color: colors.textSecondary,
     marginTop: 4,
   },
   hint: {
     textAlign: 'center',
     fontSize: 12,
-    color: Colors.textMuted,
+    color: colors.textMuted,
     marginTop: 8,
   },
 });

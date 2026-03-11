@@ -14,7 +14,7 @@ import { TimerScreen } from "../screens/TimerScreen";
 import { HistoryScreen } from "../screens/HistoryScreen";
 import { RelaxScreen } from "../screens/RelaxScreen";
 import { SettingsScreen } from "../screens/SettingsScreen";
-import { Colors } from "../theme";
+import { useTheme, type ThemeColors } from "../theme";
 import type { useContractions } from "../hooks/useContractions";
 
 export type TabParamList = {
@@ -25,12 +25,15 @@ export type TabParamList = {
 };
 
 type TabKey = keyof TabParamList;
+const EDGE_SLOP = 24;
 
 interface Props {
   app: ReturnType<typeof useContractions>;
 }
 
 export function TabNavigator({ app }: Props) {
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
   const [index, setIndex] = useState(0);
@@ -99,6 +102,10 @@ export function TabNavigator({ app }: Props) {
           tabs.length - 1,
         );
         setIndex(nextIndex);
+        animateToIndex(nextIndex);
+      },
+      onPanResponderTerminate: () => {
+        animateToIndex(index);
       },
     })
   ).current;
@@ -106,7 +113,7 @@ export function TabNavigator({ app }: Props) {
   return (
     <ScreenBackground active={app.isActive}>
       <View style={styles.container}>
-        <View style={styles.pager} {...panResponder.panHandlers}>
+        <View style={styles.pager}>
           <Animated.View
             style={[
               styles.pagerRow,
@@ -122,6 +129,13 @@ export function TabNavigator({ app }: Props) {
               );
             })}
           </Animated.View>
+          <View pointerEvents="box-none" style={styles.edgeOverlay}>
+            <View style={styles.edgeZone} {...panResponder.panHandlers} />
+            <View
+              style={[styles.edgeZone, styles.edgeZoneRight]}
+              {...panResponder.panHandlers}
+            />
+          </View>
         </View>
         <View
           style={[
@@ -131,7 +145,7 @@ export function TabNavigator({ app }: Props) {
         >
           {tabs.map((tab, i) => {
             const active = i === index;
-            const color = active ? Colors.deepGreen : Colors.textMuted;
+            const color = active ? colors.deepGreen : colors.textMuted;
             return (
               <Pressable
                 key={tab.key}
@@ -149,7 +163,8 @@ export function TabNavigator({ app }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
   container: {
     flex: 1,
   },
@@ -161,12 +176,23 @@ const styles = StyleSheet.create({
     flex: 1,
     flexDirection: "row",
   },
+  edgeOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    flexDirection: "row",
+    justifyContent: "space-between",
+  },
+  edgeZone: {
+    width: EDGE_SLOP,
+  },
+  edgeZoneRight: {
+    alignSelf: "stretch",
+  },
   tabBar: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-around",
-    backgroundColor: Colors.cream,
-    borderTopColor: Colors.beige,
+    backgroundColor: colors.cream,
+    borderTopColor: colors.beige,
     borderTopWidth: 1,
     paddingTop: 6,
   },

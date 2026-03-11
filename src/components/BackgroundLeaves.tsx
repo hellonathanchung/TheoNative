@@ -10,72 +10,73 @@ import Animated, {
   cancelAnimation,
 } from "react-native-reanimated";
 import Svg, { Path } from "react-native-svg";
-import { Colors } from "../theme";
+import { useTheme } from "../theme";
 
 const { width: SCREEN_W, height: SCREEN_H } = Dimensions.get("window");
-const LEAF_COLOR = Colors.deepGreen;
 const OPACITY_SCALE = 0.75;
 const SWAY_SCALE = 0.6;
 
 function LeafA({
   size = 1,
   opacity = 0.1,
+  color,
 }: {
   size?: number;
   opacity?: number;
+  color: string;
 }) {
   return (
     <Svg width={80 * size} height={140 * size} viewBox="0 0 80 140" fill="none">
       <Path
         d="M40 8C40 8 12 30 8 65C4 100 30 125 40 130C50 125 76 100 72 65C68 30 40 8 40 8Z"
-        fill={LEAF_COLOR}
+        fill={color}
         opacity={opacity}
       />
       <Path
         d="M40 12C40 40 40 90 40 130"
-        stroke={LEAF_COLOR}
+        stroke={color}
         strokeWidth="0.8"
         opacity={opacity * 0.6}
       />
       <Path
         d="M40 35C32 42 22 50 16 55"
-        stroke={LEAF_COLOR}
+        stroke={color}
         strokeWidth="0.4"
         opacity={opacity * 0.4}
       />
       <Path
         d="M40 35C48 42 58 50 64 55"
-        stroke={LEAF_COLOR}
+        stroke={color}
         strokeWidth="0.4"
         opacity={opacity * 0.4}
       />
       <Path
         d="M40 55C30 62 20 72 14 78"
-        stroke={LEAF_COLOR}
+        stroke={color}
         strokeWidth="0.4"
         opacity={opacity * 0.4}
       />
       <Path
         d="M40 55C50 62 60 72 66 78"
-        stroke={LEAF_COLOR}
+        stroke={color}
         strokeWidth="0.4"
         opacity={opacity * 0.4}
       />
       <Path
         d="M40 75C32 82 24 90 18 96"
-        stroke={LEAF_COLOR}
+        stroke={color}
         strokeWidth="0.4"
         opacity={opacity * 0.4}
       />
       <Path
         d="M40 75C48 82 56 90 62 96"
-        stroke={LEAF_COLOR}
+        stroke={color}
         strokeWidth="0.4"
         opacity={opacity * 0.4}
       />
       <Path
         d="M40 130L40 140"
-        stroke={LEAF_COLOR}
+        stroke={color}
         strokeWidth="1"
         opacity={opacity * 0.7}
       />
@@ -86,50 +87,52 @@ function LeafA({
 function LeafB({
   size = 1,
   opacity = 0.1,
+  color,
 }: {
   size?: number;
   opacity?: number;
+  color: string;
 }) {
   return (
     <Svg width={50 * size} height={130 * size} viewBox="0 0 50 130" fill="none">
       <Path
         d="M25 5C25 5 8 25 5 55C2 85 18 110 25 120C32 110 48 85 45 55C42 25 25 5 25 5Z"
-        fill={LEAF_COLOR}
+        fill={color}
         opacity={opacity}
       />
       <Path
         d="M25 8C25 35 25 80 25 120"
-        stroke={LEAF_COLOR}
+        stroke={color}
         strokeWidth="0.6"
         opacity={opacity * 0.5}
       />
       <Path
         d="M25 30C19 38 12 46 8 50"
-        stroke={LEAF_COLOR}
+        stroke={color}
         strokeWidth="0.3"
         opacity={opacity * 0.35}
       />
       <Path
         d="M25 30C31 38 38 46 42 50"
-        stroke={LEAF_COLOR}
+        stroke={color}
         strokeWidth="0.3"
         opacity={opacity * 0.35}
       />
       <Path
         d="M25 55C18 63 12 72 8 78"
-        stroke={LEAF_COLOR}
+        stroke={color}
         strokeWidth="0.3"
         opacity={opacity * 0.35}
       />
       <Path
         d="M25 55C32 63 38 72 42 78"
-        stroke={LEAF_COLOR}
+        stroke={color}
         strokeWidth="0.3"
         opacity={opacity * 0.35}
       />
       <Path
         d="M25 120L25 130"
-        stroke={LEAF_COLOR}
+        stroke={color}
         strokeWidth="0.8"
         opacity={opacity * 0.6}
       />
@@ -140,9 +143,11 @@ function LeafB({
 function Branch({
   size = 1,
   opacity = 0.08,
+  color,
 }: {
   size?: number;
   opacity?: number;
+  color: string;
 }) {
   return (
     <Svg
@@ -153,33 +158,33 @@ function Branch({
     >
       <Path
         d="M50 0C48 30 46 80 50 160"
-        stroke={LEAF_COLOR}
+        stroke={color}
         strokeWidth="1.2"
         opacity={opacity * 0.7}
       />
       <Path
         d="M48 20C40 12 28 10 25 14C22 18 30 26 40 28C46 24 48 20 48 20Z"
-        fill={LEAF_COLOR}
+        fill={color}
         opacity={opacity}
       />
       <Path
         d="M50 40C58 30 70 26 74 30C78 34 68 44 58 44C52 42 50 40 50 40Z"
-        fill={LEAF_COLOR}
+        fill={color}
         opacity={opacity}
       />
       <Path
         d="M48 65C38 56 26 54 22 58C18 62 28 72 38 72C44 68 48 65 48 65Z"
-        fill={LEAF_COLOR}
+        fill={color}
         opacity={opacity}
       />
       <Path
         d="M50 90C60 80 72 76 76 80C80 84 70 94 60 94C54 92 50 90 50 90Z"
-        fill={LEAF_COLOR}
+        fill={color}
         opacity={opacity}
       />
       <Path
         d="M48 115C38 106 26 104 22 108C18 112 28 122 38 122C44 118 48 115 48 115Z"
-        fill={LEAF_COLOR}
+        fill={color}
         opacity={opacity}
       />
     </Svg>
@@ -462,6 +467,7 @@ const LEAVES: LeafConfig[] = [
 ];
 
 function SwayingLeaf({ config }: { config: LeafConfig }) {
+  const { colors } = useTheme();
   const rotation = useSharedValue(0);
   const translateX = useSharedValue(0);
   const translateY = useSharedValue(0);
@@ -471,7 +477,7 @@ function SwayingLeaf({ config }: { config: LeafConfig }) {
   const swayTranslateY = config.swayTranslateY * SWAY_SCALE;
 
   useEffect(() => {
-    const dur = config.swayDuration / 4;
+    const dur = (config.swayDuration * 1.8) / 4;
     const easing = Easing.inOut(Easing.sin);
 
     rotation.value = withRepeat(
@@ -541,7 +547,7 @@ function SwayingLeaf({ config }: { config: LeafConfig }) {
   return (
     <Animated.View style={posStyle}>
       <Animated.View style={animStyle}>
-        <LeafComponent size={config.size} opacity={opacity} />
+        <LeafComponent size={config.size} opacity={opacity} color={colors.deepGreen} />
       </Animated.View>
     </Animated.View>
   );

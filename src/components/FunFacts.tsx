@@ -1,7 +1,7 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { View, Text, Pressable, StyleSheet, ScrollView, Dimensions } from 'react-native';
 import * as Clipboard from 'expo-clipboard';
-import { Colors } from '../theme';
+import { useTheme, type ThemeColors } from '../theme';
 
 const FACTS = [
   { emoji: '\uD83D\uDC76', text: 'Babies can recognize their mother\'s voice from inside the womb.', source: 'DeCasper & Fifer, Science, 1980' },
@@ -36,7 +36,15 @@ const FACTS = [
   { emoji: '\uD83C\uDFA4', text: 'Babies babble in the rhythm of their native language before they can speak.', source: 'de Boysson-Bardies et al., J. Child Language, 1984' },
 ];
 
-export function FunFacts() {
+export function FunFacts({
+  onSwipeStart,
+  onSwipeEnd,
+}: {
+  onSwipeStart?: () => void;
+  onSwipeEnd?: () => void;
+}) {
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const [index, setIndex] = useState(() => Math.floor(Math.random() * FACTS.length));
   const [collapsed, setCollapsed] = useState(false);
   const [shared, setShared] = useState(false);
@@ -92,70 +100,76 @@ export function FunFacts() {
   }, []);
 
   return (
-    <View style={s.container}>
-      <Pressable onPress={() => setCollapsed(!collapsed)} style={s.headerRow}>
-        <Text style={s.headerLabel}>DID YOU KNOW?</Text>
-        <Text style={[s.chevron, collapsed && { transform: [{ rotate: '-90deg' }] }]}>
+    <View style={styles.container}>
+      <Pressable onPress={() => setCollapsed(!collapsed)} style={styles.headerRow}>
+        <Text style={styles.headerLabel}>DID YOU KNOW?</Text>
+        <Text style={[styles.chevron, collapsed && { transform: [{ rotate: '-90deg' }] }]}>
           {'\u25BE'}
         </Text>
       </Pressable>
 
       {!collapsed && (
         <>
-          <View style={s.navRow}>
+          <View style={styles.navRow}>
             <Pressable onPress={prevFact}>
-              <Text style={s.navBtn}>{'\u2190'} Prev</Text>
+              <Text style={styles.navBtn}>{'\u2190'} Prev</Text>
             </Pressable>
-            <Pressable onPress={randomFact} style={s.randomBtn}>
-              <Text style={s.randomBtnText}>Random</Text>
+            <Pressable onPress={randomFact} style={styles.randomBtn}>
+              <Text style={styles.randomBtnText}>Random</Text>
             </Pressable>
-            <Pressable onPress={shareFact} style={s.shareBtn}>
-              <Text style={s.shareBtnText}>{shared ? '\u2713 Copied!' : '\u2197 Share'}</Text>
+            <Pressable onPress={shareFact} style={styles.shareBtn}>
+              <Text style={styles.shareBtnText}>{shared ? '\u2713 Copied!' : '\u2197 Share'}</Text>
             </Pressable>
             <Pressable onPress={nextFact}>
-              <Text style={s.navBtn}>Next {'\u2192'}</Text>
+              <Text style={styles.navBtn}>Next {'\u2192'}</Text>
             </Pressable>
           </View>
 
-          <View style={[s.carousel, { width: pageWidth }]}>
+          <View style={[styles.carousel, { width: pageWidth }]}>
             <ScrollView
               ref={scrollRef}
               horizontal
               pagingEnabled
-              bounces={false}
-              showsHorizontalScrollIndicator={false}
+              nestedScrollEnabled
+              scrollEnabled
+              onTouchStart={onSwipeStart}
+              onTouchEnd={onSwipeEnd}
+              onScrollBeginDrag={onSwipeStart}
+              onScrollEndDrag={onSwipeEnd}
               onMomentumScrollEnd={(e) => {
                 const nextIndex = Math.round(
                   e.nativeEvent.contentOffset.x / pageWidth,
                 );
                 if (nextIndex !== index) setIndex(nextIndex);
+                onSwipeEnd?.();
               }}
+              bounces={false}
+              showsHorizontalScrollIndicator={false}
               scrollEventThrottle={16}
-              contentOffset={{ x: pageWidth * index, y: 0 }}
               snapToInterval={pageWidth}
               decelerationRate="fast"
             >
               {FACTS.map((item, idx) => (
-                <View key={idx} style={[s.page, { width: pageWidth }]}>
-                  <View style={[s.card, { width: cardWidth, height: cardHeight }]}>
-                    <Text style={s.emoji}>{item.emoji}</Text>
-                    <Text style={s.factText}>{item.text}</Text>
-                    <Text style={s.sourceText}>{item.source}</Text>
+                <View key={idx} style={[styles.page, { width: pageWidth }]}>
+                  <View style={[styles.card, { width: cardWidth, height: cardHeight }]}>
+                    <Text style={styles.emoji}>{item.emoji}</Text>
+                    <Text style={styles.factText}>{item.text}</Text>
+                    <Text style={styles.sourceText}>{item.source}</Text>
                   </View>
                 </View>
               ))}
             </ScrollView>
           </View>
 
-          <View style={s.dotsRow}>
+          <View style={styles.dotsRow}>
             {Array.from({ length: Math.min(5, FACTS.length) }, (_, i) => {
               const dotIdx = (Math.floor(index / 5) * 5 + i) % FACTS.length;
               return (
                 <View
                   key={i}
                   style={[
-                    s.dot,
-                    { backgroundColor: dotIdx === index ? Colors.terracotta : Colors.beige },
+                    styles.dot,
+                    { backgroundColor: dotIdx === index ? colors.terracotta : colors.beige },
                   ]}
                 />
               );
@@ -167,23 +181,23 @@ export function FunFacts() {
   );
 }
 
-const s = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   container: { paddingBottom: 16 },
   headerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8, paddingVertical: 6 },
-  headerLabel: { fontSize: 11, color: Colors.textMuted, letterSpacing: 1.5 },
-  chevron: { fontSize: 14, color: Colors.textMuted },
+  headerLabel: { fontSize: 11, color: colors.textMuted, letterSpacing: 1.5 },
+  chevron: { fontSize: 14, color: colors.textMuted },
   navRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
-  navBtn: { fontSize: 12, color: Colors.terracotta, fontWeight: '500' },
-  randomBtn: { paddingVertical: 4, paddingHorizontal: 10, borderRadius: 8, backgroundColor: Colors.beige },
-  randomBtnText: { fontSize: 12, color: Colors.textSecondary, fontWeight: '500' },
-  shareBtn: { paddingVertical: 4, paddingHorizontal: 12, borderRadius: 8, backgroundColor: Colors.beige },
-  shareBtnText: { fontSize: 12, color: Colors.textSecondary, fontWeight: '500' },
+  navBtn: { fontSize: 12, color: colors.terracotta, fontWeight: '500' },
+  randomBtn: { paddingVertical: 4, paddingHorizontal: 10, borderRadius: 8, backgroundColor: colors.beige },
+  randomBtnText: { fontSize: 12, color: colors.textSecondary, fontWeight: '500' },
+  shareBtn: { paddingVertical: 4, paddingHorizontal: 12, borderRadius: 8, backgroundColor: colors.beige },
+  shareBtnText: { fontSize: 12, color: colors.textSecondary, fontWeight: '500' },
   carousel: { overflow: 'hidden', borderRadius: 16 },
   page: { paddingRight: 8 },
-  card: { backgroundColor: Colors.beige, borderRadius: 16, paddingVertical: 20, paddingHorizontal: 16, alignItems: 'center', justifyContent: 'center' },
+  card: { backgroundColor: colors.beige, borderRadius: 16, paddingVertical: 20, paddingHorizontal: 16, alignItems: 'center', justifyContent: 'center' },
   emoji: { fontSize: 28, marginBottom: 8 },
-  factText: { fontSize: 14, color: Colors.textSecondary, lineHeight: 22, textAlign: 'center', maxWidth: 280 },
-  sourceText: { fontSize: 11, color: Colors.textMuted, fontStyle: 'italic', marginTop: 4, textAlign: 'center', maxWidth: 260, lineHeight: 16 },
+  factText: { fontSize: 14, color: colors.textSecondary, lineHeight: 22, textAlign: 'center', maxWidth: 280 },
+  sourceText: { fontSize: 11, color: colors.textMuted, fontStyle: 'italic', marginTop: 4, textAlign: 'center', maxWidth: 260, lineHeight: 16 },
   dotsRow: { flexDirection: 'row', justifyContent: 'center', gap: 4, marginTop: 8 },
   dot: { width: 6, height: 6, borderRadius: 3 },
 });

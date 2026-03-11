@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useMemo, useState, useEffect, useRef, useCallback } from 'react';
 import { View, Text, Pressable, StyleSheet, Dimensions } from 'react-native';
 import {
   Canvas,
@@ -9,7 +9,7 @@ import {
   vec,
   Group,
 } from '@shopify/react-native-skia';
-import { Colors } from '../theme';
+import { useTheme, type ThemeColors } from '../theme';
 import { loadBubbleHigh, saveBubbleHigh } from '../utils/storage';
 import type { BubbleConfig } from '../utils/gameConfig';
 
@@ -53,6 +53,8 @@ interface BubbleGameProps {
 }
 
 export function BubbleGame({ config, headerExtra }: BubbleGameProps) {
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const configRef = useRef(config);
   configRef.current = config;
 
@@ -206,7 +208,7 @@ export function BubbleGame({ config, headerExtra }: BubbleGameProps) {
               <LinearGradient
                 start={vec(0, 0)}
                 end={vec(0, GAME_HEIGHT)}
-                colors={['#E8F0E8', '#F5FAF5']}
+                colors={[colors.beige, colors.cream]}
               />
             </Rect>
 
@@ -270,7 +272,7 @@ export function BubbleGame({ config, headerExtra }: BubbleGameProps) {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   headerRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -279,7 +281,7 @@ const styles = StyleSheet.create({
   },
   headerLabel: {
     fontSize: 11,
-    color: Colors.textMuted,
+    color: colors.textMuted,
     letterSpacing: 1.5,
   },
   scoresRow: {
@@ -290,15 +292,15 @@ const styles = StyleSheet.create({
   scoreLabel: {
     fontSize: 13,
     fontWeight: '600',
-    color: Colors.textPrimary,
+    color: colors.textPrimary,
   },
   highLabel: {
     fontSize: 13,
-    color: Colors.textMuted,
+    color: colors.textMuted,
   },
   resetLabel: {
     fontSize: 13,
-    color: Colors.textSecondary,
+    color: colors.textSecondary,
   },
   canvasPressable: {
     width: GAME_WIDTH,
@@ -321,6 +323,6 @@ const styles = StyleSheet.create({
   },
   overlayText: {
     fontSize: 14,
-    color: '#8A9B8A',
+    color: colors.textMuted,
   },
 });

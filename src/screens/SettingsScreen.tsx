@@ -1,9 +1,9 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { View, Text, Pressable, Switch, ScrollView, Modal, Linking, StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Notifications from 'expo-notifications';
 import * as Clipboard from 'expo-clipboard';
-import { Colors } from '../theme';
+import { useTheme, type ThemeColors } from '../theme';
 import type { Preset } from '../types';
 import type { useContractions } from '../hooks/useContractions';
 
@@ -35,10 +35,39 @@ const PRESETS: { id: Preset; label: string; shortDesc: string; longDesc: string;
 ];
 
 export function SettingsScreen({ app }: Props) {
+  const { colors, mode, setMode } = useTheme();
+  const s = useMemo(() => createStyles(colors, mode === 'dark'), [colors, mode]);
   const insets = useSafeAreaInsets();
   const { settings, updateSettings, contractions, sessions } = app;
   const [showClearConfirm, setShowClearConfirm] = useState(false);
   const [exported, setExported] = useState(false);
+
+  const SettingRow = ({ label, desc, children }: { label: string; desc: string; children: React.ReactNode }) => (
+    <View style={s.settingRow}>
+      <View style={{ flex: 1, marginRight: 16 }}>
+        <Text style={s.settingLabel}>{label}</Text>
+        <Text style={s.settingDesc}>{desc}</Text>
+      </View>
+      {children}
+    </View>
+  );
+
+  const Stepper = ({ value, unit, disabled, onDec, onInc }: {
+    value: number; unit: string; disabled?: boolean; onDec: () => void; onInc: () => void;
+  }) => (
+    <View style={[s.stepperRow, disabled && { opacity: 0.5 }]}>
+      <Pressable onPress={disabled ? undefined : onDec} style={s.stepBtn}>
+        <Text style={s.stepBtnText}>−</Text>
+      </Pressable>
+      <View style={{ alignItems: 'center', minWidth: 48 }}>
+        <Text style={s.stepValue}>{value}</Text>
+        <Text style={s.stepUnit}>{unit}</Text>
+      </View>
+      <Pressable onPress={disabled ? undefined : onInc} style={s.stepBtn}>
+        <Text style={s.stepBtnText}>+</Text>
+      </Pressable>
+    </View>
+  );
 
   const selectPreset = (p: typeof PRESETS[number]) => {
     if (p.id === 'custom') {
@@ -137,18 +166,18 @@ export function SettingsScreen({ app }: Props) {
             style={[
               s.presetBtn,
               {
-                backgroundColor: settings.preset === p.id ? Colors.deepGreen : Colors.beige,
+                backgroundColor: settings.preset === p.id ? colors.deepGreen : colors.beige,
               },
             ]}
             onPress={() => selectPreset(p)}
           >
             <Text style={[s.presetBtnLabel, {
-              color: settings.preset === p.id ? Colors.cream : Colors.textSecondary,
+              color: settings.preset === p.id ? colors.cream : colors.textSecondary,
             }]}>
               {p.label}
             </Text>
             <Text style={[s.presetBtnDesc, {
-              color: settings.preset === p.id ? Colors.cream : Colors.textMuted,
+              color: settings.preset === p.id ? colors.cream : colors.textMuted,
             }]}>
               {p.shortDesc}
             </Text>
@@ -196,25 +225,43 @@ export function SettingsScreen({ app }: Props) {
             if (v) Notifications.requestPermissionsAsync();
             updateSettings({ notificationsEnabled: v });
           }}
-          trackColor={{ false: Colors.beige, true: Colors.green }}
-          thumbColor={settings.notificationsEnabled ? Colors.deepGreen : Colors.textMuted}
+          trackColor={{ false: colors.beige, true: colors.green }}
+          thumbColor={settings.notificationsEnabled ? colors.deepGreen : colors.textMuted}
         />
       </SettingRow>
       <SettingRow label="Vibration" desc="Haptic feedback on tap">
         <Switch
           value={settings.hapticEnabled}
           onValueChange={(v) => updateSettings({ hapticEnabled: v })}
-          trackColor={{ false: Colors.beige, true: Colors.green }}
-          thumbColor={settings.hapticEnabled ? Colors.deepGreen : Colors.textMuted}
+          trackColor={{ false: colors.beige, true: colors.green }}
+          thumbColor={settings.hapticEnabled ? colors.deepGreen : colors.textMuted}
         />
       </SettingRow>
       <SettingRow label="Track intensity" desc="Note mild, moderate, or strong after each contraction">
         <Switch
           value={settings.intensityEnabled}
           onValueChange={(v) => updateSettings({ intensityEnabled: v })}
-          trackColor={{ false: Colors.beige, true: Colors.green }}
-          thumbColor={settings.intensityEnabled ? Colors.deepGreen : Colors.textMuted}
+          trackColor={{ false: colors.beige, true: colors.green }}
+          thumbColor={settings.intensityEnabled ? colors.deepGreen : colors.textMuted}
         />
+      </SettingRow>
+
+      <Text style={[s.sectionLabel, { marginTop: 24 }]}>APPEARANCE</Text>
+      <SettingRow label="Theme" desc="Light or dark appearance">
+        <View style={s.themeToggle}>
+          <Pressable
+            style={[s.themeOption, mode === 'light' && s.themeOptionActive]}
+            onPress={() => setMode('light')}
+          >
+            <Text style={[s.themeOptionText, mode === 'light' && s.themeOptionTextActive]}>Light</Text>
+          </Pressable>
+          <Pressable
+            style={[s.themeOption, mode === 'dark' && s.themeOptionActive]}
+            onPress={() => setMode('dark')}
+          >
+            <Text style={[s.themeOptionText, mode === 'dark' && s.themeOptionTextActive]}>Dark</Text>
+          </Pressable>
+        </View>
       </SettingRow>
 
       {/* Support */}
@@ -288,72 +335,46 @@ export function SettingsScreen({ app }: Props) {
   );
 }
 
-function SettingRow({ label, desc, children }: { label: string; desc: string; children: React.ReactNode }) {
-  return (
-    <View style={s.settingRow}>
-      <View style={{ flex: 1, marginRight: 16 }}>
-        <Text style={s.settingLabel}>{label}</Text>
-        <Text style={s.settingDesc}>{desc}</Text>
-      </View>
-      {children}
-    </View>
-  );
-}
-
-function Stepper({ value, unit, disabled, onDec, onInc }: {
-  value: number; unit: string; disabled?: boolean; onDec: () => void; onInc: () => void;
-}) {
-  return (
-    <View style={[s.stepperRow, disabled && { opacity: 0.5 }]}>
-      <Pressable onPress={disabled ? undefined : onDec} style={s.stepBtn}>
-        <Text style={s.stepBtnText}>−</Text>
-      </Pressable>
-      <View style={{ alignItems: 'center', minWidth: 48 }}>
-        <Text style={s.stepValue}>{value}</Text>
-        <Text style={s.stepUnit}>{unit}</Text>
-      </View>
-      <Pressable onPress={disabled ? undefined : onInc} style={s.stepBtn}>
-        <Text style={s.stepBtnText}>+</Text>
-      </Pressable>
-    </View>
-  );
-}
-
-const s = StyleSheet.create({
+const createStyles = (colors: ThemeColors, isDark: boolean) => StyleSheet.create({
   container: { flex: 1 },
-  title: { fontSize: 20, fontWeight: '600', color: Colors.textPrimary, paddingHorizontal: 20, paddingBottom: 8 },
-  sectionLabel: { fontSize: 11, color: Colors.textMuted, letterSpacing: 1.5, paddingHorizontal: 20, paddingTop: 12, paddingBottom: 4 },
+  title: { fontSize: 20, fontWeight: '600', color: colors.textPrimary, paddingHorizontal: 20, paddingBottom: 8 },
+  sectionLabel: { fontSize: 11, color: colors.textMuted, letterSpacing: 1.5, paddingHorizontal: 20, paddingTop: 12, paddingBottom: 4 },
   presetGrid: { flexDirection: 'row', flexWrap: 'wrap', paddingHorizontal: 20, gap: 8, marginTop: 8 },
   presetBtn: { width: '48%', padding: 12, borderRadius: 12, alignItems: 'center' },
   presetBtnLabel: { fontSize: 15, fontWeight: '600' },
   presetBtnDesc: { fontSize: 10, marginTop: 2 },
-  presetDescription: { fontSize: 13, color: Colors.textSecondary, paddingHorizontal: 20, paddingTop: 4, paddingBottom: 12, lineHeight: 20 },
-  settingRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 14, paddingHorizontal: 20, borderBottomWidth: 1, borderBottomColor: Colors.beige },
-  settingLabel: { fontSize: 15, color: Colors.textPrimary },
-  settingDesc: { fontSize: 12, color: Colors.textMuted, marginTop: 2 },
+  presetDescription: { fontSize: 13, color: colors.textSecondary, paddingHorizontal: 20, paddingTop: 4, paddingBottom: 12, lineHeight: 20 },
+  settingRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 14, paddingHorizontal: 20, borderBottomWidth: 1, borderBottomColor: colors.beige },
+  settingLabel: { fontSize: 15, color: colors.textPrimary },
+  settingDesc: { fontSize: 12, color: colors.textMuted, marginTop: 2 },
+  themeToggle: { flexDirection: 'row', backgroundColor: colors.beige, padding: 4, borderRadius: 14 },
+  themeOption: { paddingVertical: 6, paddingHorizontal: 12, borderRadius: 10 },
+  themeOptionActive: { backgroundColor: colors.deepGreen },
+  themeOptionText: { fontSize: 12, fontWeight: '600', color: colors.textMuted },
+  themeOptionTextActive: { color: colors.cream },
   stepperRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  stepBtn: { width: 34, height: 34, borderRadius: 17, backgroundColor: Colors.beige, alignItems: 'center', justifyContent: 'center' },
-  stepBtnText: { fontSize: 18, fontWeight: '600', color: Colors.deepGreen },
-  stepValue: { fontSize: 17, fontWeight: '600', color: Colors.textPrimary },
-  stepUnit: { fontSize: 10, color: Colors.textMuted },
+  stepBtn: { width: 34, height: 34, borderRadius: 17, backgroundColor: colors.beige, alignItems: 'center', justifyContent: 'center' },
+  stepBtnText: { fontSize: 18, fontWeight: '600', color: colors.deepGreen },
+  stepValue: { fontSize: 17, fontWeight: '600', color: colors.textPrimary },
+  stepUnit: { fontSize: 10, color: colors.textMuted },
   supportSection: { paddingHorizontal: 20, paddingVertical: 12 },
-  supportTitle: { fontSize: 15, color: Colors.textPrimary, marginBottom: 4 },
-  supportDesc: { fontSize: 12, color: Colors.textMuted, lineHeight: 18, marginBottom: 12 },
-  donateBtn: { paddingVertical: 10, paddingHorizontal: 24, backgroundColor: Colors.beige, borderRadius: 12, alignSelf: 'flex-start' },
-  donateBtnText: { fontSize: 14, fontWeight: '500', color: Colors.deepGreen },
-  clearBtn: { paddingVertical: 10, paddingHorizontal: 24, backgroundColor: Colors.beige, borderRadius: 12, alignSelf: 'flex-start' },
-  clearBtnText: { fontSize: 14, fontWeight: '500', color: Colors.danger },
-  exportBtn: { marginTop: 10, paddingVertical: 10, paddingHorizontal: 24, backgroundColor: Colors.beige, borderRadius: 12, alignSelf: 'flex-start' },
-  exportBtnText: { fontSize: 14, fontWeight: '500', color: Colors.deepGreen },
-  exportHint: { fontSize: 11, color: Colors.textMuted, marginTop: 6 },
-  disclaimer: { textAlign: 'center', fontSize: 12, color: Colors.textMuted, paddingTop: 32, paddingHorizontal: 20, lineHeight: 18 },
-  version: { textAlign: 'center', fontSize: 11, color: Colors.textMuted, paddingVertical: 8, opacity: 0.6 },
-  modalOverlay: { flex: 1, backgroundColor: 'rgba(46,59,46,0.4)', alignItems: 'center', justifyContent: 'center', padding: 24 },
-  modalCard: { backgroundColor: Colors.cream, borderRadius: 20, paddingVertical: 28, paddingHorizontal: 24, width: '100%', maxWidth: 320, alignItems: 'center' },
-  modalTitle: { fontSize: 17, fontWeight: '600', color: Colors.textPrimary, marginTop: 8, marginBottom: 4 },
-  modalBody: { fontSize: 13, color: Colors.textSecondary, lineHeight: 20, textAlign: 'center', marginBottom: 20 },
-  modalDeleteBtn: { width: '100%', padding: 14, borderRadius: 12, backgroundColor: Colors.danger, alignItems: 'center', marginBottom: 10 },
-  modalDeleteText: { fontSize: 15, fontWeight: '600', color: Colors.white },
+  supportTitle: { fontSize: 15, color: colors.textPrimary, marginBottom: 4 },
+  supportDesc: { fontSize: 12, color: colors.textMuted, lineHeight: 18, marginBottom: 12 },
+  donateBtn: { paddingVertical: 10, paddingHorizontal: 24, backgroundColor: colors.beige, borderRadius: 12, alignSelf: 'flex-start' },
+  donateBtnText: { fontSize: 14, fontWeight: '500', color: colors.deepGreen },
+  clearBtn: { paddingVertical: 10, paddingHorizontal: 24, backgroundColor: colors.beige, borderRadius: 12, alignSelf: 'flex-start' },
+  clearBtnText: { fontSize: 14, fontWeight: '500', color: colors.danger },
+  exportBtn: { marginTop: 10, paddingVertical: 10, paddingHorizontal: 24, backgroundColor: colors.beige, borderRadius: 12, alignSelf: 'flex-start' },
+  exportBtnText: { fontSize: 14, fontWeight: '500', color: colors.deepGreen },
+  exportHint: { fontSize: 11, color: colors.textMuted, marginTop: 6 },
+  disclaimer: { textAlign: 'center', fontSize: 12, color: colors.textMuted, paddingTop: 32, paddingHorizontal: 20, lineHeight: 18 },
+  version: { textAlign: 'center', fontSize: 11, color: colors.textMuted, paddingVertical: 8, opacity: 0.6 },
+  modalOverlay: { flex: 1, backgroundColor: isDark ? 'rgba(0,0,0,0.6)' : 'rgba(46,59,46,0.4)', alignItems: 'center', justifyContent: 'center', padding: 24 },
+  modalCard: { backgroundColor: colors.cream, borderRadius: 20, paddingVertical: 28, paddingHorizontal: 24, width: '100%', maxWidth: 320, alignItems: 'center' },
+  modalTitle: { fontSize: 17, fontWeight: '600', color: colors.textPrimary, marginTop: 8, marginBottom: 4 },
+  modalBody: { fontSize: 13, color: colors.textSecondary, lineHeight: 20, textAlign: 'center', marginBottom: 20 },
+  modalDeleteBtn: { width: '100%', padding: 14, borderRadius: 12, backgroundColor: colors.danger, alignItems: 'center', marginBottom: 10 },
+  modalDeleteText: { fontSize: 15, fontWeight: '600', color: colors.white },
   modalCancelBtn: { width: '100%', padding: 12, borderRadius: 12, alignItems: 'center' },
-  modalCancelText: { fontSize: 14, fontWeight: '500', color: Colors.textMuted },
+  modalCancelText: { fontSize: 14, fontWeight: '500', color: colors.textMuted },
 });

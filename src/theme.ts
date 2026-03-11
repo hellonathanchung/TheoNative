@@ -1,4 +1,6 @@
-export const Colors = {
+import React, { createContext, useContext, useMemo } from 'react';
+
+export const LightColors = {
   cream: '#F5FAF5',
   beige: '#E8F0E8',
   softGreen: '#C8E6C9',
@@ -19,3 +21,55 @@ export const Colors = {
   warmBeige: '#E8F0E8',
   softPeach: '#C8E6C9',
 };
+
+export const DarkColors = {
+  cream: '#111512',
+  beige: '#1A211C',
+  softGreen: '#223125',
+  mediumGreen: '#2B3B2C',
+  green: '#3A4E3B',
+  deepGreen: '#8BC34A',
+  intensityMild: '#9CCC65',
+  intensityModerate: '#FFB74D',
+  intensityStrong: '#FF7043',
+  textPrimary: '#E8EFE8',
+  textSecondary: '#C0C9C0',
+  textMuted: '#98A398',
+  danger: '#EF5350',
+  white: '#FFFFFF',
+  softCoral: '#4C6A52',
+  terracotta: '#7CB342',
+  warmAmber: '#8BC34A',
+  warmBeige: '#1A211C',
+  softPeach: '#2A3A2C',
+};
+
+export type ThemeColors = typeof LightColors;
+export type ThemeMode = 'light' | 'dark';
+
+const ThemeContext = createContext({
+  mode: 'light' as ThemeMode,
+  colors: LightColors,
+  setMode: (_mode: ThemeMode) => {},
+});
+
+export function ThemeProvider({
+  mode,
+  setMode,
+  children,
+}: {
+  mode: ThemeMode;
+  setMode: (mode: ThemeMode) => void;
+  children: React.ReactNode;
+}) {
+  const colors = mode === 'dark' ? DarkColors : LightColors;
+  const value = useMemo(() => ({ mode, colors, setMode }), [mode, colors, setMode]);
+  return React.createElement(ThemeContext.Provider, { value }, children);
+}
+
+export function useTheme() {
+  return useContext(ThemeContext);
+}
+
+// Backwards-compatible alias for any remaining imports.
+export const Colors = LightColors;

@@ -1,9 +1,9 @@
-import React from 'react';
+import React, { useMemo, useState } from 'react';
 import { View, Text, Pressable, ScrollView, StyleSheet, Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTimer } from '../hooks/useTimer';
 import { formatDuration } from '../utils/format';
-import { Colors } from '../theme';
+import { useTheme, type ThemeColors } from '../theme';
 import type { useContractions } from '../hooks/useContractions';
 import { FunFacts } from '../components/FunFacts';
 import { DinoGame } from '../components/DinoGame';
@@ -17,10 +17,13 @@ interface Props {
 }
 
 export function RelaxScreen({ app }: Props) {
+  const { colors } = useTheme();
+  const s = useMemo(() => createStyles(colors), [colors]);
   const insets = useSafeAreaInsets();
   const elapsed = useTimer(app.isActive, app.activeStart);
   const dinoConfig = DINO_CONFIGS[app.settings.dinoDifficulty] ?? DINO_CONFIGS.normal;
   const bubbleConfig = BUBBLE_CONFIGS[app.settings.bubbleDifficulty] ?? BUBBLE_CONFIGS.normal;
+  const [scrollEnabled, setScrollEnabled] = useState(true);
 
   return (
     <View style={[s.container, { paddingTop: insets.top + 16 }]}>
@@ -46,7 +49,7 @@ export function RelaxScreen({ app }: Props) {
         <Pressable
           style={[
             s.timerBarButton,
-            { backgroundColor: app.isActive ? Colors.danger : Colors.terracotta },
+            { backgroundColor: app.isActive ? colors.danger : colors.terracotta },
           ]}
           onPress={app.isActive ? app.stopContraction : app.startContraction}
         >
@@ -61,12 +64,17 @@ export function RelaxScreen({ app }: Props) {
         style={s.scrollView}
         contentContainerStyle={[s.scrollContent, { paddingBottom: 24 + insets.bottom }]}
         showsVerticalScrollIndicator={false}
+        nestedScrollEnabled
+        scrollEnabled={scrollEnabled}
       >
-        <FunFacts />
+        <FunFacts
+          onSwipeStart={() => setScrollEnabled(false)}
+          onSwipeEnd={() => setScrollEnabled(true)}
+        />
 
         <View style={s.divider} />
 
-        <GameErrorBoundary label="Sprout Jump">
+        <GameErrorBoundary label="Sprout Jump" styles={s}>
           <DinoGame
             config={dinoConfig}
             headerExtra={
@@ -80,7 +88,7 @@ export function RelaxScreen({ app }: Props) {
 
         <View style={s.divider} />
 
-        <GameErrorBoundary label="Bubble Pop">
+        <GameErrorBoundary label="Bubble Pop" styles={s}>
           <BubbleGame
             config={bubbleConfig}
             headerExtra={
@@ -100,8 +108,8 @@ export function RelaxScreen({ app }: Props) {
   );
 }
 
-class GameErrorBoundary extends React.Component<{ label: string; children: React.ReactNode }, { hasError: boolean }> {
-  constructor(props: { label: string; children: React.ReactNode }) {
+class GameErrorBoundary extends React.Component<{ label: string; styles: ReturnType<typeof createStyles>; children: React.ReactNode }, { hasError: boolean }> {
+  constructor(props: { label: string; styles: ReturnType<typeof createStyles>; children: React.ReactNode }) {
     super(props);
     this.state = { hasError: false };
   }
@@ -117,9 +125,9 @@ class GameErrorBoundary extends React.Component<{ label: string; children: React
   render() {
     if (!this.state.hasError) return this.props.children;
     return (
-      <View style={s.gameFallback}>
-        <Text style={s.gameFallbackTitle}>{this.props.label} is unavailable</Text>
-        <Text style={s.gameFallbackBody}>
+      <View style={this.props.styles.gameFallback}>
+        <Text style={this.props.styles.gameFallbackTitle}>{this.props.label} is unavailable</Text>
+        <Text style={this.props.styles.gameFallbackBody}>
           {Platform.OS === 'web'
             ? 'Unable to load the game renderer. Check your browser supports WebAssembly.'
             : 'If you are running Expo Go, build a dev client to enable Skia.'}
@@ -129,14 +137,14 @@ class GameErrorBoundary extends React.Component<{ label: string; children: React
   }
 }
 
-const s = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   container: {
     flex: 1,
   },
   title: {
     fontSize: 20,
     fontWeight: '600',
-    color: Colors.textPrimary,
+    color: colors.textPrimary,
     paddingHorizontal: 20,
     marginBottom: 8,
   },
@@ -144,7 +152,7 @@ const s = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: Colors.beige,
+    backgroundColor: colors.beige,
     marginHorizontal: 16,
     paddingVertical: 10,
     paddingHorizontal: 14,
@@ -160,17 +168,17 @@ const s = StyleSheet.create({
     width: 8,
     height: 8,
     borderRadius: 4,
-    backgroundColor: Colors.danger,
+    backgroundColor: colors.danger,
   },
   timerBarTextActive: {
     fontSize: 22,
     fontWeight: '500',
-    color: Colors.textPrimary,
+    color: colors.textPrimary,
     fontVariant: ['tabular-nums'],
   },
   timerBarTextIdle: {
     fontSize: 13,
-    color: Colors.textMuted,
+    color: colors.textMuted,
   },
   timerBarButton: {
     paddingVertical: 8,
@@ -180,7 +188,7 @@ const s = StyleSheet.create({
   timerBarButtonText: {
     fontSize: 14,
     fontWeight: '600',
-    color: Colors.white,
+    color: colors.white,
   },
   scrollView: {
     flex: 1,
@@ -191,12 +199,12 @@ const s = StyleSheet.create({
   },
   divider: {
     height: 1,
-    backgroundColor: Colors.beige,
+    backgroundColor: colors.beige,
     marginTop: 8,
     marginBottom: 16,
   },
   gameFallback: {
-    backgroundColor: Colors.beige,
+    backgroundColor: colors.beige,
     borderRadius: 16,
     paddingVertical: 20,
     paddingHorizontal: 16,
@@ -205,18 +213,18 @@ const s = StyleSheet.create({
   gameFallbackTitle: {
     fontSize: 14,
     fontWeight: '600',
-    color: Colors.textPrimary,
+    color: colors.textPrimary,
     marginBottom: 6,
   },
   gameFallbackBody: {
     fontSize: 12,
-    color: Colors.textMuted,
+    color: colors.textMuted,
     textAlign: 'center',
     lineHeight: 18,
   },
   footer: {
     fontSize: 14,
-    color: Colors.textMuted,
+    color: colors.textMuted,
     textAlign: 'center',
     paddingTop: 16,
     paddingBottom: 24,

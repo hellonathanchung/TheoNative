@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { View, Text, Pressable, StyleSheet } from 'react-native';
-import { Colors } from '../theme';
+import { useTheme, type ThemeColors } from '../theme';
 import type { GameDifficulty } from '../types';
 
 interface Props {
@@ -15,6 +15,8 @@ const LEVELS: { key: GameDifficulty; label: string }[] = [
 ];
 
 export function DifficultySelector({ value, onChange }: Props) {
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   return (
     <View style={styles.row}>
       {LEVELS.map((level) => {
@@ -24,14 +26,14 @@ export function DifficultySelector({ value, onChange }: Props) {
             key={level.key}
             style={[
               styles.btn,
-              { backgroundColor: active ? Colors.deepGreen : Colors.beige },
+              { backgroundColor: active ? colors.deepGreen : colors.beige },
             ]}
             onPress={() => onChange(level.key)}
           >
             <Text
               style={[
                 styles.label,
-                { color: active ? Colors.cream : Colors.textMuted },
+                { color: active ? colors.cream : colors.textMuted },
               ]}
             >
               {level.label}
@@ -43,7 +45,7 @@ export function DifficultySelector({ value, onChange }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   row: {
     flexDirection: 'row',
     gap: 4,
@@ -57,5 +59,6 @@ const styles = StyleSheet.create({
     fontSize: 10,
     fontWeight: '600',
     letterSpacing: 0.5,
+    color: colors.textMuted,
   },
 });
