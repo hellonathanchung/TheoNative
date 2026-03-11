@@ -7,6 +7,7 @@ import Animated, {
   withSequence,
   withTiming,
   Easing,
+  cancelAnimation,
 } from "react-native-reanimated";
 import Svg, { Path } from "react-native-svg";
 import { Colors } from "../theme";
@@ -477,10 +478,10 @@ function SwayingLeaf({ config }: { config: LeafConfig }) {
       withSequence(
         withTiming(swayRotation, { duration: dur, easing }),
         withTiming(-swayRotation * 0.75, { duration: dur, easing }),
-        withTiming(0, { duration: dur, easing })
+        withTiming(0, { duration: dur, easing }),
       ),
       -1,
-      true
+      true,
     );
 
     if (swayTranslateX) {
@@ -488,10 +489,10 @@ function SwayingLeaf({ config }: { config: LeafConfig }) {
         withSequence(
           withTiming(swayTranslateX, { duration: dur, easing }),
           withTiming(-swayTranslateX * 0.67, { duration: dur, easing }),
-          withTiming(0, { duration: dur, easing })
+          withTiming(0, { duration: dur, easing }),
         ),
         -1,
-        true
+        true,
       );
     }
 
@@ -500,13 +501,22 @@ function SwayingLeaf({ config }: { config: LeafConfig }) {
         withSequence(
           withTiming(swayTranslateY, { duration: dur, easing }),
           withTiming(-swayTranslateY * 0.5, { duration: dur, easing }),
-          withTiming(0, { duration: dur, easing })
+          withTiming(0, { duration: dur, easing }),
         ),
         -1,
-        true
+        true,
       );
     }
-  }, []);
+
+    return () => {
+      cancelAnimation(rotation);
+      cancelAnimation(translateX);
+      cancelAnimation(translateY);
+      rotation.value = 0;
+      translateX.value = 0;
+      translateY.value = 0;
+    };
+  }, [config.swayDuration, rotation, swayRotation, swayTranslateX, swayTranslateY, translateX, translateY]);
 
   const animStyle = useAnimatedStyle(() => ({
     transform: [

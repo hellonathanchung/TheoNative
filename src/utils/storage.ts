@@ -9,7 +9,7 @@ const ACTIVE_KEY = 'theo_active';
 const SESSIONS_KEY = 'theo_sessions';
 const ONBOARDING_KEY = 'theo_onboarding_complete';
 
-const DEFAULT_SETTINGS: Settings = {
+export const DEFAULT_SETTINGS: Settings = {
   preset: '5-1-1' as const,
   frequencyMinutes: 5,
   durationSeconds: 60,

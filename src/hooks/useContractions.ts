@@ -8,6 +8,8 @@ import {
   loadSettings, saveSettings,
   loadActiveState, saveActiveState,
   loadSessions, saveSessions,
+  clearAllData,
+  DEFAULT_SETTINGS,
 } from '../utils/storage';
 import { evaluateContractions, getAlertMessage } from '../utils/alerts';
 
@@ -52,6 +54,8 @@ export function useContractions() {
   const [alertMessage, setAlertMessage] = useState<string | null>(null);
   const [lastAlertTime, setLastAlertTime] = useState(0);
   const [pendingIntensityId, setPendingIntensityId] = useState<string | null>(null);
+  const [persistenceEnabled, setPersistenceEnabled] = useState(true);
+  const [onboardingResetAt, setOnboardingResetAt] = useState<number | null>(null);
 
   // Restore active state on mount
   useEffect(() => {
@@ -64,18 +68,21 @@ export function useContractions() {
 
   // Persist contractions
   useEffect(() => {
+    if (!persistenceEnabled) return;
     saveContractions(contractions);
-  }, [contractions]);
+  }, [contractions, persistenceEnabled]);
 
   // Persist settings
   useEffect(() => {
+    if (!persistenceEnabled) return;
     saveSettings(settings);
-  }, [settings]);
+  }, [settings, persistenceEnabled]);
 
   // Persist sessions
   useEffect(() => {
+    if (!persistenceEnabled) return;
     saveSessions(sessions);
-  }, [sessions]);
+  }, [sessions, persistenceEnabled]);
 
   const startContraction = useCallback(() => {
     const now = Date.now();
@@ -162,13 +169,44 @@ export function useContractions() {
   }, []);
 
   const updateContraction = useCallback((id: string, updates: Partial<Contraction>) => {
+    const clamp = (value: number, min: number, max: number) =>
+      Math.min(max, Math.max(min, value));
+    const now = Date.now();
+    const maxLookbackMs = 12 * 60 * 60 * 1000;
+    const minTime = now - maxLookbackMs;
+    const maxTime = now;
+    const minDurationMs = 5000;
+
     setContractions((prev) =>
       prev.map((c) => {
         if (c.id !== id) return c;
-        const updated = { ...c, ...updates };
-        if (updated.startTime && updated.endTime) {
-          updated.duration = (updated.endTime - updated.startTime) / 1000;
+
+        let startTime = updates.startTime ?? c.startTime;
+        let endTime =
+          updates.endTime ??
+          c.endTime ??
+          Math.min(startTime + minDurationMs, maxTime);
+
+        startTime = clamp(startTime, minTime, maxTime);
+        endTime = clamp(endTime, minTime, maxTime);
+
+        if (endTime < startTime + minDurationMs) {
+          if (updates.startTime !== undefined && updates.endTime === undefined) {
+            endTime = clamp(startTime + minDurationMs, minTime, maxTime);
+          } else if (updates.endTime !== undefined && updates.startTime === undefined) {
+            startTime = clamp(endTime - minDurationMs, minTime, maxTime);
+          } else {
+            endTime = clamp(startTime + minDurationMs, minTime, maxTime);
+          }
         }
+
+        const updated: Contraction = {
+          ...c,
+          ...updates,
+          startTime,
+          endTime,
+          duration: (endTime - startTime) / 1000,
+        };
         return updated;
       })
     );
@@ -184,6 +222,29 @@ export function useContractions() {
 
   const updateSettings = useCallback((partial: Partial<Settings>) => {
     setSettings((prev) => ({ ...prev, ...partial }));
+  }, []);
+
+  const disablePersistence = useCallback(() => {
+    setPersistenceEnabled(false);
+  }, []);
+
+  const enablePersistence = useCallback(() => {
+    setPersistenceEnabled(true);
+  }, []);
+
+  const resetAllData = useCallback(() => {
+    setPersistenceEnabled(false);
+    clearAllData();
+    setContractions([]);
+    setSessions([]);
+    setSettings({ ...DEFAULT_SETTINGS });
+    setIsActive(false);
+    setActiveStart(null);
+    setAlertMessage(null);
+    setLastAlertTime(0);
+    setPendingIntensityId(null);
+    saveActiveState(false, null);
+    setOnboardingResetAt(Date.now());
   }, []);
 
   const completed = contractions.filter((c) => c.endTime !== null);
@@ -215,5 +276,9 @@ export function useContractions() {
     dismissAlert,
     updateSettings,
     getUrgencyState,
+    resetAllData,
+    disablePersistence,
+    enablePersistence,
+    onboardingResetAt,
   };
 }

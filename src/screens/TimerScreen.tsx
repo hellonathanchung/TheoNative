@@ -32,18 +32,18 @@ export function TimerScreen({ app }: Props) {
   };
 
   const urgency = app.getUrgencyState();
-  const buttonBg =
-    urgency === 'approaching'
-      ? Colors.softCoral
-      : app.isActive
-        ? Colors.terracotta
-        : Colors.warmAmber;
+  const buttonTone = useRef(new Animated.Value(0)).current;
+  const targetTone = app.isActive ? 2 : urgency === 'approaching' ? 1 : 0;
+  const buttonBg = buttonTone.interpolate({
+    inputRange: [0, 1, 2],
+    outputRange: [Colors.warmAmber, Colors.softCoral, Colors.terracotta],
+  });
+  const buttonShadow = app.isActive ? Colors.deepGreen : Colors.warmAmber;
 
   // Animated breathing for active button
   const scale = useRef(new Animated.Value(1)).current;
   const animRef = useRef<any>(null);
   const bgOpacity = useRef(new Animated.Value(0)).current;
-  const bgLoopRef = useRef<Animated.CompositeAnimation | null>(null);
 
   useEffect(() => {
     if (app.isActive) {
@@ -64,24 +64,28 @@ export function TimerScreen({ app }: Props) {
 
   useEffect(() => {
     if (app.isActive) {
-      bgLoopRef.current?.stop?.();
       bgOpacity.setValue(0);
-      Animated.timing(bgOpacity, { toValue: 0.35, duration: 1200, useNativeDriver: true }).start(() => {
-        const loop = Animated.loop(
-          Animated.sequence([
-            Animated.timing(bgOpacity, { toValue: 0.5, duration: 2500, useNativeDriver: true }),
-            Animated.timing(bgOpacity, { toValue: 0.3, duration: 2500, useNativeDriver: true }),
-          ]),
-        );
-        bgLoopRef.current = loop;
-        loop.start();
-      });
+      Animated.timing(bgOpacity, {
+        toValue: 0.35,
+        duration: 800,
+        useNativeDriver: true,
+      }).start();
     } else {
-      bgLoopRef.current?.stop?.();
-      Animated.timing(bgOpacity, { toValue: 0, duration: 500, useNativeDriver: true }).start();
+      Animated.timing(bgOpacity, {
+        toValue: 0,
+        duration: 500,
+        useNativeDriver: true,
+      }).start();
     }
-    return () => { bgLoopRef.current?.stop?.(); };
   }, [app.isActive, bgOpacity]);
+
+  useEffect(() => {
+    Animated.timing(buttonTone, {
+      toValue: targetTone,
+      duration: 320,
+      useNativeDriver: false,
+    }).start();
+  }, [buttonTone, targetTone]);
 
   return (
     <ScreenBackground>
@@ -132,17 +136,28 @@ export function TimerScreen({ app }: Props) {
             <FlatList
               data={recent}
               keyExtractor={(c) => c.id}
-              renderItem={({ item, index }) => {
+              renderItem={({ item }) => {
                 const interval = getInterval(item);
+                const durationLabel = item.duration
+                  ? formatDuration(item.duration)
+                  : '--';
+                const intervalLabel =
+                  interval !== null ? formatInterval(interval) : '--';
                 return (
-                  <Pressable onPress={() => setSelectedContractionId(item.id)}>
+                  <Pressable
+                    accessibilityRole="button"
+                    accessibilityLabel={`Contraction at ${formatTime(
+                      item.startTime,
+                    )}, duration ${durationLabel}, ${intervalLabel} apart.`}
+                    onPress={() => setSelectedContractionId(item.id)}
+                  >
                     <View style={styles.row}>
                       <Text style={styles.rowTime}>
                         {formatTime(item.startTime)}
                       </Text>
                       <View style={styles.rowDetail}>
                         <Text style={styles.rowValue}>
-                          {item.duration ? formatDuration(item.duration) : '--'}
+                          {durationLabel}
                         </Text>
                         <Text style={styles.rowLabel}>duration</Text>
                       </View>
@@ -150,7 +165,7 @@ export function TimerScreen({ app }: Props) {
                         <Text
                           style={[styles.rowValue, { color: Colors.deepGreen }]}
                         >
-                          {interval !== null ? formatInterval(interval) : '--'}
+                          {intervalLabel}
                         </Text>
                         <Text style={styles.rowLabel}>apart</Text>
                       </View>
@@ -184,6 +199,8 @@ export function TimerScreen({ app }: Props) {
         <View style={styles.newSessionWrapper}>
           <Pressable
             style={styles.newSessionBtn}
+            accessibilityRole="button"
+            accessibilityLabel="Start a new contraction session"
             onPress={app.newSession}
           >
             <Text style={styles.newSessionText}>New Session</Text>
@@ -198,13 +215,15 @@ export function TimerScreen({ app }: Props) {
             styles.bigButton,
             {
               backgroundColor: buttonBg,
-              shadowColor: app.isActive ? Colors.deepGreen : Colors.warmAmber,
+              shadowColor: buttonShadow,
               transform: [{ scale }],
             },
           ]}
         >
           <Pressable
             style={{ flex: 1, alignItems: 'center', justifyContent: 'center', borderRadius: 80, backgroundColor: 'transparent' }}
+            accessibilityRole="button"
+            accessibilityLabel={app.isActive ? 'Stop contraction' : 'Start contraction'}
             onPress={app.isActive ? app.stopContraction : app.startContraction}
           >
             <Text style={styles.bigButtonLabel}>TAP TO</Text>

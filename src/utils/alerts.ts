@@ -5,6 +5,8 @@ export interface AlertResult {
   approaching: boolean;
 }
 
+// Uses a rolling time window to approximate 5-1-1/4-1-1/3-1-1 style patterns
+// by comparing average frequency (minutes apart) and duration (seconds).
 export function evaluateContractions(
   contractions: Contraction[],
   settings: Settings

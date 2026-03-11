@@ -1,8 +1,7 @@
 import React, { useState } from 'react';
-import { View, Text, Pressable, Switch, ScrollView, Modal, Linking, Alert, StyleSheet } from 'react-native';
+import { View, Text, Pressable, Switch, ScrollView, Modal, Linking, StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Notifications from 'expo-notifications';
-import { clearAllData } from '../utils/storage';
 import { Colors } from '../theme';
 import type { Preset } from '../types';
 import type { useContractions } from '../hooks/useContractions';
@@ -196,10 +195,8 @@ export function SettingsScreen({ app }: Props) {
             <Pressable
               style={s.modalDeleteBtn}
               onPress={() => {
-                clearAllData();
-                // Restart the app by reloading
+                app.resetAllData();
                 setShowClearConfirm(false);
-                Alert.alert('Done', 'All data has been cleared. Please restart the app.');
               }}
             >
               <Text style={s.modalDeleteText}>Yes, Clear Everything</Text>

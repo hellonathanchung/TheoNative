@@ -69,6 +69,15 @@ export function BubbleGame({ config, headerExtra }: BubbleGameProps) {
   const [displayHigh, setDisplayHigh] = useState(stateRef.current.highScore);
   const [, forceRender] = useState(0);
 
+  const resetGame = useCallback(() => {
+    const s = stateRef.current;
+    s.bubbles = [];
+    s.nextId = 0;
+    s.score = 0;
+    s.frame = 0;
+    setDisplayScore(0);
+  }, []);
+
   const popBubble = useCallback((tapX: number, tapY: number) => {
     const s = stateRef.current;
     // Find closest bubble to tap
@@ -79,7 +88,7 @@ export function BubbleGame({ config, headerExtra }: BubbleGameProps) {
       const dx = b.x - tapX;
       const dy = b.y - tapY;
       const dist = Math.sqrt(dx * dx + dy * dy);
-      if (dist < b.r + 10 && dist < closestDist) {
+      if (dist < b.r + 20 && dist < closestDist) {
         closest = b;
         closestDist = dist;
       }
@@ -160,6 +169,15 @@ export function BubbleGame({ config, headerExtra }: BubbleGameProps) {
         <View style={styles.scoresRow}>
           <Text style={styles.scoreLabel}>{displayScore} popped</Text>
           <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Reset bubble score"
+            onPress={resetGame}
+          >
+            <Text style={styles.resetLabel}>Reset</Text>
+          </Pressable>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Clear bubble high score"
             onPress={() => {
               if (displayHigh > 0) {
                 saveBubbleHigh(0);
@@ -174,7 +192,10 @@ export function BubbleGame({ config, headerExtra }: BubbleGameProps) {
       </View>
 
       <Pressable
-        onPress={(e) => {
+        style={styles.canvasPressable}
+        accessibilityRole="button"
+        accessibilityLabel="Bubble game board. Tap to pop bubbles."
+        onPressIn={(e) => {
           popBubble(e.nativeEvent.locationX, e.nativeEvent.locationY);
         }}
       >
@@ -239,7 +260,7 @@ export function BubbleGame({ config, headerExtra }: BubbleGameProps) {
 
           {/* Instruction text */}
           {gs.score === 0 && gs.frame > 60 && (
-            <View style={styles.overlay}>
+            <View style={styles.overlay} pointerEvents="none">
               <Text style={styles.overlayText}>Tap the bubbles!</Text>
             </View>
           )}
@@ -274,6 +295,14 @@ const styles = StyleSheet.create({
   highLabel: {
     fontSize: 13,
     color: Colors.textMuted,
+  },
+  resetLabel: {
+    fontSize: 13,
+    color: Colors.textSecondary,
+  },
+  canvasPressable: {
+    width: GAME_WIDTH,
+    height: GAME_HEIGHT,
   },
   canvasWrapper: {
     width: GAME_WIDTH,

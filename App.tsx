@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, Pressable, Modal, StyleSheet } from 'react-native';
+import React, { useState, useEffect, useRef } from 'react';
+import { View, Text, Pressable, Modal, StyleSheet, Animated } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
@@ -34,7 +34,18 @@ const TWENTY_FOUR_HOURS = 24 * 60 * 60 * 1000;
 export default function App() {
   const [showOnboarding, setShowOnboarding] = useState(() => !loadOnboardingComplete());
   const [showStalePrompt, setShowStalePrompt] = useState(false);
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const toastOpacity = useRef(new Animated.Value(0)).current;
   const app = useContractions();
+  const { disablePersistence, enablePersistence } = app;
+
+  useEffect(() => {
+    if (showOnboarding) {
+      disablePersistence();
+    } else {
+      enablePersistence();
+    }
+  }, [showOnboarding, disablePersistence, enablePersistence]);
 
   // Request notification permission after onboarding
   useEffect(() => {
@@ -42,6 +53,32 @@ export default function App() {
       Notifications.requestPermissionsAsync();
     }
   }, [showOnboarding]);
+
+  useEffect(() => {
+    if (app.onboardingResetAt) {
+      setShowOnboarding(true);
+      setShowStalePrompt(false);
+      setToastMessage('All data cleared');
+    }
+  }, [app.onboardingResetAt]);
+
+  useEffect(() => {
+    if (!toastMessage) return;
+    toastOpacity.setValue(0);
+    Animated.timing(toastOpacity, {
+      toValue: 1,
+      duration: 220,
+      useNativeDriver: true,
+    }).start();
+    const timer = setTimeout(() => {
+      Animated.timing(toastOpacity, {
+        toValue: 0,
+        duration: 250,
+        useNativeDriver: true,
+      }).start(() => setToastMessage(null));
+    }, 1800);
+    return () => clearTimeout(timer);
+  }, [toastMessage, toastOpacity]);
 
   // Check if session is stale (24+ hours since last contraction)
   useEffect(() => {
@@ -55,6 +92,7 @@ export default function App() {
 
   const handleOnboardingComplete = (preset: Preset) => {
     saveOnboardingComplete();
+    app.enablePersistence();
     if (preset !== 'custom') {
       app.updateSettings({ preset, ...PRESET_VALUES[preset] });
     }
@@ -65,6 +103,11 @@ export default function App() {
     return (
       <SafeAreaProvider>
         <Onboarding onComplete={handleOnboardingComplete} />
+        {toastMessage && (
+          <Animated.View style={[styles.toast, { opacity: toastOpacity }]}>
+            <Text style={styles.toastText}>{toastMessage}</Text>
+          </Animated.View>
+        )}
         <StatusBar style="dark" />
       </SafeAreaProvider>
     );
@@ -107,6 +150,12 @@ export default function App() {
             </View>
           </View>
         </Modal>
+
+        {toastMessage && (
+          <Animated.View style={[styles.toast, { opacity: toastOpacity }]}>
+            <Text style={styles.toastText}>{toastMessage}</Text>
+          </Animated.View>
+        )}
       </View>
       <StatusBar style="dark" />
     </SafeAreaProvider>
@@ -169,5 +218,21 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '500',
     color: Colors.textMuted,
+  },
+  toast: {
+    position: 'absolute',
+    left: 20,
+    right: 20,
+    top: 16,
+    backgroundColor: 'rgba(46, 59, 46, 0.9)',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 12,
+    alignItems: 'center',
+  },
+  toastText: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: Colors.cream,
   },
 });

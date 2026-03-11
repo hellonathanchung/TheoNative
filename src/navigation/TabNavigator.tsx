@@ -1,12 +1,12 @@
-import React from 'react';
-import { Text } from 'react-native';
-import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { TimerScreen } from '../screens/TimerScreen';
-import { HistoryScreen } from '../screens/HistoryScreen';
-import { RelaxScreen } from '../screens/RelaxScreen';
-import { SettingsScreen } from '../screens/SettingsScreen';
-import { Colors } from '../theme';
-import type { useContractions } from '../hooks/useContractions';
+import React from "react";
+import { Text } from "react-native";
+import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
+import { TimerScreen } from "../screens/TimerScreen";
+import { HistoryScreen } from "../screens/HistoryScreen";
+import { RelaxScreen } from "../screens/RelaxScreen";
+import { SettingsScreen } from "../screens/SettingsScreen";
+import { Colors } from "../theme";
+import type { useContractions } from "../hooks/useContractions";
 
 export type TabParamList = {
   Track: undefined;
@@ -26,7 +26,6 @@ export function TabNavigator({ app }: Props) {
     <Tab.Navigator
       screenOptions={{
         headerShown: false,
-        tabBarSafeAreaInsets: { bottom: 0 },
         tabBarActiveTintColor: Colors.deepGreen,
         tabBarInactiveTintColor: Colors.textMuted,
         tabBarStyle: {
@@ -34,7 +33,6 @@ export function TabNavigator({ app }: Props) {
           borderTopColor: Colors.beige,
           borderTopWidth: 1,
           height: 64,
-          paddingBottom: 8,
           paddingTop: 6,
         },
         tabBarLabelStyle: {
@@ -46,7 +44,9 @@ export function TabNavigator({ app }: Props) {
       <Tab.Screen
         name="Track"
         options={{
-          tabBarIcon: ({ color }) => <Text style={{ fontSize: 20, color }}>⏱</Text>,
+          tabBarIcon: ({ color }) => (
+            <Text style={{ fontSize: 20, color }}>⏱</Text>
+          ),
         }}
       >
         {() => <TimerScreen app={app} />}
@@ -54,7 +54,9 @@ export function TabNavigator({ app }: Props) {
       <Tab.Screen
         name="History"
         options={{
-          tabBarIcon: ({ color }) => <Text style={{ fontSize: 20, color }}>📋</Text>,
+          tabBarIcon: ({ color }) => (
+            <Text style={{ fontSize: 20, color }}>📋</Text>
+          ),
         }}
       >
         {() => <HistoryScreen app={app} />}
@@ -62,7 +64,9 @@ export function TabNavigator({ app }: Props) {
       <Tab.Screen
         name="Relax"
         options={{
-          tabBarIcon: ({ color }) => <Text style={{ fontSize: 20, color }}>🌿</Text>,
+          tabBarIcon: ({ color }) => (
+            <Text style={{ fontSize: 20, color }}>🌿</Text>
+          ),
         }}
       >
         {() => <RelaxScreen app={app} />}
@@ -70,7 +74,9 @@ export function TabNavigator({ app }: Props) {
       <Tab.Screen
         name="Settings"
         options={{
-          tabBarIcon: ({ color }) => <Text style={{ fontSize: 20, color }}>⚙️</Text>,
+          tabBarIcon: ({ color }) => (
+            <Text style={{ fontSize: 20, color }}>⚙️</Text>
+          ),
         }}
       >
         {() => <SettingsScreen app={app} />}

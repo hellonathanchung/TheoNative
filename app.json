@@ -30,8 +30,7 @@
       "favicon": "./assets/favicon.png"
     },
     "plugins": [
-      "expo-notifications",
-      "@shopify/react-native-skia"
+      "expo-notifications"
     ]
   }
 }

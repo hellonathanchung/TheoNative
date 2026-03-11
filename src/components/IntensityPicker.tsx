@@ -25,6 +25,8 @@ export const IntensityPicker: React.FC<Props> = ({ onSelect, onSkip }) => {
               <Pressable
                 key={option.value}
                 style={styles.option}
+                accessibilityRole="button"
+                accessibilityLabel={`Mark contraction intensity as ${option.label}`}
                 onPress={() => onSelect(option.value)}
               >
                 <View style={styles.dotsContainer}>
@@ -39,7 +41,12 @@ export const IntensityPicker: React.FC<Props> = ({ onSelect, onSkip }) => {
               </Pressable>
             ))}
           </View>
-          <Pressable style={styles.skipButton} onPress={onSkip}>
+          <Pressable
+            style={styles.skipButton}
+            accessibilityRole="button"
+            accessibilityLabel="Skip intensity selection"
+            onPress={onSkip}
+          >
             <Text style={styles.skipText}>Skip</Text>
           </Pressable>
         </View>

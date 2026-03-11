@@ -124,7 +124,7 @@ class GameErrorBoundary extends React.Component<{ label: string; children: React
         <Text style={s.gameFallbackTitle}>{this.props.label} is unavailable</Text>
         <Text style={s.gameFallbackBody}>
           {Platform.OS === 'web'
-            ? 'This game requires native Skia rendering.'
+            ? 'Unable to load the game renderer. Check your browser supports WebAssembly.'
             : 'If you are running Expo Go, build a dev client to enable Skia.'}
         </Text>
       </View>

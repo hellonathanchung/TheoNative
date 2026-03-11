@@ -459,20 +459,22 @@ export function DinoGame({ config, headerExtra }: DinoGameProps) {
           </Canvas>
 
           {/* Text overlays rendered as RN Text for crisp font rendering */}
-          {!gameStarted && !isGameOver && (
-            <View style={styles.overlay}>
-              <Text style={styles.overlayTitle}>Tap to Start!</Text>
-              <Text style={styles.overlaySubtext}>
-                Help Sprout jump over obstacles
-              </Text>
-            </View>
-          )}
-          {isGameOver && (
-            <View style={styles.overlay}>
-              <Text style={styles.overlayTitle}>Game Over!</Text>
-              <Text style={styles.overlaySubtext}>Tap to play again</Text>
-            </View>
-          )}
+          <View style={styles.overlayContainer} pointerEvents="none">
+            {!gameStarted && !isGameOver && (
+              <View style={styles.overlay}>
+                <Text style={styles.overlayTitle}>Tap to Start!</Text>
+                <Text style={styles.overlaySubtext}>
+                  Help Sprout jump over obstacles
+                </Text>
+              </View>
+            )}
+            {isGameOver && (
+              <View style={styles.overlay}>
+                <Text style={styles.overlayTitle}>Game Over!</Text>
+                <Text style={styles.overlaySubtext}>Tap to play again</Text>
+              </View>
+            )}
+          </View>
         </View>
       </Pressable>
 
@@ -525,6 +527,9 @@ const styles = StyleSheet.create({
     ...StyleSheet.absoluteFillObject,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  overlayContainer: {
+    ...StyleSheet.absoluteFillObject,
   },
   overlayTitle: {
     fontSize: 18,
