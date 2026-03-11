@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, Pressable, ScrollView, StyleSheet } from 'react-native';
+import { View, Text, Pressable, ScrollView, StyleSheet, Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTimer } from '../hooks/useTimer';
 import { formatDuration } from '../utils/format';
@@ -11,6 +11,7 @@ import { BubbleGame } from '../components/BubbleGame';
 import { DifficultySelector } from '../components/DifficultySelector';
 import { DINO_CONFIGS, BUBBLE_CONFIGS } from '../utils/gameConfig';
 import type { GameDifficulty } from '../types';
+import { ScreenBackground } from '../components/ScreenBackground';
 
 interface Props {
   app: ReturnType<typeof useContractions>;
@@ -19,11 +20,14 @@ interface Props {
 export function RelaxScreen({ app }: Props) {
   const insets = useSafeAreaInsets();
   const elapsed = useTimer(app.isActive, app.activeStart);
+  const dinoConfig = DINO_CONFIGS[app.settings.dinoDifficulty] ?? DINO_CONFIGS.normal;
+  const bubbleConfig = BUBBLE_CONFIGS[app.settings.bubbleDifficulty] ?? BUBBLE_CONFIGS.normal;
 
   return (
-    <View style={[s.container, { paddingTop: insets.top + 16 }]}>
-      {/* Title */}
-      <Text style={s.title}>Relax</Text>
+    <ScreenBackground>
+      <View style={[s.container, { paddingTop: insets.top + 16 }]}>
+        {/* Title */}
+        <Text style={s.title}>Relax</Text>
 
       {/* Compact contraction timer bar */}
       <View style={s.timerBar}>
@@ -57,47 +61,80 @@ export function RelaxScreen({ app }: Props) {
       {/* Scrollable content */}
       <ScrollView
         style={s.scrollView}
-        contentContainerStyle={s.scrollContent}
+        contentContainerStyle={[s.scrollContent, { paddingBottom: 24 + insets.bottom }]}
         showsVerticalScrollIndicator={false}
       >
         <FunFacts />
 
         <View style={s.divider} />
 
-        <DinoGame
-          config={DINO_CONFIGS[app.settings.dinoDifficulty]}
-          headerExtra={
-            <DifficultySelector
-              value={app.settings.dinoDifficulty}
-              onChange={(d: GameDifficulty) => app.updateSettings({ dinoDifficulty: d })}
-            />
-          }
-        />
+        <GameErrorBoundary label="Sprout Jump">
+          <DinoGame
+            config={dinoConfig}
+            headerExtra={
+              <DifficultySelector
+                value={app.settings.dinoDifficulty}
+                onChange={(d: GameDifficulty) => app.updateSettings({ dinoDifficulty: d })}
+              />
+            }
+          />
+        </GameErrorBoundary>
 
         <View style={s.divider} />
 
-        <BubbleGame
-          config={BUBBLE_CONFIGS[app.settings.bubbleDifficulty]}
-          headerExtra={
-            <DifficultySelector
-              value={app.settings.bubbleDifficulty}
-              onChange={(d: GameDifficulty) => app.updateSettings({ bubbleDifficulty: d })}
-            />
-          }
-        />
+        <GameErrorBoundary label="Bubble Pop">
+          <BubbleGame
+            config={bubbleConfig}
+            headerExtra={
+              <DifficultySelector
+                value={app.settings.bubbleDifficulty}
+                onChange={(d: GameDifficulty) => app.updateSettings({ bubbleDifficulty: d })}
+              />
+            }
+          />
+        </GameErrorBoundary>
 
         <Text style={s.footer}>
           Take a deep breath. You're doing amazing. 🌿
         </Text>
       </ScrollView>
     </View>
+  </ScreenBackground>
   );
+}
+
+class GameErrorBoundary extends React.Component<{ label: string; children: React.ReactNode }, { hasError: boolean }> {
+  constructor(props: { label: string; children: React.ReactNode }) {
+    super(props);
+    this.state = { hasError: false };
+  }
+
+  static getDerivedStateFromError() {
+    return { hasError: true };
+  }
+
+  componentDidCatch() {
+    // Intentionally empty: we just show a fallback view.
+  }
+
+  render() {
+    if (!this.state.hasError) return this.props.children;
+    return (
+      <View style={s.gameFallback}>
+        <Text style={s.gameFallbackTitle}>{this.props.label} is unavailable</Text>
+        <Text style={s.gameFallbackBody}>
+          {Platform.OS === 'web'
+            ? 'This game requires native Skia rendering.'
+            : 'If you are running Expo Go, build a dev client to enable Skia.'}
+        </Text>
+      </View>
+    );
+  }
 }
 
 const s = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.cream,
   },
   title: {
     fontSize: 20,
@@ -160,6 +197,25 @@ const s = StyleSheet.create({
     backgroundColor: Colors.beige,
     marginTop: 8,
     marginBottom: 16,
+  },
+  gameFallback: {
+    backgroundColor: Colors.beige,
+    borderRadius: 16,
+    paddingVertical: 20,
+    paddingHorizontal: 16,
+    alignItems: 'center',
+  },
+  gameFallbackTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: Colors.textPrimary,
+    marginBottom: 6,
+  },
+  gameFallbackBody: {
+    fontSize: 12,
+    color: Colors.textMuted,
+    textAlign: 'center',
+    lineHeight: 18,
   },
   footer: {
     fontSize: 14,

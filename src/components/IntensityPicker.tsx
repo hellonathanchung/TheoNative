@@ -9,9 +9,9 @@ interface Props {
 }
 
 const intensityOptions: { value: Intensity; label: string; dotColor: string; dotCount: number }[] = [
-  { value: 'mild', label: 'Mild', dotColor: Colors.warmAmber, dotCount: 1 },
-  { value: 'moderate', label: 'Moderate', dotColor: Colors.softCoral, dotCount: 2 },
-  { value: 'strong', label: 'Strong', dotColor: Colors.terracotta, dotCount: 3 },
+  { value: 'mild', label: 'Mild', dotColor: Colors.intensityMild, dotCount: 1 },
+  { value: 'moderate', label: 'Moderate', dotColor: Colors.intensityModerate, dotCount: 2 },
+  { value: 'strong', label: 'Strong', dotColor: Colors.intensityStrong, dotCount: 3 },
 ];
 
 export const IntensityPicker: React.FC<Props> = ({ onSelect, onSkip }) => {

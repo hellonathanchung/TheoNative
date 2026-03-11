@@ -26,12 +26,16 @@ export function TabNavigator({ app }: Props) {
     <Tab.Navigator
       screenOptions={{
         headerShown: false,
+        tabBarSafeAreaInsets: { bottom: 0 },
         tabBarActiveTintColor: Colors.deepGreen,
         tabBarInactiveTintColor: Colors.textMuted,
         tabBarStyle: {
           backgroundColor: Colors.cream,
           borderTopColor: Colors.beige,
           borderTopWidth: 1,
+          height: 64,
+          paddingBottom: 8,
+          paddingTop: 6,
         },
         tabBarLabelStyle: {
           fontSize: 10,

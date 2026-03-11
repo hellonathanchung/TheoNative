@@ -14,9 +14,9 @@ interface Props {
 }
 
 const INTENSITIES: { id: Intensity; label: string; color: string }[] = [
-  { id: 'mild', label: 'Mild', color: Colors.warmAmber },
-  { id: 'moderate', label: 'Moderate', color: Colors.softCoral },
-  { id: 'strong', label: 'Strong', color: Colors.terracotta },
+  { id: 'mild', label: 'Mild', color: Colors.intensityMild },
+  { id: 'moderate', label: 'Moderate', color: Colors.intensityModerate },
+  { id: 'strong', label: 'Strong', color: Colors.intensityStrong },
 ];
 
 export function ContractionDetailModal({ contraction: c, contractions, onClose, onUpdate, onDelete, readOnly }: Props) {
@@ -58,15 +58,31 @@ export function ContractionDetailModal({ contraction: c, contractions, onClose, 
               <Text style={s.fieldLabel}>Started</Text>
               <View style={s.timeControls}>
                 {!readOnly && (
-                  <Pressable onPress={() => adjustTime('startTime', -60000)} style={s.adjBtn}>
-                    <Text style={s.adjBtnText}>-1m</Text>
-                  </Pressable>
+                  <View style={s.adjustRow}>
+                    <Pressable onPress={() => adjustTime('startTime', -5000)} style={s.adjBtn}>
+                      <Text style={s.adjBtnText}>-5s</Text>
+                    </Pressable>
+                    <Pressable onPress={() => adjustTime('startTime', -30000)} style={s.adjBtn}>
+                      <Text style={s.adjBtnText}>-30s</Text>
+                    </Pressable>
+                    <Pressable onPress={() => adjustTime('startTime', -60000)} style={s.adjBtn}>
+                      <Text style={s.adjBtnText}>-1m</Text>
+                    </Pressable>
+                  </View>
                 )}
                 <Text style={s.fieldValue}>{formatTimeOfDay(c.startTime)}</Text>
                 {!readOnly && (
-                  <Pressable onPress={() => adjustTime('startTime', 60000)} style={s.adjBtn}>
-                    <Text style={s.adjBtnText}>+1m</Text>
-                  </Pressable>
+                  <View style={s.adjustRow}>
+                    <Pressable onPress={() => adjustTime('startTime', 5000)} style={s.adjBtn}>
+                      <Text style={s.adjBtnText}>+5s</Text>
+                    </Pressable>
+                    <Pressable onPress={() => adjustTime('startTime', 30000)} style={s.adjBtn}>
+                      <Text style={s.adjBtnText}>+30s</Text>
+                    </Pressable>
+                    <Pressable onPress={() => adjustTime('startTime', 60000)} style={s.adjBtn}>
+                      <Text style={s.adjBtnText}>+1m</Text>
+                    </Pressable>
+                  </View>
                 )}
               </View>
             </View>
@@ -76,15 +92,31 @@ export function ContractionDetailModal({ contraction: c, contractions, onClose, 
                 <Text style={s.fieldLabel}>Ended</Text>
                 <View style={s.timeControls}>
                   {!readOnly && (
-                    <Pressable onPress={() => adjustTime('endTime', -60000)} style={s.adjBtn}>
-                      <Text style={s.adjBtnText}>-1m</Text>
-                    </Pressable>
+                    <View style={s.adjustRow}>
+                      <Pressable onPress={() => adjustTime('endTime', -5000)} style={s.adjBtn}>
+                        <Text style={s.adjBtnText}>-5s</Text>
+                      </Pressable>
+                      <Pressable onPress={() => adjustTime('endTime', -30000)} style={s.adjBtn}>
+                        <Text style={s.adjBtnText}>-30s</Text>
+                      </Pressable>
+                      <Pressable onPress={() => adjustTime('endTime', -60000)} style={s.adjBtn}>
+                        <Text style={s.adjBtnText}>-1m</Text>
+                      </Pressable>
+                    </View>
                   )}
                   <Text style={s.fieldValue}>{formatTimeOfDay(c.endTime)}</Text>
                   {!readOnly && (
-                    <Pressable onPress={() => adjustTime('endTime', 60000)} style={s.adjBtn}>
-                      <Text style={s.adjBtnText}>+1m</Text>
-                    </Pressable>
+                    <View style={s.adjustRow}>
+                      <Pressable onPress={() => adjustTime('endTime', 5000)} style={s.adjBtn}>
+                        <Text style={s.adjBtnText}>+5s</Text>
+                      </Pressable>
+                      <Pressable onPress={() => adjustTime('endTime', 30000)} style={s.adjBtn}>
+                        <Text style={s.adjBtnText}>+30s</Text>
+                      </Pressable>
+                      <Pressable onPress={() => adjustTime('endTime', 60000)} style={s.adjBtn}>
+                        <Text style={s.adjBtnText}>+1m</Text>
+                      </Pressable>
+                    </View>
                   )}
                 </View>
               </View>
@@ -172,7 +204,8 @@ const s = StyleSheet.create({
   fieldRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 8 },
   fieldLabel: { fontSize: 14, color: Colors.textSecondary },
   fieldValue: { fontSize: 15, fontWeight: '500', color: Colors.textPrimary },
-  timeControls: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  timeControls: { alignItems: 'center', gap: 6 },
+  adjustRow: { flexDirection: 'row', alignItems: 'center', gap: 6, flexWrap: 'wrap', justifyContent: 'center' },
   adjBtn: { paddingVertical: 4, paddingHorizontal: 8, borderRadius: 8, backgroundColor: Colors.beige },
   adjBtnText: { fontSize: 12, fontWeight: '500', color: Colors.terracotta },
   intensityRow: { flexDirection: 'row', gap: 8 },

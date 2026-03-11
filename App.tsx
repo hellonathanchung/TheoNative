@@ -7,7 +7,6 @@ import * as Notifications from 'expo-notifications';
 import { TabNavigator } from './src/navigation/TabNavigator';
 import { Onboarding } from './src/components/Onboarding';
 import { AlertBanner } from './src/components/AlertBanner';
-import { BackgroundLeaves } from './src/components/BackgroundLeaves';
 import { useContractions } from './src/hooks/useContractions';
 import { loadOnboardingComplete, saveOnboardingComplete } from './src/utils/storage';
 import { Colors } from './src/theme';
@@ -71,18 +70,9 @@ export default function App() {
     );
   }
 
-  const urgency = app.getUrgencyState();
-  const bgColor =
-    urgency === 'active'
-      ? Colors.softPeach
-      : urgency === 'approaching'
-        ? Colors.softCoral
-        : Colors.cream;
-
   return (
     <SafeAreaProvider>
-      <View style={[styles.container, { backgroundColor: bgColor }]}>
-        <BackgroundLeaves />
+      <View style={[styles.container, { backgroundColor: Colors.cream }]}>
 
         {/* Alert banner */}
         {app.alertMessage && (

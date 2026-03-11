@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { View, Text, Pressable, FlatList, Alert, StyleSheet, Animated } from 'react-native';
+import { View, Text, Pressable, FlatList, StyleSheet, Animated } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTimer, useTimeSinceLast } from '../hooks/useTimer';
 import { formatDuration, formatTime, formatInterval } from '../utils/format';
@@ -8,6 +8,7 @@ import type { Contraction } from '../types';
 import type { useContractions } from '../hooks/useContractions';
 import { IntensityPicker } from '../components/IntensityPicker';
 import { ContractionDetailModal } from '../components/ContractionDetailModal';
+import { ScreenBackground } from '../components/ScreenBackground';
 
 interface Props {
   app: ReturnType<typeof useContractions>;
@@ -19,7 +20,10 @@ export function TimerScreen({ app }: Props) {
   const lastContraction = app.contractions[app.contractions.length - 1] ?? null;
   const timeSinceLast = useTimeSinceLast(app.isActive, lastContraction?.endTime ?? null);
   const recent = app.contractions.slice(-5).reverse();
-  const [selectedContraction, setSelectedContraction] = useState<Contraction | null>(null);
+  const [selectedContractionId, setSelectedContractionId] = useState<string | null>(null);
+  const selectedContraction = selectedContractionId
+    ? app.contractions.find((c) => c.id === selectedContractionId) ?? null
+    : null;
 
   const getInterval = (c: Contraction): number | null => {
     const idx = app.contractions.findIndex((a) => a.id === c.id);
@@ -38,6 +42,8 @@ export function TimerScreen({ app }: Props) {
   // Animated breathing for active button
   const scale = useRef(new Animated.Value(1)).current;
   const animRef = useRef<any>(null);
+  const bgOpacity = useRef(new Animated.Value(0)).current;
+  const bgLoopRef = useRef<Animated.CompositeAnimation | null>(null);
 
   useEffect(() => {
     if (app.isActive) {
@@ -56,8 +62,37 @@ export function TimerScreen({ app }: Props) {
     return () => { animRef.current?.stop?.(); };
   }, [app.isActive, scale]);
 
+  useEffect(() => {
+    if (app.isActive) {
+      bgLoopRef.current?.stop?.();
+      bgOpacity.setValue(0);
+      Animated.timing(bgOpacity, { toValue: 0.35, duration: 1200, useNativeDriver: true }).start(() => {
+        const loop = Animated.loop(
+          Animated.sequence([
+            Animated.timing(bgOpacity, { toValue: 0.5, duration: 2500, useNativeDriver: true }),
+            Animated.timing(bgOpacity, { toValue: 0.3, duration: 2500, useNativeDriver: true }),
+          ]),
+        );
+        bgLoopRef.current = loop;
+        loop.start();
+      });
+    } else {
+      bgLoopRef.current?.stop?.();
+      Animated.timing(bgOpacity, { toValue: 0, duration: 500, useNativeDriver: true }).start();
+    }
+    return () => { bgLoopRef.current?.stop?.(); };
+  }, [app.isActive, bgOpacity]);
+
   return (
-    <View style={[styles.container, { paddingTop: insets.top + 16 }]}>
+    <ScreenBackground>
+      <Animated.View
+        pointerEvents="none"
+        style={[
+          StyleSheet.absoluteFillObject,
+          { backgroundColor: Colors.softGreen, opacity: bgOpacity },
+        ]}
+      />
+      <View style={[styles.container, { paddingTop: insets.top + 16 }]}>
       {/* Counter */}
       {app.contractions.length > 0 && (
         <Text style={styles.counter}>
@@ -100,13 +135,8 @@ export function TimerScreen({ app }: Props) {
               renderItem={({ item, index }) => {
                 const interval = getInterval(item);
                 return (
-                  <Pressable onPress={() => setSelectedContraction(item)}>
-                    <View
-                      style={[
-                        styles.row,
-                        index === 0 && { backgroundColor: Colors.beige },
-                      ]}
-                    >
+                  <Pressable onPress={() => setSelectedContractionId(item.id)}>
+                    <View style={styles.row}>
                       <Text style={styles.rowTime}>
                         {formatTime(item.startTime)}
                       </Text>
@@ -131,10 +161,10 @@ export function TimerScreen({ app }: Props) {
                             {
                               backgroundColor:
                                 item.intensity === 'mild'
-                                  ? Colors.green
+                                  ? Colors.intensityMild
                                   : item.intensity === 'moderate'
-                                    ? Colors.mediumGreen
-                                    : Colors.deepGreen,
+                                    ? Colors.intensityModerate
+                                    : Colors.intensityStrong,
                             },
                           ]}
                         />
@@ -154,16 +184,7 @@ export function TimerScreen({ app }: Props) {
         <View style={styles.newSessionWrapper}>
           <Pressable
             style={styles.newSessionBtn}
-            onPress={() => {
-              Alert.alert(
-                'New Session',
-                'Save current contractions and start a new session?',
-                [
-                  { text: 'Cancel', style: 'cancel' },
-                  { text: 'New Session', onPress: () => app.newSession() },
-                ],
-              );
-            }}
+            onPress={app.newSession}
           >
             <Text style={styles.newSessionText}>New Session</Text>
           </Pressable>
@@ -206,11 +227,12 @@ export function TimerScreen({ app }: Props) {
       <ContractionDetailModal
         contraction={selectedContraction}
         contractions={app.contractions}
-        onClose={() => setSelectedContraction(null)}
+        onClose={() => setSelectedContractionId(null)}
         onUpdate={app.updateContraction}
         onDelete={app.deleteContraction}
       />
-    </View>
+      </View>
+    </ScreenBackground>
   );
 }
 
@@ -272,16 +294,19 @@ const styles = StyleSheet.create({
   row: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 10,
-    paddingHorizontal: 8,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.beige,
-    borderRadius: 8,
+    paddingVertical: 12,
+    paddingHorizontal: 12,
+    backgroundColor: Colors.cream,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: Colors.beige,
+    marginBottom: 10,
   },
   rowTime: {
-    width: 70,
+    width: 84,
     fontSize: 14,
     color: Colors.textSecondary,
+    textAlign: 'center',
   },
   rowDetail: {
     flex: 1,
@@ -301,7 +326,7 @@ const styles = StyleSheet.create({
     width: 8,
     height: 8,
     borderRadius: 4,
-    marginLeft: 8,
+    marginLeft: 12,
   },
   newSessionWrapper: {
     paddingHorizontal: 20,

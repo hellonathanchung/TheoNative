@@ -141,6 +141,9 @@ export function useContractions() {
     setContractions([]);
     setAlertMessage(null);
     setPendingIntensityId(null);
+    setIsActive(false);
+    setActiveStart(null);
+    saveActiveState(false, null);
   }, [contractions]);
 
   const deleteSession = useCallback((id: string) => {
