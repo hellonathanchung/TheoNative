@@ -4,12 +4,14 @@ import { NavigationContainer } from '@react-navigation/native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import * as Notifications from 'expo-notifications';
+import { PostHogProvider } from 'posthog-react-native';
 import { TabNavigator } from './src/navigation/TabNavigator';
 import { Onboarding } from './src/components/Onboarding';
 import { AlertBanner } from './src/components/AlertBanner';
 import { useContractions } from './src/hooks/useContractions';
 import { loadOnboardingComplete, saveOnboardingComplete } from './src/utils/storage';
 import { DarkColors, LightColors, ThemeProvider } from './src/theme';
+import { posthogClient, analytics } from './src/utils/analytics';
 import type { Preset } from './src/types';
 
 // Configure notification handler
@@ -108,6 +110,7 @@ export default function App() {
     const lastTime = lastContraction.endTime ?? lastContraction.startTime;
     if (Date.now() - lastTime > TWENTY_FOUR_HOURS) {
       setShowStalePrompt(true);
+      analytics.staleSessionPromptShown();
     }
   }, []);
 
@@ -117,6 +120,7 @@ export default function App() {
     if (preset !== 'custom') {
       app.updateSettings({ preset, ...PRESET_VALUES[preset] });
     }
+    analytics.onboardingCompleted(preset);
     setShowOnboarding(false);
   };
 
@@ -124,12 +128,90 @@ export default function App() {
     const undoMessage =
       undoState?.type === 'session' ? 'Session deleted' : 'Contraction deleted';
     return (
+      <PostHogProvider client={posthogClient}>
+        <ThemeProvider
+          mode={mode}
+          setMode={(nextMode) => app.updateSettings({ themeMode: nextMode })}
+        >
+          <SafeAreaProvider>
+            <Onboarding onComplete={handleOnboardingComplete} />
+            {toastMessage && (
+              <Animated.View style={[styles.toast, { opacity: toastOpacity }]}>
+                <Text style={styles.toastText}>{toastMessage}</Text>
+              </Animated.View>
+            )}
+            {undoState && (
+              <Animated.View
+                style={[
+                  styles.undoToast,
+                  { opacity: undoOpacity, top: toastMessage ? 64 : 16 },
+                ]}
+              >
+                <Text style={styles.undoText}>{undoMessage}</Text>
+                <Pressable
+                  style={styles.undoAction}
+                  onPress={() => {
+                    undoLast();
+                    clearUndo();
+                  }}
+                >
+                  <Text style={styles.undoActionText}>Undo</Text>
+                </Pressable>
+              </Animated.View>
+            )}
+            <StatusBar style={mode === 'dark' ? 'light' : 'dark'} />
+          </SafeAreaProvider>
+        </ThemeProvider>
+      </PostHogProvider>
+    );
+  }
+
+  const undoMessage =
+    undoState?.type === 'session' ? 'Session deleted' : 'Contraction deleted';
+
+  return (
+    <PostHogProvider client={posthogClient}>
       <ThemeProvider
         mode={mode}
         setMode={(nextMode) => app.updateSettings({ themeMode: nextMode })}
       >
         <SafeAreaProvider>
-          <Onboarding onComplete={handleOnboardingComplete} />
+          <View style={styles.container}>
+
+          {/* Alert banner */}
+          {app.alertMessage && (
+            <AlertBanner message={app.alertMessage} onDismiss={app.dismissAlert} />
+          )}
+
+          <NavigationContainer>
+            <TabNavigator app={app} />
+          </NavigationContainer>
+
+          {/* Stale session modal */}
+          <Modal visible={showStalePrompt} transparent animationType="fade">
+            <View style={styles.modalOverlay}>
+              <View style={styles.modalCard}>
+                <Text style={{ fontSize: 32 }}>{'\uD83D\uDC4B'}</Text>
+                <Text style={styles.modalTitle}>Welcome back!</Text>
+                <Text style={styles.modalBody}>
+                  It has been a while since your last contraction. Would you like to start a new session?
+                </Text>
+                <Pressable
+                  style={styles.modalPrimaryBtn}
+                  onPress={() => { app.newSession(); setShowStalePrompt(false); analytics.staleSessionAction('new_session'); }}
+                >
+                  <Text style={styles.modalPrimaryText}>Start New Session</Text>
+                </Pressable>
+                <Pressable
+                  style={styles.modalSecondaryBtn}
+                  onPress={() => { setShowStalePrompt(false); analytics.staleSessionAction('keep_session'); }}
+                >
+                  <Text style={styles.modalSecondaryText}>Keep Current Session</Text>
+                </Pressable>
+              </View>
+            </View>
+          </Modal>
+
           {toastMessage && (
             <Animated.View style={[styles.toast, { opacity: toastOpacity }]}>
               <Text style={styles.toastText}>{toastMessage}</Text>
@@ -154,85 +236,11 @@ export default function App() {
               </Pressable>
             </Animated.View>
           )}
+          </View>
           <StatusBar style={mode === 'dark' ? 'light' : 'dark'} />
         </SafeAreaProvider>
       </ThemeProvider>
-    );
-  }
-
-  const undoMessage =
-    undoState?.type === 'session' ? 'Session deleted' : 'Contraction deleted';
-
-  return (
-    <ThemeProvider
-      mode={mode}
-      setMode={(nextMode) => app.updateSettings({ themeMode: nextMode })}
-    >
-      <SafeAreaProvider>
-        <View style={styles.container}>
-
-        {/* Alert banner */}
-        {app.alertMessage && (
-          <AlertBanner message={app.alertMessage} onDismiss={app.dismissAlert} />
-        )}
-
-        <NavigationContainer>
-          <TabNavigator app={app} />
-        </NavigationContainer>
-
-        {/* Stale session modal */}
-        <Modal visible={showStalePrompt} transparent animationType="fade">
-          <View style={styles.modalOverlay}>
-            <View style={styles.modalCard}>
-              <Text style={{ fontSize: 32 }}>{'\uD83D\uDC4B'}</Text>
-              <Text style={styles.modalTitle}>Welcome back!</Text>
-              <Text style={styles.modalBody}>
-                It has been a while since your last contraction. Would you like to start a new session?
-              </Text>
-              <Pressable
-                style={styles.modalPrimaryBtn}
-                onPress={() => { app.newSession(); setShowStalePrompt(false); }}
-              >
-                <Text style={styles.modalPrimaryText}>Start New Session</Text>
-              </Pressable>
-              <Pressable
-                style={styles.modalSecondaryBtn}
-                onPress={() => setShowStalePrompt(false)}
-              >
-                <Text style={styles.modalSecondaryText}>Keep Current Session</Text>
-              </Pressable>
-            </View>
-          </View>
-        </Modal>
-
-        {toastMessage && (
-          <Animated.View style={[styles.toast, { opacity: toastOpacity }]}>
-            <Text style={styles.toastText}>{toastMessage}</Text>
-          </Animated.View>
-        )}
-        {undoState && (
-          <Animated.View
-            style={[
-              styles.undoToast,
-              { opacity: undoOpacity, top: toastMessage ? 64 : 16 },
-            ]}
-          >
-            <Text style={styles.undoText}>{undoMessage}</Text>
-            <Pressable
-              style={styles.undoAction}
-              onPress={() => {
-                undoLast();
-                clearUndo();
-              }}
-            >
-              <Text style={styles.undoActionText}>Undo</Text>
-            </Pressable>
-          </Animated.View>
-        )}
-        </View>
-        <StatusBar style={mode === 'dark' ? 'light' : 'dark'} />
-      </SafeAreaProvider>
-    </ThemeProvider>
+    </PostHogProvider>
   );
 }
 

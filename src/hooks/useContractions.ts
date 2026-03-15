@@ -12,6 +12,7 @@ import {
   DEFAULT_SETTINGS,
 } from '../utils/storage';
 import { evaluateContractions, getAlertMessage } from '../utils/alerts';
+import { analytics } from '../utils/analytics';
 
 function generateId(): string {
   return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
@@ -103,6 +104,7 @@ export function useContractions() {
     saveActiveState(true, now);
 
     if (settings.hapticEnabled) triggerHaptic('medium');
+    analytics.contractionStarted();
   }, [settings.hapticEnabled]);
 
   const stopContraction = useCallback(() => {
@@ -145,6 +147,7 @@ export function useContractions() {
     }
 
     if (settings.hapticEnabled) triggerHaptic('heavy');
+    analytics.contractionStopped(duration);
   }, [activeStart, settings, lastAlertTime]);
 
   const newSession = useCallback(() => {
@@ -157,12 +160,14 @@ export function useContractions() {
       };
       setSessions((prev) => [session, ...prev]);
     }
+    analytics.sessionEnded(contractions.length);
     setContractions([]);
     setAlertMessage(null);
     setPendingIntensityId(null);
     setIsActive(false);
     setActiveStart(null);
     saveActiveState(false, null);
+    analytics.sessionStarted();
   }, [contractions]);
 
   const deleteSession = useCallback((id: string) => {
