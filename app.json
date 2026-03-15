@@ -14,7 +14,11 @@
     },
     "ios": {
       "supportsTablet": false,
-      "bundleIdentifier": "com.hellonathanchung.theo"
+      "bundleIdentifier": "com.hellonathanchung.theo",
+      "buildNumber": "1",
+      "config": {
+        "usesNonExemptEncryption": false
+      }
     },
     "android": {
       "package": "com.hellonathanchung.theo",
@@ -31,6 +35,11 @@
     },
     "plugins": [
       "expo-notifications"
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "354e11a0-1de5-4b99-a963-bb83a020d5f1"
+      }
+    }
   }
 }
