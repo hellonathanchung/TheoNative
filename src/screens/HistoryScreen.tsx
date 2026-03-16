@@ -31,13 +31,42 @@ export function HistoryScreen({ app }: Props) {
     ? contractions.find((c) => c.id === selectedContractionId) ?? null
     : null;
 
-  // Current session stats
+  // Past hour stats
+  const ONE_HOUR = 60 * 60 * 1000;
+  const now = Date.now();
+  const recentContractions = contractions.filter(c => now - c.startTime < ONE_HOUR);
+
   const avgDuration =
-    contractions.length > 0
-      ? contractions.reduce((sum, c) => sum + (c.duration ?? 0), 0) /
-        contractions.length
+    recentContractions.length > 0
+      ? recentContractions.reduce((sum, c) => sum + (c.duration ?? 0), 0) /
+        recentContractions.length
       : 0;
 
+  const recentIntervals: number[] = [];
+  for (let i = 1; i < recentContractions.length; i++) {
+    const prev = recentContractions[i - 1];
+    if (prev.endTime) {
+      recentIntervals.push((recentContractions[i].startTime - prev.endTime) / 1000);
+    }
+  }
+  const avgInterval =
+    recentIntervals.length > 0
+      ? recentIntervals.reduce((a, b) => a + b, 0) / recentIntervals.length
+      : 0;
+
+  const recentStart = recentContractions[0]?.startTime ?? null;
+  const recentEnd =
+    recentContractions.length > 0
+      ? recentContractions[recentContractions.length - 1].endTime ?? null
+      : null;
+  const recentSpan =
+    recentStart && recentEnd ? (recentEnd - recentStart) / 1000 : 0;
+  const lastDuration =
+    recentContractions.length > 0 ? recentContractions[recentContractions.length - 1].duration ?? 0 : 0;
+  const lastInterval =
+    recentIntervals.length > 0 ? recentIntervals[recentIntervals.length - 1] : 0;
+
+  // Timeline uses all contractions
   const intervals: number[] = [];
   for (let i = 1; i < contractions.length; i++) {
     const prev = contractions[i - 1];
@@ -45,23 +74,6 @@ export function HistoryScreen({ app }: Props) {
       intervals.push((contractions[i].startTime - prev.endTime) / 1000);
     }
   }
-  const avgInterval =
-    intervals.length > 0
-      ? intervals.reduce((a, b) => a + b, 0) / intervals.length
-      : 0;
-
-  const sessionStart = contractions[0]?.startTime ?? null;
-  const sessionEnd =
-    contractions.length > 0
-      ? contractions[contractions.length - 1].endTime ?? null
-      : null;
-  const sessionLength =
-    sessionStart && sessionEnd ? (sessionEnd - sessionStart) / 1000 : 0;
-  const lastDuration =
-    contractions.length > 0 ? contractions[contractions.length - 1].duration ?? 0 : 0;
-  const lastInterval =
-    intervals.length > 0 ? intervals[intervals.length - 1] : 0;
-
   const timelineDurations = contractions.map((c) => c.duration ?? 0);
   const maxDuration = Math.max(60, ...timelineDurations);
   const maxInterval = Math.max(60, ...intervals);
@@ -78,15 +90,15 @@ export function HistoryScreen({ app }: Props) {
           <Text style={s.title}>History</Text>
           </View>
 
-        {/* Current session stats */}
-        {contractions.length > 0 && (
+        {/* Past hour stats */}
+        {recentContractions.length > 0 && (
           <>
             <View style={s.sectionWrap}>
-              <Text style={s.sectionLabel}>CURRENT SESSION</Text>
+              <Text style={s.sectionLabel}>PAST HOUR</Text>
             </View>
             <View style={s.statsRow}>
               <View style={s.statCol}>
-                <Text style={s.statValue}>{contractions.length}</Text>
+                <Text style={s.statValue}>{recentContractions.length}</Text>
                 <Text style={s.statLabel}>contractions</Text>
               </View>
               <View style={s.statDivider} />
@@ -108,9 +120,9 @@ export function HistoryScreen({ app }: Props) {
             <View style={s.statsRow}>
               <View style={s.statCol}>
                 <Text style={s.statValue}>
-                  {sessionLength > 0 ? formatInterval(sessionLength) : "--"}
+                  {recentSpan > 0 ? formatInterval(recentSpan) : "--"}
                 </Text>
-                <Text style={s.statLabel}>session length</Text>
+                <Text style={s.statLabel}>span</Text>
               </View>
               <View style={s.statDivider} />
               <View style={s.statCol}>
