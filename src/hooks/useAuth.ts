@@ -1,18 +1,19 @@
 import { useState, useEffect, useCallback } from 'react';
-import { makeRedirectUri } from 'expo-auth-session';
-import * as QueryParams from 'expo-auth-session/build/QueryParams';
 import * as Linking from 'expo-linking';
 import { supabase } from '../utils/supabase';
 import { analytics } from '../utils/analytics';
 import type { User } from '@supabase/supabase-js';
 
-const redirectTo = makeRedirectUri();
+const redirectTo = Linking.createURL('/');
 
 const createSessionFromUrl = async (url: string) => {
-  const { params, errorCode } = QueryParams.getQueryParams(url);
+  const parsed = Linking.parse(url);
+  const params = parsed.queryParams ?? {};
+  const errorCode = params.error_code as string | undefined;
   if (errorCode) throw new Error(errorCode);
 
-  const { access_token, refresh_token } = params;
+  const access_token = params.access_token as string | undefined;
+  const refresh_token = params.refresh_token as string | undefined;
   if (!access_token || !refresh_token) return;
 
   const { data, error } = await supabase.auth.setSession({
