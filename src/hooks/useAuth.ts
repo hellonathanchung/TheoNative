@@ -1,8 +1,27 @@
 import { useState, useEffect, useCallback } from 'react';
+import { makeRedirectUri } from 'expo-auth-session';
+import * as QueryParams from 'expo-auth-session/build/QueryParams';
 import * as Linking from 'expo-linking';
 import { supabase } from '../utils/supabase';
 import { analytics } from '../utils/analytics';
 import type { User } from '@supabase/supabase-js';
+
+const redirectTo = makeRedirectUri();
+
+const createSessionFromUrl = async (url: string) => {
+  const { params, errorCode } = QueryParams.getQueryParams(url);
+  if (errorCode) throw new Error(errorCode);
+
+  const { access_token, refresh_token } = params;
+  if (!access_token || !refresh_token) return;
+
+  const { data, error } = await supabase.auth.setSession({
+    access_token,
+    refresh_token,
+  });
+  if (error) throw error;
+  return data.session;
+};
 
 export function useAuth() {
   const [user, setUser] = useState<User | null>(null);
@@ -26,37 +45,14 @@ export function useAuth() {
   }, []);
 
   // Handle incoming deep links for magic link auth
+  const url = Linking.useURL();
   useEffect(() => {
-    const handleDeepLink = (event: { url: string }) => {
-      const url = event.url;
-      if (!url) return;
-
-      // Extract tokens from URL fragment (Supabase appends #access_token=...&refresh_token=...)
-      const hashIndex = url.indexOf('#');
-      if (hashIndex === -1) return;
-
-      const fragment = url.substring(hashIndex + 1);
-      const params = new URLSearchParams(fragment);
-      const accessToken = params.get('access_token');
-      const refreshToken = params.get('refresh_token');
-
-      if (accessToken && refreshToken) {
-        supabase.auth.setSession({ access_token: accessToken, refresh_token: refreshToken });
-      }
-    };
-
-    // Handle URL that launched the app (cold start)
-    Linking.getInitialURL().then((url) => {
-      if (url) handleDeepLink({ url });
-    });
-
-    // Handle URLs while app is open (warm start)
-    const sub = Linking.addEventListener('url', handleDeepLink);
-    return () => sub.remove();
-  }, []);
+    if (url) {
+      createSessionFromUrl(url);
+    }
+  }, [url]);
 
   const signInWithOtp = useCallback(async (email: string) => {
-    const redirectTo = Linking.createURL('/auth/callback');
     const { error } = await supabase.auth.signInWithOtp({
       email,
       options: { emailRedirectTo: redirectTo },
