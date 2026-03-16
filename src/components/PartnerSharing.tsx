@@ -130,16 +130,16 @@ export function PartnerSharing() {
     return (
       <View style={s.container}>
         <Text style={s.desc}>
-          Enter the 6-digit code sent to {otpEmail}
+          Enter the 8-digit code sent to {otpEmail}
         </Text>
         <TextInput
           style={s.input}
-          placeholder="6-digit code"
+          placeholder="8-digit code"
           placeholderTextColor={colors.textMuted}
           value={otp}
           onChangeText={setOtp}
           keyboardType="number-pad"
-          maxLength={6}
+          maxLength={8}
           autoFocus
         />
         {error && <Text style={s.error}>{error}</Text>}

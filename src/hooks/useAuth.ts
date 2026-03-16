@@ -4,8 +4,6 @@ import { supabase } from '../utils/supabase';
 import { analytics } from '../utils/analytics';
 import type { User } from '@supabase/supabase-js';
 
-const redirectTo = Linking.createURL('/');
-
 const createSessionFromUrl = async (url: string) => {
   const parsed = Linking.parse(url);
   const params = parsed.queryParams ?? {};
@@ -54,17 +52,16 @@ export function useAuth() {
   }, [url]);
 
   const signInWithOtp = useCallback(async (email: string) => {
-    const { error } = await supabase.auth.signInWithOtp({
-      email,
-      options: { emailRedirectTo: redirectTo },
+    const { data, error } = await supabase.auth.signInWithOtp({
+      email: email.toLowerCase(),
     });
     if (error) throw error;
     analytics.sharingSignInStarted();
   }, []);
 
   const verifyOtp = useCallback(async (email: string, token: string) => {
-    const { error } = await supabase.auth.verifyOtp({
-      email,
+    const { data, error } = await supabase.auth.verifyOtp({
+      email: email.toLowerCase(),
       token,
       type: 'email',
     });
