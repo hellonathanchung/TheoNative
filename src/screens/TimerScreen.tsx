@@ -270,27 +270,28 @@ export function TimerScreen({ app }: Props) {
 
       {/* Big Start/Stop button */}
       <View style={styles.buttonWrapper}>
-        <Animated.View
-          style={[
-            styles.bigButton,
-            {
-              backgroundColor: buttonBg,
-              shadowColor: buttonShadow,
-              transform: [{ scale }],
-            },
-          ]}
-        >
-          <Pressable
-            style={{ flex: 1, alignItems: 'center', justifyContent: 'center', borderRadius: 80, backgroundColor: 'transparent' }}
-            accessibilityRole="button"
-            accessibilityLabel={app.isActive ? 'Stop contraction' : 'Start contraction'}
-            onPress={app.isActive ? app.stopContraction : app.startContraction}
+        <Animated.View style={{ transform: [{ scale }] }}>
+          <Animated.View
+            style={[
+              styles.bigButton,
+              {
+                backgroundColor: buttonBg,
+                shadowColor: buttonShadow,
+              },
+            ]}
           >
-            <Text style={styles.bigButtonLabel}>TAP TO</Text>
-            <Text style={styles.bigButtonAction}>
-              {app.isActive ? 'Stop' : 'Start'}
-            </Text>
-          </Pressable>
+            <Pressable
+              style={{ flex: 1, alignItems: 'center', justifyContent: 'center', borderRadius: 80, backgroundColor: 'transparent' }}
+              accessibilityRole="button"
+              accessibilityLabel={app.isActive ? 'Stop contraction' : 'Start contraction'}
+              onPress={app.isActive ? app.stopContraction : app.startContraction}
+            >
+              <Text style={styles.bigButtonLabel}>TAP TO</Text>
+              <Text style={styles.bigButtonAction}>
+                {app.isActive ? 'Stop' : 'Start'}
+              </Text>
+            </Pressable>
+          </Animated.View>
         </Animated.View>
       </View>
 

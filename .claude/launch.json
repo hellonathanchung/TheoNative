@@ -3,8 +3,8 @@
   "configurations": [
     {
       "name": "Expo Dev Server",
-      "runtimeExecutable": "cmd",
-      "runtimeArgs": ["/c", "npx", "expo", "start", "--web"],
+      "runtimeExecutable": "bash",
+      "runtimeArgs": ["/Users/nathanchung/Development/TheoNative/.claude/start-expo.sh"],
       "port": 8081,
       "autoPort": true
     }

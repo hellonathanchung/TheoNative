@@ -15,6 +15,9 @@ export const posthogClient = Platform.OS !== 'web'
       flushInterval: 30000,
       captureNativeAppLifecycleEvents: true,
       captureDeepLinks: true,
+      autocapture: {
+        captureScreens: false,
+      },
     })
   : null;
 

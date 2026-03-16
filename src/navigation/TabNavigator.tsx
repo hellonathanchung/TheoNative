@@ -60,7 +60,7 @@ export function TabNavigator({ app }: Props) {
       offsetX.current = nextOffset;
       Animated.spring(translateX, {
         toValue: nextOffset,
-        useNativeDriver: true,
+        useNativeDriver: false,
         damping: 24,
         stiffness: 200,
         mass: 0.8,

@@ -7,7 +7,17 @@
       "Bash(git push:*)",
       "mcp__1b065bd3-ccb7-46fb-ac8b-fb740824cd87__get_project",
       "mcp__1b065bd3-ccb7-46fb-ac8b-fb740824cd87__list_tables",
-      "mcp__1b065bd3-ccb7-46fb-ac8b-fb740824cd87__apply_migration"
+      "mcp__1b065bd3-ccb7-46fb-ac8b-fb740824cd87__apply_migration",
+      "Bash(eas secret:push --scope project --env-file .env --force)",
+      "Bash(npx eas-cli secret:push --scope project --env-file .env --force)",
+      "Bash(npx eas-cli build --profile preview --platform ios --non-interactive)",
+      "Bash(npx eas-cli build:view 68ce32b2-00da-4a37-8d3f-92f6784dafd2 --json)",
+      "Bash(python3 -c \"import json,sys; p=json.load\\(sys.stdin\\); print\\(json.dumps\\({k:v for k,v in p.get\\(''dependencies'',{}\\).items\\(\\)}, indent=2\\)\\)\")",
+      "Bash(npx eas-cli env:list --environment preview)",
+      "Bash(npx eas-cli secret:list)",
+      "Bash(command -v nvm)",
+      "Read(//Users/nathanchung/.nvm/versions/node/**)",
+      "Bash(brew list node)"
     ]
   }
 }

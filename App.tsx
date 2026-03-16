@@ -4,19 +4,12 @@ import { NavigationContainer } from '@react-navigation/native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import * as Notifications from 'expo-notifications';
-import { PostHogProvider } from 'posthog-react-native';
 import { TabNavigator } from './src/navigation/TabNavigator';
 import { AlertBanner } from './src/components/AlertBanner';
 import { useContractions } from './src/hooks/useContractions';
 import { DarkColors, LightColors, ThemeProvider } from './src/theme';
-import { posthogClient, analytics } from './src/utils/analytics';
+import { analytics } from './src/utils/analytics';
 import { SharingProvider } from './src/contexts/SharingContext';
-
-// Conditionally wraps children in PostHogProvider only when a client is available (native only)
-function MaybePostHog({ children }: { children: React.ReactNode }) {
-  if (!posthogClient) return <>{children}</>;
-  return <PostHogProvider client={posthogClient}>{children}</PostHogProvider>;
-}
 
 // Configure notification handler
 Notifications.setNotificationHandler({
@@ -97,8 +90,7 @@ export default function App() {
     undoState?.type === 'session' ? 'Session deleted' : 'Contraction deleted';
 
   return (
-    <MaybePostHog>
-      <ThemeProvider
+    <ThemeProvider
         mode={mode}
         setMode={(nextMode) => app.updateSettings({ themeMode: nextMode })}
       >
@@ -169,7 +161,6 @@ export default function App() {
           </SharingProvider>
         </SafeAreaProvider>
       </ThemeProvider>
-    </MaybePostHog>
   );
 }
 
