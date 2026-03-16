@@ -40,6 +40,8 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   ],
   extra: {
     posthogApiKey: process.env.POSTHOG_API_KEY ?? '',
+    supabaseUrl: process.env.SUPABASE_URL ?? '',
+    supabaseAnonKey: process.env.SUPABASE_ANON_KEY ?? '',
     eas: {
       projectId: '354e11a0-1de5-4b99-a963-bb83a020d5f1',
     },

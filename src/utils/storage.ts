@@ -7,7 +7,6 @@ const CONTRACTIONS_KEY = 'theo_contractions';
 const SETTINGS_KEY = 'theo_settings';
 const ACTIVE_KEY = 'theo_active';
 const SESSIONS_KEY = 'theo_sessions';
-const ONBOARDING_KEY = 'theo_onboarding_complete';
 
 export const DEFAULT_SETTINGS: Settings = {
   preset: '5-1-1' as const,
@@ -76,18 +75,6 @@ export function saveSessions(sessions: Session[]): void {
   storage.set(SESSIONS_KEY, JSON.stringify(sessions));
 }
 
-export function loadOnboardingComplete(): boolean {
-  try {
-    if (storage.contains(SETTINGS_KEY)) return true;
-    return storage.getString(ONBOARDING_KEY) === 'true';
-  } catch {
-    return false;
-  }
-}
-
-export function saveOnboardingComplete(): void {
-  storage.set(ONBOARDING_KEY, 'true');
-}
 
 export function hasExistingData(): boolean {
   return storage.contains(SETTINGS_KEY);
@@ -124,7 +111,6 @@ export function clearAllData(): void {
   storage.remove(SETTINGS_KEY);
   storage.remove(ACTIVE_KEY);
   storage.remove(SESSIONS_KEY);
-  storage.remove(ONBOARDING_KEY);
   storage.remove('theo_dino_high');
   storage.remove('theo_bubble_high');
 }

@@ -8,8 +8,9 @@ import {
   StyleSheet,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { formatDuration, formatTime, formatInterval } from "../utils/format";
+import { formatDuration, formatTime, formatInterval, groupWithDaySeparators } from "../utils/format";
 import { useTheme, type ThemeColors } from "../theme";
+import { DaySeparator } from "../components/DaySeparator";
 import type { Contraction, Session } from "../types";
 import type { useContractions } from "../hooks/useContractions";
 import { ContractionDetailModal } from "../components/ContractionDetailModal";
@@ -65,7 +66,11 @@ export function HistoryScreen({ app }: Props) {
   const maxDuration = Math.max(60, ...timelineDurations);
   const maxInterval = Math.max(60, ...intervals);
 
-  const reversedContractions = [...contractions].reverse();
+  const reversedContractions = useMemo(() => [...contractions].reverse(), [contractions]);
+  const groupedContractions = useMemo(
+    () => groupWithDaySeparators(reversedContractions),
+    [reversedContractions],
+  );
   const topSectionHeight = contractions.length > 0 ? 240 : 160;
 
   return (
@@ -171,7 +176,11 @@ export function HistoryScreen({ app }: Props) {
 
               {/* Current contractions list (reversed) */}
               <View style={s.listSection}>
-                {reversedContractions.map((c) => {
+                {groupedContractions.map((item) => {
+                  if (item.type === 'separator') {
+                    return <DaySeparator key={item.key} label={item.label} />;
+                  }
+                  const c = item.contraction;
                   const originalIndex = contractions.indexOf(c);
                   const number = originalIndex + 1;
                   const prev =
@@ -182,7 +191,7 @@ export function HistoryScreen({ app }: Props) {
 
                   return (
                     <Pressable
-                      key={c.id}
+                      key={item.key}
                       style={s.row}
                       onPress={() => setSelectedContractionId(c.id)}
                     >
@@ -320,6 +329,11 @@ function SessionCard({
       ? sessionIntervals.reduce((a, b) => a + b, 0) / sessionIntervals.length
       : 0;
 
+  const groupedSessionContractions = useMemo(
+    () => groupWithDaySeparators(session.contractions),
+    [session.contractions],
+  );
+
   return (
     <View style={styles.sessionCard}>
       <Pressable style={styles.sessionHeader} onPress={onToggle}>
@@ -341,13 +355,18 @@ function SessionCard({
 
       {expanded && (
         <View>
-          {session.contractions.map((c, i) => {
+          {groupedSessionContractions.map((item) => {
+            if (item.type === 'separator') {
+              return <DaySeparator key={item.key} label={item.label} />;
+            }
+            const c = item.contraction;
+            const i = session.contractions.indexOf(c);
             const prev = i > 0 ? session.contractions[i - 1] : null;
             const interval = prev?.endTime
               ? (c.startTime - prev.endTime) / 1000
               : null;
             return (
-              <View key={c.id} style={styles.row}>
+              <View key={item.key} style={styles.row}>
                 <Text style={styles.rowNumber}>#{i + 1}</Text>
                 <Text style={styles.rowTime}>{formatTime(c.startTime)}</Text>
                 <View style={styles.rowDetail}>

@@ -1,3 +1,4 @@
+import { Platform } from 'react-native';
 import PostHog from 'posthog-react-native';
 import Constants from 'expo-constants';
 
@@ -5,75 +6,96 @@ import Constants from 'expo-constants';
 const POSTHOG_API_KEY = Constants.expoConfig?.extra?.posthogApiKey ?? '';
 const POSTHOG_HOST = 'https://us.i.posthog.com';
 
-export const posthogClient = new PostHog(POSTHOG_API_KEY, {
-  host: POSTHOG_HOST,
-  // Flush events every 30 seconds or when 20 events are queued
-  flushAt: 20,
-  flushInterval: 30000,
-  // Capture app lifecycle events automatically
-  captureNativeAppLifecycleEvents: true,
-  // Capture screen views automatically
-  captureDeepLinks: true,
-});
+// PostHog requires native file storage (expo-file-system) which isn't available on web.
+// Skip initialization on web so the dev server doesn't crash.
+export const posthogClient = Platform.OS !== 'web'
+  ? new PostHog(POSTHOG_API_KEY, {
+      host: POSTHOG_HOST,
+      flushAt: 20,
+      flushInterval: 30000,
+      captureNativeAppLifecycleEvents: true,
+      captureDeepLinks: true,
+    })
+  : null;
+
+const capture = (event: string, props?: Record<string, string | number | boolean | null>) => {
+  posthogClient?.capture(event, props);
+};
 
 // Helper to track events with consistent naming
 export const analytics = {
   // Contraction tracking
   contractionStarted: () =>
-    posthogClient.capture('contraction_started'),
+    capture('contraction_started'),
 
   contractionStopped: (durationSeconds: number, intensity?: string) =>
-    posthogClient.capture('contraction_stopped', {
+    capture('contraction_stopped', {
       duration_seconds: durationSeconds,
       intensity: intensity ?? 'none',
     }),
 
   contractionDeleted: () =>
-    posthogClient.capture('contraction_deleted'),
+    capture('contraction_deleted'),
 
   // Session tracking
   sessionStarted: () =>
-    posthogClient.capture('session_started'),
+    capture('session_started'),
 
   sessionEnded: (contractionCount: number) =>
-    posthogClient.capture('session_ended', {
+    capture('session_ended', {
       contraction_count: contractionCount,
     }),
 
   // Alert tracking
   alertTriggered: (rule: string) =>
-    posthogClient.capture('alert_triggered', { rule }),
+    capture('alert_triggered', { rule }),
 
   alertDismissed: () =>
-    posthogClient.capture('alert_dismissed'),
+    capture('alert_dismissed'),
 
   // Settings
   settingsChanged: (setting: string, value: string | number | boolean) =>
-    posthogClient.capture('settings_changed', { setting, value }),
+    capture('settings_changed', { setting, value }),
 
   presetSelected: (preset: string) =>
-    posthogClient.capture('preset_selected', { preset }),
+    capture('preset_selected', { preset }),
 
   themeChanged: (theme: string) =>
-    posthogClient.capture('theme_changed', { theme }),
+    capture('theme_changed', { theme }),
 
   // Feature usage
-  onboardingCompleted: (preset: string) =>
-    posthogClient.capture('onboarding_completed', { preset }),
-
   tabViewed: (tab: string) =>
-    posthogClient.capture('tab_viewed', { tab }),
+    capture('tab_viewed', { tab }),
 
   gameStarted: (game: string) =>
-    posthogClient.capture('game_started', { game }),
+    capture('game_started', { game }),
 
   // Engagement
   appOpened: () =>
-    posthogClient.capture('app_opened'),
+    capture('app_opened'),
 
   staleSessionPromptShown: () =>
-    posthogClient.capture('stale_session_prompt_shown'),
+    capture('stale_session_prompt_shown'),
 
   staleSessionAction: (action: 'new_session' | 'keep_session') =>
-    posthogClient.capture('stale_session_action', { action }),
+    capture('stale_session_action', { action }),
+
+  // Partner sharing
+  sharingSignInStarted: () =>
+    capture('sharing_sign_in_started'),
+
+  sharingSignInCompleted: () =>
+    capture('sharing_sign_in_completed'),
+
+  sharingSignedOut: () =>
+    capture('sharing_signed_out'),
+
+  partnerInviteSent: () =>
+    capture('partner_invite_sent'),
+
+  partnerInviteAccepted: () =>
+    capture('partner_invite_accepted'),
+
+  partnerDisconnected: () =>
+    capture('partner_disconnected'),
 };

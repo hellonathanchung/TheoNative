@@ -55,8 +55,6 @@ export function useContractions() {
   const [alertMessage, setAlertMessage] = useState<string | null>(null);
   const [lastAlertTime, setLastAlertTime] = useState(0);
   const [pendingIntensityId, setPendingIntensityId] = useState<string | null>(null);
-  const [persistenceEnabled, setPersistenceEnabled] = useState(true);
-  const [onboardingResetAt, setOnboardingResetAt] = useState<number | null>(null);
   const [undoState, setUndoState] = useState<{
     type: 'contraction' | 'session';
     item: Contraction | Session;
@@ -81,21 +79,18 @@ export function useContractions() {
 
   // Persist contractions
   useEffect(() => {
-    if (!persistenceEnabled) return;
     saveContractions(contractions);
-  }, [contractions, persistenceEnabled]);
+  }, [contractions]);
 
   // Persist settings
   useEffect(() => {
-    if (!persistenceEnabled) return;
     saveSettings(settings);
-  }, [settings, persistenceEnabled]);
+  }, [settings]);
 
   // Persist sessions
   useEffect(() => {
-    if (!persistenceEnabled) return;
     saveSessions(sessions);
-  }, [sessions, persistenceEnabled]);
+  }, [sessions]);
 
   const startContraction = useCallback(() => {
     const now = Date.now();
@@ -291,16 +286,7 @@ export function useContractions() {
     setUndoState(null);
   }, []);
 
-  const disablePersistence = useCallback(() => {
-    setPersistenceEnabled(false);
-  }, []);
-
-  const enablePersistence = useCallback(() => {
-    setPersistenceEnabled(true);
-  }, []);
-
   const resetAllData = useCallback(() => {
-    setPersistenceEnabled(false);
     clearAllData();
     if (undoTimeoutRef.current) {
       clearTimeout(undoTimeoutRef.current);
@@ -316,7 +302,6 @@ export function useContractions() {
     setLastAlertTime(0);
     setPendingIntensityId(null);
     saveActiveState(false, null);
-    setOnboardingResetAt(Date.now());
   }, []);
 
   const completed = contractions.filter((c) => c.endTime !== null);
@@ -349,9 +334,6 @@ export function useContractions() {
     updateSettings,
     getUrgencyState,
     resetAllData,
-    disablePersistence,
-    enablePersistence,
-    onboardingResetAt,
     undoState,
     undoLast,
     clearUndo,
