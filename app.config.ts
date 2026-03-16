@@ -39,7 +39,6 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   plugins: [
     'expo-notifications',
     'expo-localization',
-    'expo-web-browser',
   ],
   extra: {
     posthogApiKey: process.env.POSTHOG_API_KEY ?? '',

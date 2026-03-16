@@ -20,7 +20,8 @@
       "Bash(brew list node)",
       "Bash(export NVM_DIR=\"$HOME/.nvm\")",
       "Bash(. \"$NVM_DIR/nvm.sh\")",
-      "Bash(nvm use 25)"
+      "Bash(nvm use 25)",
+      "mcp__Claude_Preview__preview_start"
     ]
   }
 }
