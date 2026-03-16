@@ -9,6 +9,7 @@ import {
   useWindowDimensions,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { Ionicons } from "@expo/vector-icons";
 import { ScreenBackground } from "../components/ScreenBackground";
 import { TimerScreen } from "../screens/TimerScreen";
 import { HistoryScreen } from "../screens/HistoryScreen";
@@ -42,10 +43,10 @@ export function TabNavigator({ app }: Props) {
 
   const tabs = useMemo(
     () => [
-      { key: "Track" as TabKey, label: "Track", icon: "⏱", Screen: TimerScreen },
-      { key: "History" as TabKey, label: "History", icon: "📋", Screen: HistoryScreen },
-      { key: "Relax" as TabKey, label: "Relax", icon: "🌿", Screen: RelaxScreen },
-      { key: "Settings" as TabKey, label: "Settings", icon: "⚙️", Screen: SettingsScreen },
+      { key: "Track" as TabKey, label: "Track", icon: "timer-outline" as const, Screen: TimerScreen },
+      { key: "History" as TabKey, label: "History", icon: "list-outline" as const, Screen: HistoryScreen },
+      { key: "Relax" as TabKey, label: "Relax", icon: "leaf-outline" as const, Screen: RelaxScreen },
+      { key: "Settings" as TabKey, label: "Settings", icon: "settings-outline" as const, Screen: SettingsScreen },
     ],
     [],
   );
@@ -152,7 +153,7 @@ export function TabNavigator({ app }: Props) {
                 style={styles.tabItem}
                 onPress={() => setIndex(i)}
               >
-                <Text style={[styles.tabIcon, { color }]}>{tab.icon}</Text>
+                <Ionicons name={tab.icon} size={20} color={color} />
                 <Text style={[styles.tabLabel, { color }]}>{tab.label}</Text>
               </Pressable>
             );

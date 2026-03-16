@@ -71,11 +71,9 @@ export function HistoryScreen({ app }: Props) {
     () => groupWithDaySeparators(reversedContractions),
     [reversedContractions],
   );
-  const topSectionHeight = contractions.length > 0 ? 240 : 160;
-
   return (
     <View style={s.container}>
-      <View style={[s.topSection, { height: topSectionHeight, paddingTop: insets.top }]}>
+      <View style={[s.topSection, { paddingTop: insets.top }]}>
           <View style={s.sectionWrap}>
           <Text style={s.title}>History</Text>
           </View>

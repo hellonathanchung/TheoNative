@@ -17,7 +17,10 @@
       "Bash(npx eas-cli secret:list)",
       "Bash(command -v nvm)",
       "Read(//Users/nathanchung/.nvm/versions/node/**)",
-      "Bash(brew list node)"
+      "Bash(brew list node)",
+      "Bash(export NVM_DIR=\"$HOME/.nvm\")",
+      "Bash(. \"$NVM_DIR/nvm.sh\")",
+      "Bash(nvm use 25)"
     ]
   }
 }

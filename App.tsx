@@ -4,6 +4,7 @@ import { NavigationContainer } from '@react-navigation/native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import * as Notifications from 'expo-notifications';
+import { Ionicons } from '@expo/vector-icons';
 import { TabNavigator } from './src/navigation/TabNavigator';
 import { AlertBanner } from './src/components/AlertBanner';
 import { useContractions } from './src/hooks/useContractions';
@@ -111,7 +112,7 @@ export default function App() {
           <Modal visible={showStalePrompt} transparent animationType="fade">
             <View style={styles.modalOverlay}>
               <View style={styles.modalCard}>
-                <Text style={{ fontSize: 32 }}>{'\uD83D\uDC4B'}</Text>
+                <Ionicons name="hand-left-outline" size={32} color="#4CAF50" />
                 <Text style={styles.modalTitle}>Welcome back!</Text>
                 <Text style={styles.modalBody}>
                   It has been a while since your last contraction. Would you like to start a new session?

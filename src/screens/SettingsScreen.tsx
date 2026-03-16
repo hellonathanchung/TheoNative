@@ -3,6 +3,7 @@ import { View, Text, Pressable, Switch, ScrollView, Modal, Linking, StyleSheet }
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Notifications from 'expo-notifications';
 import * as Clipboard from 'expo-clipboard';
+import { Ionicons } from '@expo/vector-icons';
 import { useTheme, type ThemeColors } from '../theme';
 import type { Preset } from '../types';
 import type { useContractions } from '../hooks/useContractions';
@@ -313,7 +314,7 @@ export function SettingsScreen({ app }: Props) {
       <Modal visible={showClearConfirm} transparent animationType="fade">
         <View style={s.modalOverlay}>
           <View style={s.modalCard}>
-            <Text style={{ fontSize: 28 }}>🗑️</Text>
+            <Ionicons name="trash-outline" size={28} color="#E57373" />
             <Text style={s.modalTitle}>Clear all data?</Text>
             <Text style={s.modalBody}>
               This will permanently delete all your contractions, sessions, settings, and game high scores. This cannot be undone.
