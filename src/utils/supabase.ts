@@ -24,15 +24,16 @@ const mmkvStorage = {
 };
 
 const extra = Constants.expoConfig?.extra ?? {};
-// On web dev, Constants.expoConfig.extra may be empty — fall back to process.env
+// Primary: app.config.ts extra (native builds via EAS)
+// Fallback: EXPO_PUBLIC_ env vars (auto-injected by Metro on all platforms, including web)
 const supabaseUrl =
   (extra.supabaseUrl as string) ||
-  process.env.SUPABASE_URL ||
-  'https://xmdciilpqxyhfocpntqx.supabase.co';
+  process.env.EXPO_PUBLIC_SUPABASE_URL ||
+  '';
 const supabaseAnonKey =
   (extra.supabaseAnonKey as string) ||
-  process.env.SUPABASE_ANON_KEY ||
-  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhtZGNpaWxwcXh5aGZvY3BudHF4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM2MTc2NDUsImV4cCI6MjA4OTE5MzY0NX0.IjxCW625uhIo2P4g3LEUuQA0RNDtwtn8AAwBfnbqpJU';
+  process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ||
+  '';
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
