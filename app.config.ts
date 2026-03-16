@@ -5,6 +5,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   name: 'Theo',
   slug: 'theo-native',
   version: '1.0.0',
+  scheme: 'theo',
   orientation: 'portrait',
   icon: './assets/icon.png',
   userInterfaceStyle: 'light',
@@ -21,6 +22,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     config: {
       usesNonExemptEncryption: false,
     },
+    associatedDomains: ['applinks:theo.nathanchung.com'],
   },
   android: {
     package: 'com.hellonathanchung.theo',
