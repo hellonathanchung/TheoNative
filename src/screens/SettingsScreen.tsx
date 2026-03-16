@@ -6,6 +6,7 @@ import * as Clipboard from 'expo-clipboard';
 import { useTheme, type ThemeColors } from '../theme';
 import type { Preset } from '../types';
 import type { useContractions } from '../hooks/useContractions';
+import { PartnerSharing } from '../components/PartnerSharing';
 
 interface Props {
   app: ReturnType<typeof useContractions>;
@@ -263,6 +264,10 @@ export function SettingsScreen({ app }: Props) {
           </Pressable>
         </View>
       </SettingRow>
+
+      {/* Partner Sharing */}
+      <Text style={[s.sectionLabel, { marginTop: 24 }]}>PARTNER SHARING</Text>
+      <PartnerSharing />
 
       {/* Support */}
       <Text style={[s.sectionLabel, { marginTop: 24 }]}>SUPPORT</Text>

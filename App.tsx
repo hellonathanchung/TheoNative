@@ -6,13 +6,17 @@ import { StatusBar } from 'expo-status-bar';
 import * as Notifications from 'expo-notifications';
 import { PostHogProvider } from 'posthog-react-native';
 import { TabNavigator } from './src/navigation/TabNavigator';
-import { Onboarding } from './src/components/Onboarding';
 import { AlertBanner } from './src/components/AlertBanner';
 import { useContractions } from './src/hooks/useContractions';
-import { loadOnboardingComplete, saveOnboardingComplete } from './src/utils/storage';
 import { DarkColors, LightColors, ThemeProvider } from './src/theme';
 import { posthogClient, analytics } from './src/utils/analytics';
-import type { Preset } from './src/types';
+import { SharingProvider } from './src/contexts/SharingContext';
+
+// Conditionally wraps children in PostHogProvider only when a client is available (native only)
+function MaybePostHog({ children }: { children: React.ReactNode }) {
+  if (!posthogClient) return <>{children}</>;
+  return <PostHogProvider client={posthogClient}>{children}</PostHogProvider>;
+}
 
 // Configure notification handler
 Notifications.setNotificationHandler({
@@ -25,48 +29,23 @@ Notifications.setNotificationHandler({
   }),
 });
 
-const PRESET_VALUES: Record<Exclude<Preset, 'custom'>, { frequencyMinutes: number; durationSeconds: number; timeWindowMinutes: number }> = {
-  '5-1-1': { frequencyMinutes: 5, durationSeconds: 60, timeWindowMinutes: 60 },
-  '4-1-1': { frequencyMinutes: 4, durationSeconds: 60, timeWindowMinutes: 60 },
-  '3-1-1': { frequencyMinutes: 3, durationSeconds: 60, timeWindowMinutes: 60 },
-};
-
 const TWENTY_FOUR_HOURS = 24 * 60 * 60 * 1000;
 
 export default function App() {
-  const [showOnboarding, setShowOnboarding] = useState(() => !loadOnboardingComplete());
   const [showStalePrompt, setShowStalePrompt] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const toastOpacity = useRef(new Animated.Value(0)).current;
   const undoOpacity = useRef(new Animated.Value(0)).current;
   const app = useContractions();
-  const { disablePersistence, enablePersistence, undoState, undoLast, clearUndo } = app;
+  const { undoState, undoLast, clearUndo } = app;
   const mode = app.settings.themeMode ?? 'light';
   const colors = mode === 'dark' ? DarkColors : LightColors;
   const styles = useMemo(() => createStyles(colors, mode === 'dark'), [colors, mode]);
 
+  // Request notification permission on mount
   useEffect(() => {
-    if (showOnboarding) {
-      disablePersistence();
-    } else {
-      enablePersistence();
-    }
-  }, [showOnboarding, disablePersistence, enablePersistence]);
-
-  // Request notification permission after onboarding
-  useEffect(() => {
-    if (!showOnboarding) {
-      Notifications.requestPermissionsAsync();
-    }
-  }, [showOnboarding]);
-
-  useEffect(() => {
-    if (app.onboardingResetAt) {
-      setShowOnboarding(true);
-      setShowStalePrompt(false);
-      setToastMessage('All data cleared');
-    }
-  }, [app.onboardingResetAt]);
+    Notifications.requestPermissionsAsync();
+  }, []);
 
   useEffect(() => {
     if (!toastMessage) return;
@@ -105,7 +84,7 @@ export default function App() {
 
   // Check if session is stale (24+ hours since last contraction)
   useEffect(() => {
-    if (showOnboarding || app.contractions.length === 0) return;
+    if (app.contractions.length === 0) return;
     const lastContraction = app.contractions[app.contractions.length - 1];
     const lastTime = lastContraction.endTime ?? lastContraction.startTime;
     if (Date.now() - lastTime > TWENTY_FOUR_HOURS) {
@@ -114,68 +93,17 @@ export default function App() {
     }
   }, []);
 
-  const handleOnboardingComplete = (preset: Preset) => {
-    saveOnboardingComplete();
-    app.enablePersistence();
-    if (preset !== 'custom') {
-      app.updateSettings({ preset, ...PRESET_VALUES[preset] });
-    }
-    analytics.onboardingCompleted(preset);
-    setShowOnboarding(false);
-  };
-
-  if (showOnboarding) {
-    const undoMessage =
-      undoState?.type === 'session' ? 'Session deleted' : 'Contraction deleted';
-    return (
-      <PostHogProvider client={posthogClient}>
-        <ThemeProvider
-          mode={mode}
-          setMode={(nextMode) => app.updateSettings({ themeMode: nextMode })}
-        >
-          <SafeAreaProvider>
-            <Onboarding onComplete={handleOnboardingComplete} />
-            {toastMessage && (
-              <Animated.View style={[styles.toast, { opacity: toastOpacity }]}>
-                <Text style={styles.toastText}>{toastMessage}</Text>
-              </Animated.View>
-            )}
-            {undoState && (
-              <Animated.View
-                style={[
-                  styles.undoToast,
-                  { opacity: undoOpacity, top: toastMessage ? 64 : 16 },
-                ]}
-              >
-                <Text style={styles.undoText}>{undoMessage}</Text>
-                <Pressable
-                  style={styles.undoAction}
-                  onPress={() => {
-                    undoLast();
-                    clearUndo();
-                  }}
-                >
-                  <Text style={styles.undoActionText}>Undo</Text>
-                </Pressable>
-              </Animated.View>
-            )}
-            <StatusBar style={mode === 'dark' ? 'light' : 'dark'} />
-          </SafeAreaProvider>
-        </ThemeProvider>
-      </PostHogProvider>
-    );
-  }
-
   const undoMessage =
     undoState?.type === 'session' ? 'Session deleted' : 'Contraction deleted';
 
   return (
-    <PostHogProvider client={posthogClient}>
+    <MaybePostHog>
       <ThemeProvider
         mode={mode}
         setMode={(nextMode) => app.updateSettings({ themeMode: nextMode })}
       >
         <SafeAreaProvider>
+          <SharingProvider localContractions={app.contractions}>
           <View style={styles.container}>
 
           {/* Alert banner */}
@@ -238,9 +166,10 @@ export default function App() {
           )}
           </View>
           <StatusBar style={mode === 'dark' ? 'light' : 'dark'} />
+          </SharingProvider>
         </SafeAreaProvider>
       </ThemeProvider>
-    </PostHogProvider>
+    </MaybePostHog>
   );
 }
 

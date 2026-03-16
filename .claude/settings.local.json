@@ -4,7 +4,10 @@
       "Bash(npx expo:*)",
       "Bash(git add:*)",
       "Bash(npx eas:*)",
-      "Bash(git push:*)"
+      "Bash(git push:*)",
+      "mcp__1b065bd3-ccb7-46fb-ac8b-fb740824cd87__get_project",
+      "mcp__1b065bd3-ccb7-46fb-ac8b-fb740824cd87__list_tables",
+      "mcp__1b065bd3-ccb7-46fb-ac8b-fb740824cd87__apply_migration"
     ]
   }
 }
