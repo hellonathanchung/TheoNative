@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
   View,
   Text,
@@ -6,12 +6,14 @@ import {
   Modal,
   StyleSheet,
   Platform,
+  Image,
 } from "react-native";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { formatDuration, formatInterval } from "../utils/format";
 import { useTheme, type ThemeColors } from "../theme";
 import type { Contraction } from "../types";
 import { IntensitySlider } from "./IntensitySlider";
+import { useSwipeLock } from "../contexts/SwipeLockContext";
 
 interface Props {
   contraction: Contraction | null;
@@ -33,6 +35,14 @@ export function ContractionDetailModal({
   const { colors } = useTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const { lock, unlock } = useSwipeLock();
+
+  useEffect(() => {
+    if (c) {
+      lock();
+      return () => unlock();
+    }
+  }, [c, lock, unlock]);
 
   if (!c) return null;
 
@@ -140,25 +150,31 @@ export function ContractionDetailModal({
               style={[
                 styles.flagToggle,
                 {
-                  backgroundColor: c.flagged ? colors.warmAmber : colors.beige,
+                  backgroundColor: c.flagged
+                    ? colors.warmAmber + "33"
+                    : colors.beige,
+                  borderColor: c.flagged ? colors.warmAmber : colors.beige,
                 },
               ]}
               onPress={() =>
                 !readOnly && onUpdate(c.id, { flagged: !c.flagged })
               }
             >
-              <Text
+              <Image
+                source={require("../../assets/flag-icon.png")}
                 style={[
-                  styles.flagToggleText,
-                  { color: c.flagged ? colors.white : colors.textMuted },
+                  styles.flagIconLeft,
+                  {
+                    opacity: c.flagged ? 1 : 0.45,
+                    transform: [{ rotate: c.flagged ? "15deg" : "-15deg" }],
+                  },
                 ]}
-              >
-                ?
-              </Text>
+                resizeMode="contain"
+              />
               <Text
                 style={[
                   styles.flagLabel,
-                  { color: c.flagged ? colors.white : colors.textMuted },
+                  { color: c.flagged ? colors.warmAmber : colors.textMuted },
                 ]}
               >
                 {c.flagged ? "Flagged" : "Tap to flag"}
@@ -169,13 +185,24 @@ export function ContractionDetailModal({
           <View style={styles.section}>
             <Text style={styles.sectionLabel}>INTENSITY</Text>
             {c.intensity != null ? (
-              <IntensitySlider
-                value={c.intensity}
-                onChange={(v) => !readOnly && onUpdate(c.id, { intensity: v })}
-                readOnly={readOnly}
-              />
+              <>
+                <IntensitySlider
+                  value={c.intensity}
+                  onChange={(v) =>
+                    !readOnly && onUpdate(c.id, { intensity: v })
+                  }
+                  readOnly={readOnly}
+                />
+                {!readOnly && (
+                  <Pressable
+                    onPress={() => onUpdate(c.id, { intensity: undefined })}
+                  >
+                    <Text style={styles.removeIntensity}>Remove intensity</Text>
+                  </Pressable>
+                )}
+              </>
             ) : !readOnly ? (
-              <Pressable onPress={() => onUpdate(c.id, { intensity: 25 })}>
+              <Pressable onPress={() => onUpdate(c.id, { intensity: 50 })}>
                 <Text style={styles.addIntensity}>Tap to add intensity</Text>
               </Pressable>
             ) : null}
@@ -284,7 +311,34 @@ const createStyles = (colors: ThemeColors) =>
     fieldValue: { fontSize: 15, fontWeight: "500", color: colors.textPrimary },
     pickerContainer: { alignItems: "center", marginVertical: -8 },
     timePicker: { height: 100, width: 280 },
+    flagToggle: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "center",
+      paddingVertical: 10,
+      paddingHorizontal: 14,
+      borderRadius: 12,
+      borderWidth: 1.5,
+      position: "relative" as const,
+    },
+    flagIconLeft: {
+      position: "absolute" as const,
+      left: 10,
+      width: 44,
+      height: 44,
+    },
+    flagLabel: {
+      fontSize: 14,
+      fontWeight: "500",
+      textAlign: "center" as const,
+    },
     addIntensity: { fontSize: 13, color: colors.textMuted, paddingVertical: 8 },
+    removeIntensity: {
+      fontSize: 12,
+      color: colors.textMuted,
+      paddingTop: 6,
+      textDecorationLine: "underline",
+    },
     confirmRow: { alignItems: "center", gap: 8 },
     deleteBtn: {
       width: "100%",

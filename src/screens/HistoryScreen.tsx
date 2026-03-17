@@ -2,6 +2,7 @@ import React, { useMemo, useState } from "react";
 import {
   View,
   Text,
+  Image,
   Pressable,
   ScrollView,
   Alert,
@@ -16,11 +17,12 @@ import {
 } from "../utils/format";
 import { useTheme, type ThemeColors } from "../theme";
 import { DaySeparator } from "../components/DaySeparator";
-import { getIntensityBorderStyle } from "../utils/intensity";
+import { getIntensityBgStyle } from "../utils/intensity";
 import type { Contraction, Session } from "../types";
 import type { useContractions } from "../hooks/useContractions";
 import { ContractionDetailModal } from "../components/ContractionDetailModal";
 import { useSharing, type MergedContraction } from "../contexts/SharingContext";
+import { SwipeableRow } from "../components/SwipeableRow";
 
 interface Props {
   app: ReturnType<typeof useContractions>;
@@ -131,44 +133,59 @@ export function HistoryScreen({ app }: Props) {
                   ? (c.startTime - prev.endTime) / 1000
                   : null;
 
-                const borderStyle =
-                  c.intensity != null
-                    ? getIntensityBorderStyle(c.intensity)
-                    : { borderColor: colors.beige, borderWidth: 1 };
+                const bgStyle =
+                  c.intensity != null ? getIntensityBgStyle(c.intensity) : {};
                 return (
-                  <Pressable
+                  <SwipeableRow
                     key={item.key}
-                    style={[s.row, borderStyle]}
-                    onPress={() => {
-                      setSelectedContractionId(c.id);
-                      setSelectedIsPartner(c.isPartner);
-                    }}
+                    onDelete={() => app.deleteContraction(c.id)}
+                    onFlag={() =>
+                      app.updateContraction(c.id, { flagged: !c.flagged })
+                    }
+                    colors={colors}
                   >
-                    {c.isPartner && (
-                      <View style={s.partnerBadge}>
-                        <Text style={s.partnerBadgeText}>{partnerInitial}</Text>
+                    <Pressable
+                      onPress={() => {
+                        setSelectedContractionId(c.id);
+                        setSelectedIsPartner(c.isPartner);
+                      }}
+                    >
+                      <View style={[s.row, bgStyle]}>
+                        {c.isPartner && (
+                          <View style={s.partnerBadge}>
+                            <Text style={s.partnerBadgeText}>
+                              {partnerInitial}
+                            </Text>
+                          </View>
+                        )}
+                        {c.flagged && (
+                          <Image
+                            source={require("../../assets/flag-icon.png")}
+                            style={s.flagBadge}
+                            resizeMode="contain"
+                          />
+                        )}
+                        <Text style={s.rowNumber}>#{number}</Text>
+                        <Text style={s.rowTime}>{formatTime(c.startTime)}</Text>
+                        <View style={s.rowDetail}>
+                          <Text style={s.rowValue}>
+                            {c.duration ? formatDuration(c.duration) : "--"}
+                          </Text>
+                          <Text style={s.rowLabel}>duration</Text>
+                        </View>
+                        <View style={s.rowDetail}>
+                          <Text
+                            style={[s.rowValue, { color: colors.deepGreen }]}
+                          >
+                            {interval !== null
+                              ? formatInterval(interval)
+                              : "--"}
+                          </Text>
+                          <Text style={s.rowLabel}>apart</Text>
+                        </View>
                       </View>
-                    )}
-                    {c.flagged && (
-                      <View style={s.flagBadge}>
-                        <Text style={s.flagBadgeText}>?</Text>
-                      </View>
-                    )}
-                    <Text style={s.rowNumber}>#{number}</Text>
-                    <Text style={s.rowTime}>{formatTime(c.startTime)}</Text>
-                    <View style={s.rowDetail}>
-                      <Text style={s.rowValue}>
-                        {c.duration ? formatDuration(c.duration) : "--"}
-                      </Text>
-                      <Text style={s.rowLabel}>duration</Text>
-                    </View>
-                    <View style={s.rowDetail}>
-                      <Text style={[s.rowValue, { color: colors.deepGreen }]}>
-                        {interval !== null ? formatInterval(interval) : "--"}
-                      </Text>
-                      <Text style={s.rowLabel}>apart</Text>
-                    </View>
-                  </Pressable>
+                    </Pressable>
+                  </SwipeableRow>
                 );
               })}
             </View>
@@ -312,12 +329,10 @@ function SessionCard({
             const interval = prev?.endTime
               ? (c.startTime - prev.endTime) / 1000
               : null;
-            const rowBorder =
-              c.intensity != null
-                ? getIntensityBorderStyle(c.intensity)
-                : { borderColor: colors.beige, borderWidth: 1 };
+            const rowBg =
+              c.intensity != null ? getIntensityBgStyle(c.intensity) : {};
             return (
-              <View key={item.key} style={[styles.row, rowBorder]}>
+              <View key={item.key} style={[styles.row, rowBg]}>
                 <Text style={styles.rowNumber}>#{i + 1}</Text>
                 <Text style={styles.rowTime}>{formatTime(c.startTime)}</Text>
                 <View style={styles.rowDetail}>
@@ -414,7 +429,6 @@ const createStyles = (colors: ThemeColors) =>
       backgroundColor: colors.cream,
       borderRadius: 14,
       marginBottom: 10,
-      overflow: "visible" as const,
     },
     rowNumber: {
       width: 36,
@@ -460,6 +474,15 @@ const createStyles = (colors: ThemeColors) =>
       fontSize: 10,
       fontWeight: "700" as const,
       color: colors.cream,
+    },
+    flagBadge: {
+      position: "absolute" as const,
+      top: -6,
+      right: -10,
+      width: 40,
+      height: 40,
+      transform: [{ rotate: "15deg" }],
+      zIndex: 1,
     },
     emptyState: {
       alignItems: "center",

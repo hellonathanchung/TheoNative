@@ -1,7 +1,8 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { View, Text, Pressable, Modal, StyleSheet } from 'react-native';
 import { useTheme, type ThemeColors } from '../theme';
 import { IntensitySlider } from './IntensitySlider';
+import { useSwipeLock } from '../contexts/SwipeLockContext';
 
 interface Props {
   onSelect: (intensity: number) => void;
@@ -11,7 +12,13 @@ interface Props {
 export const IntensityPicker: React.FC<Props> = ({ onSelect, onSkip }) => {
   const { colors } = useTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
-  const [value, setValue] = useState(25);
+  const [value, setValue] = useState(50);
+  const { lock, unlock } = useSwipeLock();
+
+  useEffect(() => {
+    lock();
+    return () => unlock();
+  }, [lock, unlock]);
 
   return (
     <Modal transparent animationType="fade">
@@ -22,7 +29,7 @@ export const IntensityPicker: React.FC<Props> = ({ onSelect, onSkip }) => {
           <Pressable
             style={styles.confirmButton}
             accessibilityRole="button"
-            accessibilityLabel={`Log intensity ${value} out of 50`}
+            accessibilityLabel={`Log intensity ${value} out of 100`}
             onPress={() => onSelect(value)}
           >
             <Text style={styles.confirmText}>Log Intensity</Text>

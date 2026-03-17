@@ -11,6 +11,7 @@ import { BubbleGame } from '../components/BubbleGame';
 import { DifficultySelector } from '../components/DifficultySelector';
 import { DINO_CONFIGS, BUBBLE_CONFIGS } from '../utils/gameConfig';
 import type { GameDifficulty } from '../types';
+import { useSwipeLock } from '../contexts/SwipeLockContext';
 
 interface Props {
   app: ReturnType<typeof useContractions>;
@@ -24,6 +25,7 @@ export function RelaxScreen({ app }: Props) {
   const dinoConfig = DINO_CONFIGS[app.settings.dinoDifficulty] ?? DINO_CONFIGS.normal;
   const bubbleConfig = BUBBLE_CONFIGS[app.settings.bubbleDifficulty] ?? BUBBLE_CONFIGS.normal;
   const [scrollEnabled, setScrollEnabled] = useState(true);
+  const swipeLock = useSwipeLock();
 
   return (
     <View style={[s.container, { paddingTop: insets.top + 16 }]}>
@@ -68,8 +70,8 @@ export function RelaxScreen({ app }: Props) {
         scrollEnabled={scrollEnabled}
       >
         <FunFacts
-          onSwipeStart={() => setScrollEnabled(false)}
-          onSwipeEnd={() => setScrollEnabled(true)}
+          onSwipeStart={() => { setScrollEnabled(false); swipeLock.lock(); }}
+          onSwipeEnd={() => { setScrollEnabled(true); swipeLock.unlock(); }}
         />
 
         <View style={s.divider} />

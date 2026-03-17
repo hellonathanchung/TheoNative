@@ -17,6 +17,7 @@ import { RelaxScreen } from "../screens/RelaxScreen";
 import { SettingsScreen } from "../screens/SettingsScreen";
 import { useTheme, type ThemeColors } from "../theme";
 import type { useContractions } from "../hooks/useContractions";
+import { SwipeLockProvider, useSwipeLock } from "../contexts/SwipeLockContext";
 
 export type TabParamList = {
   Track: undefined;
@@ -26,13 +27,19 @@ export type TabParamList = {
 };
 
 type TabKey = keyof TabParamList;
-const EDGE_SLOP = 24;
-
 interface Props {
   app: ReturnType<typeof useContractions>;
 }
 
 export function TabNavigator({ app }: Props) {
+  return (
+    <SwipeLockProvider>
+      <TabNavigatorInner app={app} />
+    </SwipeLockProvider>
+  );
+}
+
+function TabNavigatorInner({ app }: Props) {
   const { colors } = useTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
   const insets = useSafeAreaInsets();
@@ -40,6 +47,7 @@ export function TabNavigator({ app }: Props) {
   const [index, setIndex] = useState(0);
   const translateX = useRef(new Animated.Value(0)).current;
   const offsetX = useRef(0);
+  const { lockRef } = useSwipeLock();
 
   const tabs = useMemo(
     () => [
@@ -77,10 +85,21 @@ export function TabNavigator({ app }: Props) {
   const panResponder = useRef(
     PanResponder.create({
       onMoveShouldSetPanResponder: (_, gesture) => {
+        if (lockRef.current > 0) return false;
         if (gesture.numberActiveTouches > 1) return false;
         const isHorizontal = Math.abs(gesture.dx) > 12;
         const isPrimary = Math.abs(gesture.dx) > Math.abs(gesture.dy) * 1.2;
         return isHorizontal && isPrimary;
+      },
+      // Capture fast, clearly-horizontal swipes from anywhere on screen
+      // (even if a child ScrollView/FlatList already claimed the gesture)
+      onMoveShouldSetPanResponderCapture: (_, gesture) => {
+        if (lockRef.current > 0) return false;
+        if (gesture.numberActiveTouches > 1) return false;
+        const isHorizontal = Math.abs(gesture.dx) > 15;
+        const isPrimary = Math.abs(gesture.dx) > Math.abs(gesture.dy) * 2.5;
+        const isFast = Math.abs(gesture.vx) > 0.4;
+        return isHorizontal && isPrimary && isFast;
       },
       onPanResponderGrant: () => {
         translateX.stopAnimation((value) => {
@@ -114,7 +133,7 @@ export function TabNavigator({ app }: Props) {
   return (
     <ScreenBackground active={app.isActive}>
       <View style={styles.container}>
-        <View style={styles.pager}>
+        <View style={styles.pager} {...panResponder.panHandlers}>
           <Animated.View
             style={[
               styles.pagerRow,
@@ -130,13 +149,6 @@ export function TabNavigator({ app }: Props) {
               );
             })}
           </Animated.View>
-          <View pointerEvents="box-none" style={styles.edgeOverlay}>
-            <View style={styles.edgeZone} {...panResponder.panHandlers} />
-            <View
-              style={[styles.edgeZone, styles.edgeZoneRight]}
-              {...panResponder.panHandlers}
-            />
-          </View>
         </View>
         <View
           style={[
@@ -176,17 +188,6 @@ const createStyles = (colors: ThemeColors) =>
   pagerRow: {
     flex: 1,
     flexDirection: "row",
-  },
-  edgeOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    flexDirection: "row",
-    justifyContent: "space-between",
-  },
-  edgeZone: {
-    width: EDGE_SLOP,
-  },
-  edgeZoneRight: {
-    alignSelf: "stretch",
   },
   tabBar: {
     flexDirection: "row",

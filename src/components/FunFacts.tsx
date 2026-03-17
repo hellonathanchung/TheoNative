@@ -188,7 +188,6 @@ export function FunFacts({
   const [shared, setShared] = useState(false);
   const scrollRef = useRef<ScrollView | null>(null);
   const cardGap = 8;
-  const cardHeight = 140;
   const cardWidth = Dimensions.get("window").width - 32 - cardGap;
   const pageWidth = cardWidth + cardGap;
 
@@ -296,13 +295,14 @@ export function FunFacts({
               scrollEventThrottle={16}
               snapToInterval={pageWidth}
               decelerationRate="fast"
+              contentContainerStyle={{ alignItems: "stretch" }}
             >
               {FACTS.map((item, idx) => (
-                <View key={idx} style={[styles.page, { width: pageWidth }]}>
+                <View key={idx} style={[styles.page, { width: pageWidth, alignSelf: "stretch" }]}>
                   <View
                     style={[
                       styles.card,
-                      { width: cardWidth, height: cardHeight },
+                      { width: cardWidth },
                     ]}
                   >
                     <Ionicons
@@ -386,12 +386,14 @@ const createStyles = (colors: ThemeColors) =>
     carousel: { overflow: "hidden", borderRadius: 16 },
     page: { paddingRight: 8 },
     card: {
+      flex: 1,
       backgroundColor: colors.beige,
       borderRadius: 16,
       paddingVertical: 20,
       paddingHorizontal: 16,
       alignItems: "center",
       justifyContent: "center",
+      minHeight: 140,
     },
     emoji: { fontSize: 28, marginBottom: 8 },
     factText: {
