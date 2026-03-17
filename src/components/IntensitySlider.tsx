@@ -1,16 +1,11 @@
-import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet } from 'react-native';
-import { Gesture, GestureDetector } from 'react-native-gesture-handler';
-import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  runOnJS,
-} from 'react-native-reanimated';
+import React, { useState, useRef, useEffect } from 'react';
+import { View, Text, StyleSheet, PanResponder, Animated } from 'react-native';
 import Svg, { Defs, LinearGradient, Stop, Rect } from 'react-native-svg';
 import { getIntensityColor } from '../utils/intensity';
 
 const TRACK_HEIGHT = 14;
 const THUMB_SIZE = 28;
+const THUMB_RADIUS = THUMB_SIZE / 2;
 
 interface Props {
   value: number; // 1–50
@@ -20,107 +15,117 @@ interface Props {
 
 export function IntensitySlider({ value, onChange, readOnly = false }: Props) {
   const [trackWidth, setTrackWidth] = useState(0);
-  const trackWidthSV = useSharedValue(0);
-  const thumbX = useSharedValue(0);
-  const startX = useSharedValue(0);
+  const [thumbPosition, setThumbPosition] = useState(0); // pixels, 0..trackWidth
   const [displayValue, setDisplayValue] = useState(value);
 
-  // Sync thumb position when value or trackWidth changes
+  const trackWidthRef = useRef(0);
+  const startPositionRef = useRef(0); // thumb x when gesture began
+  const onChangeRef = useRef(onChange);
+  onChangeRef.current = onChange;
+  const readOnlyRef = useRef(readOnly);
+  readOnlyRef.current = readOnly;
+
+  // Sync thumb when value prop or trackWidth changes
   useEffect(() => {
-    if (trackWidth > 0) {
-      thumbX.value = ((value - 1) / 49) * trackWidth;
+    if (trackWidthRef.current > 0) {
+      const x = ((value - 1) / 49) * trackWidthRef.current;
+      setThumbPosition(x);
       setDisplayValue(value);
     }
   }, [value, trackWidth]);
 
-  const clampedX = (x: number) => Math.min(Math.max(0, x), trackWidthSV.value);
+  const clamp = (x: number) => Math.min(Math.max(0, x), trackWidthRef.current);
 
   const xToValue = (x: number): number => {
-    'worklet';
-    const w = trackWidthSV.value;
+    const w = trackWidthRef.current;
     if (w === 0) return 1;
-    return Math.round((Math.min(Math.max(0, x), w) / w) * 49) + 1;
+    return Math.round((clamp(x) / w) * 49) + 1;
   };
 
-  const updateDisplay = (v: number) => {
+  const applyX = (x: number) => {
+    const clamped = clamp(x);
+    setThumbPosition(clamped);
+    const v = xToValue(clamped);
     setDisplayValue(v);
-    onChange(v);
+    onChangeRef.current(v);
   };
 
-  const pan = Gesture.Pan()
-    .enabled(!readOnly)
-    .onBegin(() => {
-      startX.value = thumbX.value;
-    })
-    .onUpdate((e) => {
-      const newX = clampedX(startX.value + e.translationX);
-      thumbX.value = newX;
-      const newValue = xToValue(newX);
-      runOnJS(updateDisplay)(newValue);
-    });
-
-  const thumbStyle = useAnimatedStyle(() => ({
-    transform: [{ translateX: thumbX.value - THUMB_SIZE / 2 }],
-  }));
+  const panResponder = useRef(
+    PanResponder.create({
+      onStartShouldSetPanResponder: () => !readOnlyRef.current,
+      onMoveShouldSetPanResponder: () => !readOnlyRef.current,
+      onPanResponderGrant: (e) => {
+        // Tap anywhere on the track → jump thumb to that position
+        const touchX = e.nativeEvent.locationX;
+        startPositionRef.current = clamp(touchX);
+        applyX(touchX);
+      },
+      onPanResponderMove: (_, gs) => {
+        applyX(startPositionRef.current + gs.dx);
+      },
+    }),
+  ).current;
 
   const thumbColor = getIntensityColor(displayValue);
 
   return (
-    <View
-      style={styles.container}
-      onLayout={(e) => {
-        const w = e.nativeEvent.layout.width;
-        setTrackWidth(w);
-        trackWidthSV.value = w;
-        thumbX.value = ((value - 1) / 49) * w;
-      }}
-    >
-      {trackWidth > 0 && (
-        <>
-          {/* Gradient track */}
-          <Svg
-            width={trackWidth}
-            height={TRACK_HEIGHT}
-            style={styles.track}
-          >
-            <Defs>
-              <LinearGradient id="intensityGrad" x1="0" y1="0" x2="1" y2="0">
-                <Stop offset="0" stopColor="#7CB342" />
-                <Stop offset="0.33" stopColor="#F9A825" />
-                <Stop offset="0.66" stopColor="#E64A19" />
-                <Stop offset="1" stopColor="#C62828" />
-              </LinearGradient>
-            </Defs>
-            <Rect
-              x={0}
-              y={0}
-              width={trackWidth}
-              height={TRACK_HEIGHT}
-              rx={TRACK_HEIGHT / 2}
-              fill="url(#intensityGrad)"
-            />
-          </Svg>
+    <View style={styles.container}>
+      {/* Gradient track + draggable thumb */}
+      <View
+        style={styles.trackWrapper}
+        onLayout={(e) => {
+          const w = e.nativeEvent.layout.width;
+          trackWidthRef.current = w;
+          setTrackWidth(w);
+          const initialX = ((value - 1) / 49) * w;
+          setThumbPosition(initialX);
+          setDisplayValue(value);
+        }}
+        {...panResponder.panHandlers}
+      >
+        {trackWidth > 0 && (
+          <>
+            {/* Gradient SVG track */}
+            <Svg width={trackWidth} height={TRACK_HEIGHT} style={styles.svgTrack}>
+              <Defs>
+                <LinearGradient id="intensityGrad" x1="0" y1="0" x2="1" y2="0">
+                  <Stop offset="0" stopColor="#7CB342" />
+                  <Stop offset="0.33" stopColor="#F9A825" />
+                  <Stop offset="0.66" stopColor="#E64A19" />
+                  <Stop offset="1" stopColor="#C62828" />
+                </LinearGradient>
+              </Defs>
+              <Rect
+                x={0}
+                y={0}
+                width={trackWidth}
+                height={TRACK_HEIGHT}
+                rx={TRACK_HEIGHT / 2}
+                fill="url(#intensityGrad)"
+              />
+            </Svg>
 
-          {/* Draggable thumb */}
-          <GestureDetector gesture={pan}>
-            <Animated.View
+            {/* Thumb */}
+            <View
               style={[
                 styles.thumb,
-                { backgroundColor: thumbColor, borderColor: thumbColor },
-                thumbStyle,
+                {
+                  backgroundColor: thumbColor,
+                  borderColor: thumbColor,
+                  left: thumbPosition - THUMB_RADIUS,
+                },
               ]}
+              pointerEvents="none"
             />
-          </GestureDetector>
-        </>
-      )}
+          </>
+        )}
+      </View>
 
-      {/* Value label */}
+      {/* Range labels + current value */}
       <View style={styles.labelRow}>
-        <Text style={styles.labelText}>1</Text>
-        <Text style={[styles.currentValue, { color: thumbColor }]}>
-          {displayValue}
-        </Text>
-        <Text style={styles.labelText}>50</Text>
+        <Text style={styles.labelEdge}>1</Text>
+        <Text style={[styles.labelCenter, { color: thumbColor }]}>{displayValue}</Text>
+        <Text style={styles.labelEdge}>50</Text>
       </View>
     </View>
   );
@@ -131,15 +136,19 @@ const styles = StyleSheet.create({
     width: '100%',
     paddingVertical: 8,
   },
-  track: {
-    marginVertical: (THUMB_SIZE - TRACK_HEIGHT) / 2,
+  trackWrapper: {
+    width: '100%',
+    height: THUMB_SIZE,
+    justifyContent: 'center',
+  },
+  svgTrack: {
+    // centered vertically within trackWrapper
   },
   thumb: {
     position: 'absolute',
-    top: 0,
     width: THUMB_SIZE,
     height: THUMB_SIZE,
-    borderRadius: THUMB_SIZE / 2,
+    borderRadius: THUMB_RADIUS,
     borderWidth: 3,
     backgroundColor: '#ffffff',
     shadowColor: '#000',
@@ -153,13 +162,14 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     marginTop: 8,
+    paddingHorizontal: 2,
   },
-  labelText: {
+  labelEdge: {
     fontSize: 11,
     color: '#98A398',
   },
-  currentValue: {
-    fontSize: 20,
+  labelCenter: {
+    fontSize: 22,
     fontWeight: '700',
   },
 });
