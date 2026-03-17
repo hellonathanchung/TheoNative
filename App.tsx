@@ -4,6 +4,7 @@ import { NavigationContainer } from '@react-navigation/native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import * as Notifications from 'expo-notifications';
+import * as ScreenOrientation from 'expo-screen-orientation';
 import { Ionicons } from '@expo/vector-icons';
 import { TabNavigator } from './src/navigation/TabNavigator';
 import { AlertBanner } from './src/components/AlertBanner';
@@ -11,6 +12,9 @@ import { useContractions } from './src/hooks/useContractions';
 import { DarkColors, LightColors, ThemeProvider } from './src/theme';
 import { analytics } from './src/utils/analytics';
 import { SharingProvider } from './src/contexts/SharingContext';
+
+// Lock to portrait
+ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.PORTRAIT_UP);
 
 // Configure notification handler
 Notifications.setNotificationHandler({

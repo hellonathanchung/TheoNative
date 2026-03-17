@@ -9,7 +9,7 @@ import type { Contraction } from '../types';
 import type { useContractions } from '../hooks/useContractions';
 import { IntensityPicker } from '../components/IntensityPicker';
 import { ContractionDetailModal } from '../components/ContractionDetailModal';
-import { useSharing } from '../contexts/SharingContext';
+import { useSharing, type MergedContraction } from '../contexts/SharingContext';
 
 interface Props {
   app: ReturnType<typeof useContractions>;
@@ -20,26 +20,25 @@ export function TimerScreen({ app }: Props) {
   const styles = useMemo(() => createStyles(colors), [colors]);
   const insets = useSafeAreaInsets();
   const elapsed = useTimer(app.isActive, app.activeStart);
-  const lastContraction = app.contractions[app.contractions.length - 1] ?? null;
+  const sharing = useSharing();
+  const merged = sharing.mergedContractions;
+  const lastContraction = merged[merged.length - 1] ?? null;
   const timeSinceLast = useTimeSinceLast(app.isActive, lastContraction?.endTime ?? null);
   const recent = useMemo(
-    () => groupWithDaySeparators(app.contractions.slice(-5).reverse()),
-    [app.contractions],
+    () => groupWithDaySeparators(merged.slice(-5).reverse()),
+    [merged],
   );
-  const sharing = useSharing();
-  const partnerRecent = useMemo(
-    () => groupWithDaySeparators(sharing.partnerContractions.slice(-5).reverse()),
-    [sharing.partnerContractions],
-  );
+  const partnerInitial = sharing.partner?.email?.[0]?.toUpperCase() ?? 'P';
   const [selectedContractionId, setSelectedContractionId] = useState<string | null>(null);
+  const [selectedIsPartner, setSelectedIsPartner] = useState(false);
   const [showAutoPause, setShowAutoPause] = useState(false);
   const selectedContraction = selectedContractionId
-    ? app.contractions.find((c) => c.id === selectedContractionId) ?? null
+    ? merged.find((c) => c.id === selectedContractionId) ?? null
     : null;
 
   const getInterval = (c: Contraction): number | null => {
-    const idx = app.contractions.findIndex((a) => a.id === c.id);
-    const prev = idx > 0 ? app.contractions[idx - 1] : null;
+    const idx = merged.findIndex((a) => a.id === c.id);
+    const prev = idx > 0 ? merged[idx - 1] : null;
     return prev?.endTime ? (c.startTime - prev.endTime) / 1000 : null;
   };
 
@@ -102,9 +101,9 @@ export function TimerScreen({ app }: Props) {
   return (
     <View style={[styles.container, { paddingTop: insets.top + 16 }]}>
       {/* Counter */}
-      {app.contractions.length > 0 && (
+      {merged.length > 0 && (
         <Text style={styles.counter}>
-          {app.contractions.length} contraction{app.contractions.length !== 1 ? 's' : ''}
+          {merged.length} contraction{merged.length !== 1 ? 's' : ''}
         </Text>
       )}
 
@@ -144,7 +143,7 @@ export function TimerScreen({ app }: Props) {
                 if (item.type === 'separator') {
                   return <DaySeparator label={item.label} />;
                 }
-                const c = item.contraction;
+                const c = item.contraction as MergedContraction;
                 const interval = getInterval(c);
                 const durationLabel = c.duration
                   ? formatDuration(c.duration)
@@ -157,9 +156,17 @@ export function TimerScreen({ app }: Props) {
                     accessibilityLabel={`Contraction at ${formatTime(
                       c.startTime,
                     )}, duration ${durationLabel}, ${intervalLabel} apart.`}
-                    onPress={() => setSelectedContractionId(c.id)}
+                    onPress={() => {
+                      setSelectedContractionId(c.id);
+                      setSelectedIsPartner(c.isPartner);
+                    }}
                   >
                     <View style={styles.row}>
+                      {c.isPartner && (
+                        <View style={styles.partnerBadge}>
+                          <Text style={styles.partnerBadgeText}>{partnerInitial}</Text>
+                        </View>
+                      )}
                       <Text style={styles.rowTime}>
                         {formatTime(c.startTime)}
                       </Text>
@@ -201,58 +208,6 @@ export function TimerScreen({ app }: Props) {
           </>
         )}
       </View>
-
-      {/* Partner's recent contractions */}
-      {sharing.partner && partnerRecent.length > 0 && (
-        <View style={styles.partnerSection}>
-          <Text style={styles.sectionHeader}>
-            {sharing.partner.display_name?.toUpperCase() || 'PARTNER'}{"'S RECENT"}
-          </Text>
-          <FlatList
-            data={partnerRecent}
-            keyExtractor={(item) => `partner-${item.key}`}
-            renderItem={({ item }) => {
-              if (item.type === 'separator') {
-                return <DaySeparator label={item.label} />;
-              }
-              const c = item.contraction;
-              const durationLabel = c.duration
-                ? formatDuration(c.duration)
-                : '--';
-              return (
-                <View style={styles.partnerRow}>
-                  <View style={styles.partnerBadge}>
-                    <Text style={styles.partnerBadgeText}>P</Text>
-                  </View>
-                  <Text style={styles.rowTime}>
-                    {formatTime(c.startTime)}
-                  </Text>
-                  <View style={styles.rowDetail}>
-                    <Text style={styles.rowValue}>{durationLabel}</Text>
-                    <Text style={styles.rowLabel}>duration</Text>
-                  </View>
-                  {c.intensity && (
-                    <View
-                      style={[
-                        styles.intensityDot,
-                        {
-                          backgroundColor:
-                            c.intensity === 'mild'
-                              ? colors.intensityMild
-                              : c.intensity === 'moderate'
-                                ? colors.intensityModerate
-                                : colors.intensityStrong,
-                        },
-                      ]}
-                    />
-                  )}
-                </View>
-              );
-            }}
-            scrollEnabled={false}
-          />
-        </View>
-      )}
 
       {/* New Session */}
       {app.contractions.length > 0 && !app.isActive && (
@@ -306,10 +261,11 @@ export function TimerScreen({ app }: Props) {
       {/* Contraction detail modal */}
       <ContractionDetailModal
         contraction={selectedContraction}
-        contractions={app.contractions}
-        onClose={() => setSelectedContractionId(null)}
+        contractions={merged}
+        onClose={() => { setSelectedContractionId(null); setSelectedIsPartner(false); }}
         onUpdate={app.updateContraction}
         onDelete={app.deleteContraction}
+        readOnly={selectedIsPartner}
       />
 
       <Modal visible={showAutoPause} transparent animationType="fade">
@@ -407,6 +363,7 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.beige,
     marginBottom: 10,
+    overflow: 'visible' as const,
   },
   rowTime: {
     width: 84,
@@ -434,31 +391,20 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     borderRadius: 4,
     marginLeft: 12,
   },
-  partnerSection: {
-    paddingHorizontal: 20,
-    marginTop: 8,
-  },
-  partnerRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 10,
-    paddingHorizontal: 12,
-    backgroundColor: colors.beige,
-    borderRadius: 14,
-    marginBottom: 8,
-    opacity: 0.85,
-  },
   partnerBadge: {
-    width: 22,
-    height: 22,
-    borderRadius: 11,
+    position: 'absolute',
+    top: 2,
+    left: 2,
+    width: 20,
+    height: 20,
+    borderRadius: 10,
     backgroundColor: colors.deepGreen,
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: 8,
+    zIndex: 1,
   },
   partnerBadgeText: {
-    fontSize: 11,
+    fontSize: 10,
     fontWeight: '700',
     color: colors.cream,
   },

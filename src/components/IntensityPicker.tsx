@@ -14,13 +14,12 @@ export const IntensityPicker: React.FC<Props> = ({ onSelect, onSkip }) => {
   const intensityOptions: {
     value: Intensity;
     label: string;
-    dotColor: string;
-    dotCount: number;
+    color: string;
   }[] = useMemo(
     () => [
-      { value: 'mild', label: 'Mild', dotColor: colors.intensityMild, dotCount: 1 },
-      { value: 'moderate', label: 'Moderate', dotColor: colors.intensityModerate, dotCount: 2 },
-      { value: 'strong', label: 'Strong', dotColor: colors.intensityStrong, dotCount: 3 },
+      { value: 'mild', label: 'Mild', color: colors.intensityMild },
+      { value: 'moderate', label: 'Moderate', color: colors.intensityModerate },
+      { value: 'strong', label: 'Strong', color: colors.intensityStrong },
     ],
     [colors],
   );
@@ -38,15 +37,9 @@ export const IntensityPicker: React.FC<Props> = ({ onSelect, onSkip }) => {
                 accessibilityLabel={`Mark contraction intensity as ${option.label}`}
                 onPress={() => onSelect(option.value)}
               >
-                <View style={styles.dotsContainer}>
-                  {Array.from({ length: option.dotCount }).map((_, i) => (
-                    <View
-                      key={i}
-                      style={[styles.dot, { backgroundColor: option.dotColor }]}
-                    />
-                  ))}
-                </View>
-                <Text style={styles.optionLabel}>{option.label}</Text>
+                <Text style={[styles.optionLabel, { color: option.color }]}>
+                  {option.label}
+                </Text>
               </Pressable>
             ))}
           </View>
@@ -96,23 +89,10 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     paddingVertical: 16,
     paddingHorizontal: 8,
     alignItems: 'center',
-    gap: 8,
-  },
-  dotsContainer: {
-    flexDirection: 'row',
-    gap: 4,
-    height: 12,
-    alignItems: 'center',
-  },
-  dot: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
   },
   optionLabel: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: colors.textSecondary,
+    fontSize: 16,
+    fontWeight: '600',
   },
   skipButton: {
     marginTop: 16,

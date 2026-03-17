@@ -1,4 +1,4 @@
-import React, { createContext, useContext } from 'react';
+import React, { createContext, useContext, useMemo } from 'react';
 import { useAuth } from '../hooks/useAuth';
 import { usePartnership } from '../hooks/usePartnership';
 import { useSync } from '../hooks/useSync';
@@ -28,8 +28,11 @@ interface SharingContextValue {
 
   // Sync
   partnerContractions: Contraction[];
+  mergedContractions: MergedContraction[];
   clearSyncedContractions: () => Promise<void>;
 }
+
+export type MergedContraction = Contraction & { isPartner: boolean };
 
 const SharingContext = createContext<SharingContextValue | null>(null);
 
@@ -42,6 +45,12 @@ export function SharingProvider({ localContractions, children }: Props) {
   const auth = useAuth();
   const partnership = usePartnership(auth.user);
   const sync = useSync(auth.user, partnership.partnerId, localContractions);
+
+  const mergedContractions = useMemo<MergedContraction[]>(() => {
+    const local = localContractions.map((c) => ({ ...c, isPartner: false }));
+    const partner = sync.partnerContractions.map((c) => ({ ...c, isPartner: true }));
+    return [...local, ...partner].sort((a, b) => a.startTime - b.startTime);
+  }, [localContractions, sync.partnerContractions]);
 
   const value: SharingContextValue = {
     user: auth.user,
@@ -62,6 +71,7 @@ export function SharingProvider({ localContractions, children }: Props) {
     cancelInvite: partnership.cancelInvite,
 
     partnerContractions: sync.partnerContractions,
+    mergedContractions,
     clearSyncedContractions: sync.clearSyncedContractions,
   };
 

@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { AppState } from 'react-native';
 import { supabase } from '../utils/supabase';
 import { analytics } from '../utils/analytics';
 import type { User } from '@supabase/supabase-js';
@@ -39,7 +40,7 @@ export function usePartnership(user: User | null) {
       const { data, error } = await supabase
         .from('partnerships')
         .select('*')
-        .or(`inviter_id.eq.${user.id},invitee_id.eq.${user.id}`);
+        .or(`inviter_id.eq.${user.id},invitee_id.eq.${user.id},invitee_email.eq.${user.email}`);
 
       if (error) throw error;
 
@@ -66,9 +67,13 @@ export function usePartnership(user: User | null) {
         setPartnerId(null);
       }
 
-      // Pending invites received by this user
+      // Pending invites received by this user (match by id or email)
       const received = partnerships.filter(
-        (p) => p.status === 'pending' && p.invitee_id === user.id,
+        (p) =>
+          p.status === 'pending' &&
+          p.inviter_id !== user.id &&
+          (p.invitee_id === user.id ||
+            p.invitee_email.toLowerCase() === user.email?.toLowerCase()),
       );
       setPendingInvites(received);
 
@@ -89,12 +94,25 @@ export function usePartnership(user: User | null) {
     fetchPartnerships();
   }, [fetchPartnerships]);
 
-  // Realtime subscription for partnership changes
+  // Re-fetch partnerships when app comes to foreground
+  useEffect(() => {
+    if (!user) return;
+
+    const sub = AppState.addEventListener('change', (state) => {
+      if (state === 'active') {
+        fetchPartnerships();
+      }
+    });
+
+    return () => sub.remove();
+  }, [user, fetchPartnerships]);
+
+  // Realtime subscription for partnership changes (accept/decline/new invites)
   useEffect(() => {
     if (!user) return;
 
     const channel = supabase
-      .channel('partnerships-changes')
+      .channel('partnership-changes')
       .on(
         'postgres_changes',
         {
@@ -116,12 +134,46 @@ export function usePartnership(user: User | null) {
   const invitePartner = useCallback(
     async (email: string) => {
       if (!user) return;
-      const { error } = await supabase.from('partnerships').insert({
-        inviter_id: user.id,
-        invitee_email: email.toLowerCase().trim(),
-      });
-      if (error) throw error;
-      analytics.partnerInviteSent();
+      const targetEmail = email.toLowerCase().trim();
+
+      // Check if there's already a pending invite FROM that email to us
+      const { data: existing } = await supabase
+        .from('partnerships')
+        .select('*')
+        .eq('invitee_email', user.email)
+        .eq('status', 'pending');
+
+      // Find a reciprocal invite (they already invited us)
+      const reciprocal = (existing ?? []).find(
+        (p: any) => p.invitee_email.toLowerCase() === user.email?.toLowerCase(),
+      );
+
+      if (reciprocal) {
+        // Auto-accept their invite instead of creating a duplicate
+        const { error } = await supabase
+          .from('partnerships')
+          .update({
+            status: 'accepted',
+            accepted_at: new Date().toISOString(),
+            invitee_id: user.id,
+          })
+          .eq('id', reciprocal.id);
+        if (error) throw error;
+        analytics.partnerInviteAccepted();
+      } else {
+        const { error } = await supabase.from('partnerships').insert({
+          inviter_id: user.id,
+          invitee_email: targetEmail,
+        });
+        if (error) {
+          if (error.code === '23505') {
+            throw new Error('You already have a pending invite to this person');
+          }
+          throw error;
+        }
+        analytics.partnerInviteSent();
+      }
+
       await fetchPartnerships();
     },
     [user, fetchPartnerships],
@@ -129,15 +181,20 @@ export function usePartnership(user: User | null) {
 
   const acceptInvite = useCallback(
     async (partnershipId: string) => {
+      if (!user) return;
       const { error } = await supabase
         .from('partnerships')
-        .update({ status: 'accepted', accepted_at: new Date().toISOString() })
+        .update({
+          status: 'accepted',
+          accepted_at: new Date().toISOString(),
+          invitee_id: user.id,
+        })
         .eq('id', partnershipId);
       if (error) throw error;
       analytics.partnerInviteAccepted();
       await fetchPartnerships();
     },
-    [fetchPartnerships],
+    [user, fetchPartnerships],
   );
 
   const declineInvite = useCallback(
@@ -158,7 +215,7 @@ export function usePartnership(user: User | null) {
     const { error } = await supabase
       .from('partnerships')
       .delete()
-      .or(`inviter_id.eq.${user.id},invitee_id.eq.${user.id}`);
+      .or(`inviter_id.eq.${user.id},invitee_id.eq.${user.id},invitee_email.eq.${user.email}`);
     if (error) throw error;
     analytics.partnerDisconnected();
     setPartner(null);

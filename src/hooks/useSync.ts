@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
+import { AppState } from 'react-native';
 import { supabase } from '../utils/supabase';
 import type { Contraction } from '../types';
 import type { User } from '@supabase/supabase-js';
@@ -52,89 +53,53 @@ export function useSync(
     };
   }, [user, localContractions]);
 
-  // Fetch partner's contractions initially
+  // Fetch partner's contractions
+  const fetchPartnerData = useCallback(async () => {
+    if (!partnerId) return;
+    try {
+      const { data, error } = await supabase
+        .from('contractions')
+        .select('*')
+        .eq('user_id', partnerId)
+        .order('start_time', { ascending: true });
+
+      if (!error && data) {
+        setPartnerContractions(
+          data.map((row: any) => ({
+            id: row.id,
+            startTime: row.start_time,
+            endTime: row.end_time,
+            duration: row.duration,
+            intensity: row.intensity,
+          })),
+        );
+      }
+    } catch {
+      // Offline
+    }
+  }, [partnerId]);
+
+  // Fetch on mount and when partnerId changes
   useEffect(() => {
     if (!partnerId) {
       setPartnerContractions([]);
       return;
     }
-
-    const fetchPartnerData = async () => {
-      try {
-        const { data, error } = await supabase
-          .from('contractions')
-          .select('*')
-          .eq('user_id', partnerId)
-          .order('start_time', { ascending: true });
-
-        if (!error && data) {
-          setPartnerContractions(
-            data.map((row: any) => ({
-              id: row.id,
-              startTime: row.start_time,
-              endTime: row.end_time,
-              duration: row.duration,
-              intensity: row.intensity,
-            })),
-          );
-        }
-      } catch {
-        // Offline
-      }
-    };
-
     fetchPartnerData();
-  }, [partnerId]);
+  }, [partnerId, fetchPartnerData]);
 
-  // Realtime subscription for partner's contractions
+  // Re-fetch when app comes to foreground
   useEffect(() => {
     if (!partnerId) return;
 
-    const channel = supabase
-      .channel('partner-contractions')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'contractions',
-          filter: `user_id=eq.${partnerId}`,
-        },
-        (payload) => {
-          if (payload.eventType === 'DELETE') {
-            const old = payload.old as any;
-            setPartnerContractions((prev) =>
-              prev.filter((c) => c.id !== old.id),
-            );
-          } else {
-            const row = payload.new as any;
-            const contraction: Contraction = {
-              id: row.id,
-              startTime: row.start_time,
-              endTime: row.end_time,
-              duration: row.duration,
-              intensity: row.intensity,
-            };
-            setPartnerContractions((prev) => {
-              const existing = prev.findIndex((c) => c.id === contraction.id);
-              if (existing >= 0) {
-                const next = [...prev];
-                next[existing] = contraction;
-                return next;
-              }
-              return [...prev, contraction].sort(
-                (a, b) => a.startTime - b.startTime,
-              );
-            });
-          }
-        },
-      )
-      .subscribe();
+    const sub = AppState.addEventListener('change', (state) => {
+      if (state === 'active') {
+        fetchPartnerData();
+      }
+    });
 
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [partnerId]);
+    return () => sub.remove();
+  }, [partnerId, fetchPartnerData]);
 
   // Clean up synced contractions when starting a new session
   const clearSyncedContractions = useCallback(async () => {

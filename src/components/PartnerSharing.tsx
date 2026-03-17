@@ -6,6 +6,8 @@ import {
   Pressable,
   ActivityIndicator,
   StyleSheet,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
 import { useSharing } from '../contexts/SharingContext';
 import { useTheme, type ThemeColors } from '../theme';
@@ -95,39 +97,42 @@ export function PartnerSharing() {
   // State: Not signed in — show email input
   if (!user && !showOtp) {
     return (
-      <View style={s.container}>
-        <Text style={s.desc}>
-          Sign in to share contraction data with your partner in real time.
-        </Text>
-        <TextInput
-          style={s.input}
-          placeholder="Email address"
-          placeholderTextColor={colors.textMuted}
-          value={email}
-          onChangeText={setEmail}
-          autoCapitalize="none"
-          keyboardType="email-address"
-          autoCorrect={false}
-        />
-        {error && <Text style={s.error}>{error}</Text>}
-        <Pressable
-          style={[s.primaryBtn, busy && { opacity: 0.6 }]}
-          onPress={handleSendOtp}
-          disabled={busy}
-        >
-          {busy ? (
-            <ActivityIndicator color={colors.cream} size="small" />
-          ) : (
-            <Text style={s.primaryBtnText}>Send Sign-In Code</Text>
-          )}
-        </Pressable>
-      </View>
+      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+        <View style={s.container}>
+          <Text style={s.desc}>
+            Sign in to share contraction data with your partner in real time.
+          </Text>
+          <TextInput
+            style={s.input}
+            placeholder="Email address"
+            placeholderTextColor={colors.textMuted}
+            value={email}
+            onChangeText={setEmail}
+            autoCapitalize="none"
+            keyboardType="email-address"
+            autoCorrect={false}
+          />
+          {error && <Text style={s.error}>{error}</Text>}
+          <Pressable
+            style={[s.primaryBtn, busy && { opacity: 0.6 }]}
+            onPress={handleSendOtp}
+            disabled={busy}
+          >
+            {busy ? (
+              <ActivityIndicator color={colors.cream} size="small" />
+            ) : (
+              <Text style={s.primaryBtnText}>Send Sign-In Code</Text>
+            )}
+          </Pressable>
+        </View>
+      </KeyboardAvoidingView>
     );
   }
 
   // State: OTP entry
   if (!user && showOtp) {
     return (
+      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <View style={s.container}>
         <Text style={s.desc}>
           Enter the 8-digit code sent to {otpEmail}
@@ -165,6 +170,7 @@ export function PartnerSharing() {
           <Text style={s.linkText}>Use different email</Text>
         </Pressable>
       </View>
+      </KeyboardAvoidingView>
     );
   }
 
@@ -189,6 +195,7 @@ export function PartnerSharing() {
 
   // State: Signed in — show pending invites, sent invite, or invite form
   return (
+    <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
     <View style={s.container}>
       <Text style={s.signedInAs}>Signed in as {user?.email}</Text>
 
@@ -265,6 +272,7 @@ export function PartnerSharing() {
         <Text style={s.linkText}>Sign out</Text>
       </Pressable>
     </View>
+    </KeyboardAvoidingView>
   );
 }
 

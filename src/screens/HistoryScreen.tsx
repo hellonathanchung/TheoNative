@@ -14,6 +14,7 @@ import { DaySeparator } from "../components/DaySeparator";
 import type { Contraction, Session } from "../types";
 import type { useContractions } from "../hooks/useContractions";
 import { ContractionDetailModal } from "../components/ContractionDetailModal";
+import { useSharing, type MergedContraction } from "../contexts/SharingContext";
 
 interface Props {
   app: ReturnType<typeof useContractions>;
@@ -23,18 +24,22 @@ export function HistoryScreen({ app }: Props) {
   const { colors } = useTheme();
   const s = useMemo(() => createStyles(colors), [colors]);
   const insets = useSafeAreaInsets();
-  const { contractions, sessions } = app;
+  const { sessions } = app;
+  const sharing = useSharing();
+  const merged = sharing.mergedContractions;
+  const partnerInitial = sharing.partner?.email?.[0]?.toUpperCase() ?? 'P';
   const [expandedSession, setExpandedSession] = useState<string | null>(null);
   const [selectedContractionId, setSelectedContractionId] =
     useState<string | null>(null);
+  const [selectedIsPartner, setSelectedIsPartner] = useState(false);
   const selectedContraction = selectedContractionId
-    ? contractions.find((c) => c.id === selectedContractionId) ?? null
+    ? merged.find((c) => c.id === selectedContractionId) ?? null
     : null;
 
   // Past hour stats
   const ONE_HOUR = 60 * 60 * 1000;
   const now = Date.now();
-  const recentContractions = contractions.filter(c => now - c.startTime < ONE_HOUR);
+  const recentContractions = merged.filter(c => now - c.startTime < ONE_HOUR);
 
   const avgDuration =
     recentContractions.length > 0
@@ -66,19 +71,19 @@ export function HistoryScreen({ app }: Props) {
   const lastInterval =
     recentIntervals.length > 0 ? recentIntervals[recentIntervals.length - 1] : 0;
 
-  // Timeline uses all contractions
+  // Timeline uses all merged contractions
   const intervals: number[] = [];
-  for (let i = 1; i < contractions.length; i++) {
-    const prev = contractions[i - 1];
+  for (let i = 1; i < merged.length; i++) {
+    const prev = merged[i - 1];
     if (prev.endTime) {
-      intervals.push((contractions[i].startTime - prev.endTime) / 1000);
+      intervals.push((merged[i].startTime - prev.endTime) / 1000);
     }
   }
-  const timelineDurations = contractions.map((c) => c.duration ?? 0);
+  const timelineDurations = merged.map((c) => c.duration ?? 0);
   const maxDuration = Math.max(60, ...timelineDurations);
   const maxInterval = Math.max(60, ...intervals);
 
-  const reversedContractions = useMemo(() => [...contractions].reverse(), [contractions]);
+  const reversedContractions = useMemo(() => [...merged].reverse(), [merged]);
   const groupedContractions = useMemo(
     () => groupWithDaySeparators(reversedContractions),
     [reversedContractions],
@@ -147,7 +152,7 @@ export function HistoryScreen({ app }: Props) {
           style={s.bottomScroll}
           contentContainerStyle={{ paddingBottom: 40 + insets.bottom }}
         >
-          {contractions.length > 0 ? (
+          {merged.length > 0 ? (
             <>
               <View style={s.sectionWrap}>
                 <Text style={s.sectionLabel}>TIMELINE</Text>
@@ -157,9 +162,9 @@ export function HistoryScreen({ app }: Props) {
                 showsHorizontalScrollIndicator={false}
                 contentContainerStyle={s.timelineRow}
               >
-                {contractions.map((c, i) => {
+                {merged.map((c, i) => {
                   const duration = c.duration ?? 0;
-                  const prev = i > 0 ? contractions[i - 1] : null;
+                  const prev = i > 0 ? merged[i - 1] : null;
                   const gap = prev?.endTime
                     ? (c.startTime - prev.endTime) / 1000
                     : 0;
@@ -176,7 +181,10 @@ export function HistoryScreen({ app }: Props) {
                       <View
                         style={[
                           s.timelineBar,
-                          { height: Math.min(46, Math.max(10, height)) },
+                          {
+                            height: Math.min(46, Math.max(10, height)),
+                            backgroundColor: c.isPartner ? colors.deepGreen : colors.terracotta,
+                          },
                         ]}
                       />
                     </View>
@@ -190,11 +198,11 @@ export function HistoryScreen({ app }: Props) {
                   if (item.type === 'separator') {
                     return <DaySeparator key={item.key} label={item.label} />;
                   }
-                  const c = item.contraction;
-                  const originalIndex = contractions.indexOf(c);
+                  const c = item.contraction as MergedContraction;
+                  const originalIndex = merged.indexOf(c);
                   const number = originalIndex + 1;
                   const prev =
-                    originalIndex > 0 ? contractions[originalIndex - 1] : null;
+                    originalIndex > 0 ? merged[originalIndex - 1] : null;
                   const interval = prev?.endTime
                     ? (c.startTime - prev.endTime) / 1000
                     : null;
@@ -203,8 +211,16 @@ export function HistoryScreen({ app }: Props) {
                     <Pressable
                       key={item.key}
                       style={s.row}
-                      onPress={() => setSelectedContractionId(c.id)}
+                      onPress={() => {
+                        setSelectedContractionId(c.id);
+                        setSelectedIsPartner(c.isPartner);
+                      }}
                     >
+                      {c.isPartner && (
+                        <View style={s.partnerBadge}>
+                          <Text style={s.partnerBadgeText}>{partnerInitial}</Text>
+                        </View>
+                      )}
                       <Text style={s.rowNumber}>#{number}</Text>
                       <Text style={s.rowTime}>{formatTime(c.startTime)}</Text>
                       <View style={s.rowDetail}>
@@ -290,10 +306,11 @@ export function HistoryScreen({ app }: Props) {
         {/* Contraction detail modal */}
         <ContractionDetailModal
           contraction={selectedContraction}
-          contractions={contractions}
-          onClose={() => setSelectedContractionId(null)}
+          contractions={merged}
+          onClose={() => { setSelectedContractionId(null); setSelectedIsPartner(false); }}
           onUpdate={app.updateContraction}
           onDelete={app.deleteContraction}
+          readOnly={selectedIsPartner}
         />
     </View>
   );
@@ -500,6 +517,7 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.beige,
     marginBottom: 10,
+    overflow: "visible" as const,
   },
   rowNumber: {
     width: 36,
@@ -533,6 +551,23 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     height: 8,
     borderRadius: 4,
     marginLeft: 12,
+  },
+  partnerBadge: {
+    position: 'absolute' as const,
+    top: 2,
+    left: 2,
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: colors.deepGreen,
+    alignItems: 'center' as const,
+    justifyContent: 'center' as const,
+    zIndex: 1,
+  },
+  partnerBadgeText: {
+    fontSize: 10,
+    fontWeight: '700' as const,
+    color: colors.cream,
   },
   emptyState: {
     alignItems: "center",

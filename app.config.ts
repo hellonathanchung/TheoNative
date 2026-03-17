@@ -39,6 +39,8 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   plugins: [
     'expo-notifications',
     'expo-localization',
+    'expo-screen-orientation',
+    '@react-native-community/datetimepicker',
   ],
   extra: {
     posthogApiKey: process.env.POSTHOG_API_KEY ?? '',
