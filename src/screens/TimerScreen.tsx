@@ -9,7 +9,6 @@ import {
   View,
   Text,
   Pressable,
-  FlatList,
   ScrollView,
   Image,
   StyleSheet,
@@ -61,15 +60,20 @@ export function TimerScreen({ app }: Props) {
   const [selectedIsPartner, setSelectedIsPartner] = useState(false);
   const [showAutoPause, setShowAutoPause] = useState(false);
   const [showNewSessionConfirm, setShowNewSessionConfirm] = useState(false);
+  const mergedIndexMap = useMemo(() => {
+    const map = new Map<string, number>();
+    merged.forEach((c, i) => map.set(c.id, i));
+    return map;
+  }, [merged]);
   const selectedContraction = selectedContractionId
-    ? merged.find((c) => c.id === selectedContractionId) ?? null
+    ? merged[mergedIndexMap.get(selectedContractionId) ?? -1] ?? null
     : null;
 
-  const getInterval = (c: Contraction): number | null => {
-    const idx = merged.findIndex((a) => a.id === c.id);
+  const getInterval = useCallback((c: Contraction): number | null => {
+    const idx = mergedIndexMap.get(c.id) ?? -1;
     const prev = idx > 0 ? merged[idx - 1] : null;
     return prev?.endTime ? (c.startTime - prev.endTime) / 1000 : null;
-  };
+  }, [mergedIndexMap, merged]);
 
   const urgency = app.getUrgencyState();
   const buttonTone = useRef(new Animated.Value(0)).current;
@@ -184,15 +188,13 @@ export function TimerScreen({ app }: Props) {
           ) : (
             <>
               <Text style={styles.sectionHeader}>CONTRACTIONS</Text>
-              <FlatList
-                data={recent}
-                keyExtractor={(item) => item.key}
-                renderItem={({ item }) => {
+              <View>
+                {recent.map((item) => {
                   if (item.type === "separator") {
-                    return <DaySeparator label={item.label} />;
+                    return <DaySeparator key={item.key} label={item.label} />;
                   }
                   const c = item.contraction as MergedContraction;
-                  const originalIndex = merged.indexOf(c);
+                  const originalIndex = mergedIndexMap.get(c.id) ?? -1;
                   const number = originalIndex + 1;
                   const interval = getInterval(c);
                   const durationLabel = c.duration
@@ -204,6 +206,7 @@ export function TimerScreen({ app }: Props) {
                     c.intensity != null ? getIntensityBgStyle(c.intensity) : {};
                   return (
                     <SwipeableRow
+                      key={item.key}
                       onDelete={() => app.deleteContraction(c.id)}
                       onFlag={() =>
                         app.updateContraction(c.id, { flagged: !c.flagged })
@@ -258,9 +261,8 @@ export function TimerScreen({ app }: Props) {
                       </Pressable>
                     </SwipeableRow>
                   );
-                }}
-                scrollEnabled={false}
-              />
+                })}
+              </View>
             </>
           )}
         </View>
@@ -460,6 +462,7 @@ const createStyles = (colors: ThemeColors) =>
       paddingHorizontal: 12,
       backgroundColor: colors.cream,
       borderRadius: 14,
+      overflow: "visible",
     },
     rowTime: {
       width: 84,
@@ -491,11 +494,11 @@ const createStyles = (colors: ThemeColors) =>
     },
     flagBadge: {
       position: "absolute",
-      top: -6,
-      right: -10,
-      width: 40,
-      height: 40,
-      transform: [{ rotate: "15deg" }],
+      top: -2,
+      right: -2,
+      width: 36,
+      height: 36,
+      transform: [{ rotate: "15deg" }, { translateX: 4 }, { translateY: -4 }],
       zIndex: 1,
     },
     partnerBadge: {

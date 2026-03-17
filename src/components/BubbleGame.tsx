@@ -155,7 +155,7 @@ export function BubbleGame({ config, headerExtra }: BubbleGameProps) {
         b.popping ? b.popFrame < 12 : b.y + b.r > -10,
       );
 
-      forceRender((n) => n + 1);
+      if (s.frame % 2 === 0) forceRender((n) => n + 1);
       rafRef.current = requestAnimationFrame(tick);
     };
 

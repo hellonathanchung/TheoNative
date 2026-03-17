@@ -186,6 +186,7 @@ export function FunFacts({
   );
   const [collapsed, setCollapsed] = useState(false);
   const [shared, setShared] = useState(false);
+  const sharedTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const scrollRef = useRef<ScrollView | null>(null);
   const cardGap = 8;
   const cardWidth = Dimensions.get("window").width - 32 - cardGap;
@@ -221,9 +222,16 @@ export function FunFacts({
     const fact = FACTS[index];
     const text = `${fact.text}\n\nSource: ${fact.source}\n\n\u2014 from Theo, a contraction timer app`;
     await Clipboard.setStringAsync(text);
+    if (sharedTimeoutRef.current) clearTimeout(sharedTimeoutRef.current);
     setShared(true);
-    setTimeout(() => setShared(false), 2000);
+    sharedTimeoutRef.current = setTimeout(() => setShared(false), 2000);
   }, [index]);
+
+  useEffect(() => {
+    return () => {
+      if (sharedTimeoutRef.current) clearTimeout(sharedTimeoutRef.current);
+    };
+  }, []);
 
   // Auto-rotate
   useEffect(() => {

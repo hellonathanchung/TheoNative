@@ -205,7 +205,7 @@ export function DinoGame({ config, headerExtra }: DinoGameProps) {
         if (s.frame % 6 === 0) setDisplayScore(s.score);
       }
 
-      forceRender((n) => n + 1);
+      if (s.frame % 2 === 0) forceRender((n) => n + 1);
       rafRef.current = requestAnimationFrame(tick);
     };
 

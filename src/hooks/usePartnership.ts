@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { AppState } from 'react-native';
 import { supabase } from '../utils/supabase';
 import { analytics } from '../utils/analytics';
@@ -28,8 +28,13 @@ export function usePartnership(user: User | null) {
   const [pendingInvites, setPendingInvites] = useState<Partnership[]>([]);
   const [sentInvite, setSentInvite] = useState<Partnership | null>(null);
   const [loading, setLoading] = useState(false);
+  const userRef = useRef(user);
+  userRef.current = user;
+  const userId = user?.id;
+  const userEmail = user?.email;
 
   const fetchPartnerships = useCallback(async () => {
+    const user = userRef.current;
     if (!user) {
       setPartner(null);
       setPartnerId(null);
@@ -97,7 +102,7 @@ export function usePartnership(user: User | null) {
     } finally {
       setLoading(false);
     }
-  }, [user]);
+  }, [userId, userEmail]);
 
   // Fetch on mount and when user changes
   useEffect(() => {
@@ -106,7 +111,7 @@ export function usePartnership(user: User | null) {
 
   // Re-fetch partnerships when app comes to foreground
   useEffect(() => {
-    if (!user) return;
+    if (!userId) return;
 
     const sub = AppState.addEventListener('change', (state) => {
       if (state === 'active') {
@@ -115,11 +120,11 @@ export function usePartnership(user: User | null) {
     });
 
     return () => sub.remove();
-  }, [user, fetchPartnerships]);
+  }, [userId, fetchPartnerships]);
 
   // Realtime subscription for partnership changes (accept/decline/new invites)
   useEffect(() => {
-    if (!user) return;
+    if (!userId) return;
 
     const channel = supabase
       .channel('partnership-changes')
@@ -139,7 +144,7 @@ export function usePartnership(user: User | null) {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [user, fetchPartnerships]);
+  }, [userId, fetchPartnerships]);
 
   const invitePartner = useCallback(
     async (email: string) => {
