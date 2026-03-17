@@ -1,9 +1,19 @@
-import React, { useMemo, useState } from 'react';
-import { View, Text, Pressable, Modal, StyleSheet, Platform } from 'react-native';
-import DateTimePicker from '@react-native-community/datetimepicker';
-import { formatDuration, formatInterval } from '../utils/format';
-import { useTheme, type ThemeColors } from '../theme';
-import type { Contraction, Intensity } from '../types';
+import React, { useEffect, useMemo, useState } from "react";
+import {
+  View,
+  Text,
+  Pressable,
+  Modal,
+  StyleSheet,
+  Platform,
+  Image,
+} from "react-native";
+import DateTimePicker from "@react-native-community/datetimepicker";
+import { formatDuration, formatInterval } from "../utils/format";
+import { useTheme, type ThemeColors } from "../theme";
+import type { Contraction } from "../types";
+import { IntensitySlider } from "./IntensitySlider";
+import { useSwipeLock } from "../contexts/SwipeLockContext";
 
 interface Props {
   contraction: Contraction | null;
@@ -14,18 +24,25 @@ interface Props {
   readOnly?: boolean;
 }
 
-export function ContractionDetailModal({ contraction: c, contractions, onClose, onUpdate, onDelete, readOnly }: Props) {
+export function ContractionDetailModal({
+  contraction: c,
+  contractions,
+  onClose,
+  onUpdate,
+  onDelete,
+  readOnly,
+}: Props) {
   const { colors } = useTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
-  const intensities: { id: Intensity; label: string; color: string }[] = useMemo(
-    () => [
-      { id: 'mild', label: 'Mild', color: colors.intensityMild },
-      { id: 'moderate', label: 'Moderate', color: colors.intensityModerate },
-      { id: 'strong', label: 'Strong', color: colors.intensityStrong },
-    ],
-    [colors],
-  );
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const { lock, unlock } = useSwipeLock();
+
+  useEffect(() => {
+    if (c) {
+      lock();
+      return () => unlock();
+    }
+  }, [c, lock, unlock]);
 
   if (!c) return null;
 
@@ -38,10 +55,17 @@ export function ContractionDetailModal({ contraction: c, contractions, onClose, 
 
   const formatTimeOfDay = (ms: number) => {
     const d = new Date(ms);
-    return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    return d.toLocaleTimeString([], {
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+    });
   };
 
-  const handleTimeChange = (field: 'startTime' | 'endTime', date: Date | undefined) => {
+  const handleTimeChange = (
+    field: "startTime" | "endTime",
+    date: Date | undefined
+  ) => {
     if (!date || readOnly) return;
     // Preserve the original date, only update hours/minutes/seconds
     const original = new Date(c[field] ?? 0);
@@ -51,7 +75,12 @@ export function ContractionDetailModal({ contraction: c, contractions, onClose, 
   };
 
   return (
-    <Modal visible={true} transparent animationType="fade" onRequestClose={onClose}>
+    <Modal
+      visible={true}
+      transparent
+      animationType="fade"
+      onRequestClose={onClose}
+    >
       <Pressable style={styles.overlay} onPress={onClose}>
         <Pressable style={styles.modal} onPress={(e) => e.stopPropagation()}>
           <View style={styles.header}>
@@ -64,14 +93,16 @@ export function ContractionDetailModal({ contraction: c, contractions, onClose, 
           <View style={styles.section}>
             <View style={styles.fieldRow}>
               <Text style={styles.fieldLabel}>Started</Text>
-              <Text style={styles.fieldValue}>{formatTimeOfDay(c.startTime)}</Text>
+              <Text style={styles.fieldValue}>
+                {formatTimeOfDay(c.startTime)}
+              </Text>
             </View>
-            {!readOnly && Platform.OS !== 'web' && (
+            {!readOnly && Platform.OS !== "web" && (
               <DateTimePicker
                 value={new Date(c.startTime)}
                 mode="time"
                 display="compact"
-                onChange={(_, date) => handleTimeChange('startTime', date)}
+                onChange={(_, date) => handleTimeChange("startTime", date)}
                 accentColor={colors.terracotta}
               />
             )}
@@ -80,14 +111,16 @@ export function ContractionDetailModal({ contraction: c, contractions, onClose, 
               <>
                 <View style={styles.fieldRow}>
                   <Text style={styles.fieldLabel}>Ended</Text>
-                  <Text style={styles.fieldValue}>{formatTimeOfDay(c.endTime)}</Text>
+                  <Text style={styles.fieldValue}>
+                    {formatTimeOfDay(c.endTime)}
+                  </Text>
                 </View>
-                {!readOnly && Platform.OS !== 'web' && (
+                {!readOnly && Platform.OS !== "web" && (
                   <DateTimePicker
                     value={new Date(c.endTime)}
                     mode="time"
                     display="compact"
-                    onChange={(_, date) => handleTimeChange('endTime', date)}
+                    onChange={(_, date) => handleTimeChange("endTime", date)}
                     accentColor={colors.terracotta}
                   />
                 )}
@@ -96,7 +129,9 @@ export function ContractionDetailModal({ contraction: c, contractions, onClose, 
 
             <View style={styles.fieldRow}>
               <Text style={styles.fieldLabel}>Duration</Text>
-              <Text style={styles.fieldValue}>{c.duration ? formatDuration(c.duration) : '--'}</Text>
+              <Text style={styles.fieldValue}>
+                {c.duration ? formatDuration(c.duration) : "--"}
+              </Text>
             </View>
 
             {interval !== null && (
@@ -114,47 +149,63 @@ export function ContractionDetailModal({ contraction: c, contractions, onClose, 
             <Pressable
               style={[
                 styles.flagToggle,
-                { backgroundColor: c.flagged ? colors.warmAmber : colors.beige },
+                {
+                  backgroundColor: c.flagged
+                    ? colors.warmAmber + "33"
+                    : colors.beige,
+                  borderColor: c.flagged ? colors.warmAmber : colors.beige,
+                },
               ]}
-              onPress={() => !readOnly && onUpdate(c.id, { flagged: !c.flagged })}
+              onPress={() =>
+                !readOnly && onUpdate(c.id, { flagged: !c.flagged })
+              }
             >
-              <Text style={[
-                styles.flagToggleText,
-                { color: c.flagged ? colors.white : colors.textMuted },
-              ]}>
-                ?
-              </Text>
-              <Text style={[
-                styles.flagLabel,
-                { color: c.flagged ? colors.white : colors.textMuted },
-              ]}>
-                {c.flagged ? 'Flagged' : 'Tap to flag'}
+              <Image
+                source={require("../../assets/flag-icon.png")}
+                style={[
+                  styles.flagIconLeft,
+                  {
+                    opacity: c.flagged ? 1 : 0.45,
+                    transform: [{ rotate: c.flagged ? "15deg" : "-15deg" }],
+                  },
+                ]}
+                resizeMode="contain"
+              />
+              <Text
+                style={[
+                  styles.flagLabel,
+                  { color: c.flagged ? colors.warmAmber : colors.textMuted },
+                ]}
+              >
+                {c.flagged ? "Flagged" : "Tap to flag"}
               </Text>
             </Pressable>
           </View>
 
           <View style={styles.section}>
             <Text style={styles.sectionLabel}>INTENSITY</Text>
-            <View style={styles.intensityRow}>
-              {intensities.map((item) => (
-                <Pressable
-                  key={item.id}
-                  onPress={() => !readOnly && onUpdate(c.id, { intensity: item.id })}
-                  style={styles.intensityBtn}
-                >
-                  <Text style={[
-                    styles.intensityText,
-                    {
-                      color: item.color,
-                      fontWeight: c.intensity === item.id ? '700' : '400',
-                      opacity: c.intensity === item.id ? 1 : 0.5,
-                    },
-                  ]}>
-                    {item.label}
-                  </Text>
-                </Pressable>
-              ))}
-            </View>
+            {c.intensity != null ? (
+              <>
+                <IntensitySlider
+                  value={c.intensity}
+                  onChange={(v) =>
+                    !readOnly && onUpdate(c.id, { intensity: v })
+                  }
+                  readOnly={readOnly}
+                />
+                {!readOnly && (
+                  <Pressable
+                    onPress={() => onUpdate(c.id, { intensity: undefined })}
+                  >
+                    <Text style={styles.removeIntensity}>Remove intensity</Text>
+                  </Pressable>
+                )}
+              </>
+            ) : !readOnly ? (
+              <Pressable onPress={() => onUpdate(c.id, { intensity: 50 })}>
+                <Text style={styles.addIntensity}>Tap to add intensity</Text>
+              </Pressable>
+            ) : null}
           </View>
 
           {!readOnly && (
@@ -165,17 +216,41 @@ export function ContractionDetailModal({ contraction: c, contractions, onClose, 
                     Delete this contraction?
                   </Text>
                   <Pressable
-                    onPress={() => { onDelete(c.id); onClose(); }}
-                    style={[styles.deleteBtn, { backgroundColor: colors.danger, borderColor: colors.danger }]}
+                    onPress={() => {
+                      onDelete(c.id);
+                      onClose();
+                    }}
+                    style={[
+                      styles.deleteBtn,
+                      {
+                        backgroundColor: colors.danger,
+                        borderColor: colors.danger,
+                      },
+                    ]}
                   >
-                    <Text style={[styles.deleteBtnText, { color: colors.white }]}>Yes, Delete</Text>
+                    <Text
+                      style={[styles.deleteBtnText, { color: colors.white }]}
+                    >
+                      Yes, Delete
+                    </Text>
                   </Pressable>
                   <Pressable onPress={() => setConfirmDelete(false)}>
-                    <Text style={{ fontSize: 14, color: colors.textMuted, padding: 8 }}>Cancel</Text>
+                    <Text
+                      style={{
+                        fontSize: 14,
+                        color: colors.textMuted,
+                        padding: 8,
+                      }}
+                    >
+                      Cancel
+                    </Text>
                   </Pressable>
                 </View>
               ) : (
-                <Pressable onPress={() => setConfirmDelete(true)} style={styles.deleteBtn}>
+                <Pressable
+                  onPress={() => setConfirmDelete(true)}
+                  style={styles.deleteBtn}
+                >
                   <Text style={styles.deleteBtnText}>Delete Contraction</Text>
                 </Pressable>
               )}
@@ -187,25 +262,91 @@ export function ContractionDetailModal({ contraction: c, contractions, onClose, 
   );
 }
 
-const createStyles = (colors: ThemeColors) => StyleSheet.create({
-  overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.3)', alignItems: 'center', justifyContent: 'center', padding: 20 },
-  modal: { width: '100%', maxWidth: 380, backgroundColor: colors.cream, borderRadius: 20, paddingHorizontal: 20, paddingBottom: 20 },
-  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 20, borderBottomWidth: 1, borderBottomColor: colors.beige },
-  headerTitle: { fontSize: 17, fontWeight: '600', color: colors.textPrimary },
-  closeBtn: { fontSize: 15, fontWeight: '500', color: colors.terracotta },
-  section: { paddingVertical: 16, borderBottomWidth: 1, borderBottomColor: colors.beige },
-  sectionLabel: { fontSize: 11, color: colors.textMuted, letterSpacing: 1.5, marginBottom: 10 },
-  fieldRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 8 },
-  timeFieldRow: { paddingVertical: 4 },
-  fieldLabel: { fontSize: 14, color: colors.textSecondary },
-  fieldValue: { fontSize: 15, fontWeight: '500', color: colors.textPrimary },
-  flagToggle: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 10, paddingHorizontal: 14, borderRadius: 12, alignSelf: 'flex-start' },
-  flagToggleText: { fontSize: 18, fontWeight: '700' },
-  flagLabel: { fontSize: 14, fontWeight: '500' },
-  intensityRow: { flexDirection: 'row', gap: 8 },
-  intensityBtn: { flex: 1, paddingVertical: 10, paddingHorizontal: 8, alignItems: 'center' },
-  intensityText: { fontSize: 15 },
-  confirmRow: { alignItems: 'center', gap: 8 },
-  deleteBtn: { width: '100%', padding: 12, borderRadius: 12, borderWidth: 1, borderColor: colors.danger, alignItems: 'center' },
-  deleteBtnText: { fontSize: 14, fontWeight: '500', color: colors.danger },
-});
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
+    overlay: {
+      flex: 1,
+      backgroundColor: "rgba(0,0,0,0.3)",
+      alignItems: "center",
+      justifyContent: "center",
+      padding: 20,
+    },
+    modal: {
+      width: "100%",
+      maxWidth: 380,
+      backgroundColor: colors.cream,
+      borderRadius: 20,
+      paddingHorizontal: 20,
+      paddingBottom: 20,
+    },
+    header: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+      paddingVertical: 20,
+      borderBottomWidth: 1,
+      borderBottomColor: colors.beige,
+    },
+    headerTitle: { fontSize: 17, fontWeight: "600", color: colors.textPrimary },
+    closeBtn: { fontSize: 15, fontWeight: "500", color: colors.terracotta },
+    section: {
+      paddingVertical: 16,
+      borderBottomWidth: 1,
+      borderBottomColor: colors.beige,
+    },
+    sectionLabel: {
+      fontSize: 11,
+      color: colors.textMuted,
+      letterSpacing: 1.5,
+      marginBottom: 10,
+    },
+    fieldRow: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+      paddingVertical: 8,
+    },
+    timeFieldRow: { paddingVertical: 4 },
+    fieldLabel: { fontSize: 14, color: colors.textSecondary },
+    fieldValue: { fontSize: 15, fontWeight: "500", color: colors.textPrimary },
+    pickerContainer: { alignItems: "center", marginVertical: -8 },
+    timePicker: { height: 100, width: 280 },
+    flagToggle: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "center",
+      paddingVertical: 10,
+      paddingHorizontal: 14,
+      borderRadius: 12,
+      borderWidth: 1.5,
+      position: "relative" as const,
+    },
+    flagIconLeft: {
+      position: "absolute" as const,
+      left: 10,
+      width: 44,
+      height: 44,
+    },
+    flagLabel: {
+      fontSize: 14,
+      fontWeight: "500",
+      textAlign: "center" as const,
+    },
+    addIntensity: { fontSize: 13, color: colors.textMuted, paddingVertical: 8 },
+    removeIntensity: {
+      fontSize: 12,
+      color: colors.textMuted,
+      paddingTop: 6,
+      textDecorationLine: "underline",
+    },
+    confirmRow: { alignItems: "center", gap: 8 },
+    deleteBtn: {
+      width: "100%",
+      padding: 12,
+      borderRadius: 12,
+      borderWidth: 1,
+      borderColor: colors.danger,
+      alignItems: "center",
+    },
+    deleteBtnText: { fontSize: 14, fontWeight: "500", color: colors.danger },
+  });

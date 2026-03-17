@@ -37,6 +37,9 @@ export function evaluateContractions(
 }
 
 const messages = [
+  'Your contractions are following a pattern commonly used by care providers to assess labor progression.',
+  'Contractions are progressing at a steady rate \u2014 a pattern care providers commonly monitor.',
+  "Your contractions have been regular. Theo has detected the pattern you set. Share this data with your care team.",
   'Your contractions are following a consistent pattern. Consider contacting your care provider for guidance.',
   'Your contractions have been steady. Check in with your care provider about next steps.',
   "You're doing great. Your contractions have been regular \u2014 talk to your care provider about timing.",

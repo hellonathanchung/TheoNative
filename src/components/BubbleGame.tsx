@@ -1,5 +1,6 @@
 import React, { useMemo, useState, useEffect, useRef, useCallback } from 'react';
 import { View, Text, Pressable, StyleSheet, Dimensions } from 'react-native';
+import * as Haptics from 'expo-haptics';
 import {
   Canvas,
   Rect,
@@ -105,6 +106,7 @@ export function BubbleGame({ config, headerExtra }: BubbleGameProps) {
         saveBubbleHigh(s.score);
         setDisplayHigh(s.score);
       }
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
     }
   }, []);
 

@@ -2,7 +2,7 @@ import { useState, useCallback, useEffect, useRef } from 'react';
 import { Vibration, Platform } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import * as Notifications from 'expo-notifications';
-import type { Contraction, Settings, Session, Intensity } from '../types';
+import type { Contraction, Settings, Session } from '../types';
 import {
   loadContractions, saveContractions,
   loadSettings, saveSettings,
@@ -99,11 +99,11 @@ export function useContractions() {
     setActiveStart(now);
     saveActiveState(true, now);
 
-    if (settings.hapticEnabled) triggerHaptic('medium');
+    if (settings.hapticEnabled) triggerHaptic('heavy');
     analytics.contractionStarted();
   }, [settings.hapticEnabled]);
 
-  const stopContraction = useCallback(() => {
+  const stopContraction = useCallback(async () => {
     if (!activeStart) return;
 
     const now = Date.now();
@@ -150,7 +150,13 @@ export function useContractions() {
       setPendingIntensityId(newContraction.id);
     }
 
-    if (settings.hapticEnabled) triggerHaptic('heavy');
+    if (settings.hapticEnabled) {
+      try {
+        await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      } catch {
+        Vibration.vibrate([0, 60, 40, 100]);
+      }
+    }
     analytics.contractionStopped(duration);
   }, [activeStart, settings, lastAlertTime]);
 
@@ -186,7 +192,7 @@ export function useContractions() {
     });
   }, []);
 
-  const setIntensity = useCallback((id: string, intensity: Intensity) => {
+  const setIntensity = useCallback((id: string, intensity: number) => {
     setContractions((prev) =>
       prev.map((c) => (c.id === id ? { ...c, intensity } : c))
     );
