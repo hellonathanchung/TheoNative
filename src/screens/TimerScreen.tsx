@@ -7,6 +7,7 @@ import { useTheme, type ThemeColors } from '../theme';
 import { DaySeparator } from '../components/DaySeparator';
 import type { Contraction } from '../types';
 import type { useContractions } from '../hooks/useContractions';
+import { getIntensityBorderStyle } from '../utils/intensity';
 import { IntensityPicker } from '../components/IntensityPicker';
 import { ContractionDetailModal } from '../components/ContractionDetailModal';
 import { useSharing, type MergedContraction } from '../contexts/SharingContext';
@@ -150,6 +151,9 @@ export function TimerScreen({ app }: Props) {
                   : '--';
                 const intervalLabel =
                   interval !== null ? formatInterval(interval) : '--';
+                const borderStyle = c.intensity != null
+                  ? getIntensityBorderStyle(c.intensity)
+                  : { borderColor: colors.beige, borderWidth: 1 };
                 return (
                   <Pressable
                     accessibilityRole="button"
@@ -161,7 +165,7 @@ export function TimerScreen({ app }: Props) {
                       setSelectedIsPartner(c.isPartner);
                     }}
                   >
-                    <View style={styles.row}>
+                    <View style={[styles.row, borderStyle]}>
                       {c.isPartner && (
                         <View style={styles.partnerBadge}>
                           <Text style={styles.partnerBadgeText}>{partnerInitial}</Text>
@@ -184,21 +188,6 @@ export function TimerScreen({ app }: Props) {
                         </Text>
                         <Text style={styles.rowLabel}>apart</Text>
                       </View>
-                      {c.intensity && (
-                        <View
-                          style={[
-                            styles.intensityDot,
-                            {
-                              backgroundColor:
-                                c.intensity === 'mild'
-                                  ? colors.intensityMild
-                                  : c.intensity === 'moderate'
-                                    ? colors.intensityModerate
-                                    : colors.intensityStrong,
-                            },
-                          ]}
-                        />
-                      )}
                     </View>
                   </Pressable>
                 );
@@ -360,8 +349,6 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     paddingHorizontal: 12,
     backgroundColor: colors.cream,
     borderRadius: 14,
-    borderWidth: 1,
-    borderColor: colors.beige,
     marginBottom: 10,
     overflow: 'visible' as const,
   },
@@ -384,12 +371,6 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     fontSize: 10,
     color: colors.textMuted,
     marginTop: 1,
-  },
-  intensityDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    marginLeft: 12,
   },
   partnerBadge: {
     position: 'absolute',

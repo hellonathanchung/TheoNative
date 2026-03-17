@@ -1,5 +1,6 @@
 import { createMMKV } from 'react-native-mmkv';
 import type { Contraction, Settings, Session } from '../types';
+import { migrateIntensity } from './intensity';
 
 const storage = createMMKV();
 
@@ -24,7 +25,9 @@ export const DEFAULT_SETTINGS: Settings = {
 export function loadContractions(): Contraction[] {
   try {
     const raw = storage.getString(CONTRACTIONS_KEY);
-    return raw ? JSON.parse(raw) : [];
+    if (!raw) return [];
+    const parsed: any[] = JSON.parse(raw);
+    return parsed.map((c: any) => ({ ...c, intensity: migrateIntensity(c.intensity) }));
   } catch {
     return [];
   }
@@ -65,7 +68,15 @@ export function saveActiveState(isActive: boolean, activeStart: number | null): 
 export function loadSessions(): Session[] {
   try {
     const raw = storage.getString(SESSIONS_KEY);
-    return raw ? JSON.parse(raw) : [];
+    if (!raw) return [];
+    const parsed: any[] = JSON.parse(raw);
+    return parsed.map((s: any) => ({
+      ...s,
+      contractions: (s.contractions ?? []).map((c: any) => ({
+        ...c,
+        intensity: migrateIntensity(c.intensity),
+      })),
+    }));
   } catch {
     return [];
   }

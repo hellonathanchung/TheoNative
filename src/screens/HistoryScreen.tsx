@@ -11,6 +11,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { formatDuration, formatTime, formatInterval, groupWithDaySeparators } from "../utils/format";
 import { useTheme, type ThemeColors } from "../theme";
 import { DaySeparator } from "../components/DaySeparator";
+import { getIntensityBorderStyle } from "../utils/intensity";
 import type { Contraction, Session } from "../types";
 import type { useContractions } from "../hooks/useContractions";
 import { ContractionDetailModal } from "../components/ContractionDetailModal";
@@ -207,10 +208,13 @@ export function HistoryScreen({ app }: Props) {
                     ? (c.startTime - prev.endTime) / 1000
                     : null;
 
+                  const borderStyle = c.intensity != null
+                    ? getIntensityBorderStyle(c.intensity)
+                    : { borderColor: colors.beige, borderWidth: 1 };
                   return (
                     <Pressable
                       key={item.key}
-                      style={s.row}
+                      style={[s.row, borderStyle]}
                       onPress={() => {
                         setSelectedContractionId(c.id);
                         setSelectedIsPartner(c.isPartner);
@@ -235,21 +239,6 @@ export function HistoryScreen({ app }: Props) {
                         </Text>
                         <Text style={s.rowLabel}>apart</Text>
                       </View>
-                      {c.intensity && (
-                        <View
-                          style={[
-                            s.intensityDot,
-                            {
-                              backgroundColor:
-                                c.intensity === "mild"
-                                  ? colors.intensityMild
-                                  : c.intensity === "moderate"
-                                  ? colors.intensityModerate
-                                  : colors.intensityStrong,
-                            },
-                          ]}
-                        />
-                      )}
                     </Pressable>
                   );
                 })}
@@ -392,8 +381,11 @@ function SessionCard({
             const interval = prev?.endTime
               ? (c.startTime - prev.endTime) / 1000
               : null;
+            const rowBorder = c.intensity != null
+              ? getIntensityBorderStyle(c.intensity)
+              : { borderColor: colors.beige, borderWidth: 1 };
             return (
-              <View key={item.key} style={styles.row}>
+              <View key={item.key} style={[styles.row, rowBorder]}>
                 <Text style={styles.rowNumber}>#{i + 1}</Text>
                 <Text style={styles.rowTime}>{formatTime(c.startTime)}</Text>
                 <View style={styles.rowDetail}>
@@ -408,21 +400,6 @@ function SessionCard({
                   </Text>
                   <Text style={styles.rowLabel}>apart</Text>
                 </View>
-                {c.intensity && (
-                  <View
-                    style={[
-                      styles.intensityDot,
-                      {
-                        backgroundColor:
-                          c.intensity === "mild"
-                            ? colors.intensityMild
-                            : c.intensity === "moderate"
-                            ? colors.intensityModerate
-                            : colors.intensityStrong,
-                      },
-                    ]}
-                  />
-                )}
               </View>
             );
           })}
@@ -514,8 +491,6 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     paddingHorizontal: 12,
     backgroundColor: colors.cream,
     borderRadius: 14,
-    borderWidth: 1,
-    borderColor: colors.beige,
     marginBottom: 10,
     overflow: "visible" as const,
   },
@@ -545,12 +520,6 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     fontSize: 10,
     color: colors.textMuted,
     marginTop: 1,
-  },
-  intensityDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    marginLeft: 12,
   },
   partnerBadge: {
     position: 'absolute' as const,

@@ -1,4 +1,4 @@
-export type Intensity = 'mild' | 'moderate' | 'strong';
+export type Intensity = number; // 1–50
 
 export interface Contraction {
   id: string;

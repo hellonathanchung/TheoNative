@@ -239,7 +239,7 @@ export function SettingsScreen({ app }: Props) {
           thumbColor={settings.hapticEnabled ? colors.deepGreen : colors.textMuted}
         />
       </SettingRow>
-      <SettingRow label="Track intensity" desc="Note mild, moderate, or strong after each contraction">
+      <SettingRow label="Track intensity" desc="Rate each contraction's intensity after it ends">
         <Switch
           value={settings.intensityEnabled}
           onValueChange={(v) => updateSettings({ intensityEnabled: v })}

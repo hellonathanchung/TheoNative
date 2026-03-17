@@ -1,48 +1,32 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { View, Text, Pressable, Modal, StyleSheet } from 'react-native';
 import { useTheme, type ThemeColors } from '../theme';
-import type { Intensity } from '../types';
+import { IntensitySlider } from './IntensitySlider';
 
 interface Props {
-  onSelect: (intensity: Intensity) => void;
+  onSelect: (intensity: number) => void;
   onSkip: () => void;
 }
 
 export const IntensityPicker: React.FC<Props> = ({ onSelect, onSkip }) => {
   const { colors } = useTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
-  const intensityOptions: {
-    value: Intensity;
-    label: string;
-    color: string;
-  }[] = useMemo(
-    () => [
-      { value: 'mild', label: 'Mild', color: colors.intensityMild },
-      { value: 'moderate', label: 'Moderate', color: colors.intensityModerate },
-      { value: 'strong', label: 'Strong', color: colors.intensityStrong },
-    ],
-    [colors],
-  );
+  const [value, setValue] = useState(25);
+
   return (
     <Modal transparent animationType="fade">
       <View style={styles.overlay}>
         <View style={styles.sheet}>
           <Text style={styles.title}>How did that feel?</Text>
-          <View style={styles.optionsRow}>
-            {intensityOptions.map((option) => (
-              <Pressable
-                key={option.value}
-                style={styles.option}
-                accessibilityRole="button"
-                accessibilityLabel={`Mark contraction intensity as ${option.label}`}
-                onPress={() => onSelect(option.value)}
-              >
-                <Text style={[styles.optionLabel, { color: option.color }]}>
-                  {option.label}
-                </Text>
-              </Pressable>
-            ))}
-          </View>
+          <IntensitySlider value={value} onChange={setValue} />
+          <Pressable
+            style={styles.confirmButton}
+            accessibilityRole="button"
+            accessibilityLabel={`Log intensity ${value} out of 50`}
+            onPress={() => onSelect(value)}
+          >
+            <Text style={styles.confirmText}>Log Intensity</Text>
+          </Pressable>
           <Pressable
             style={styles.skipButton}
             accessibilityRole="button"
@@ -68,34 +52,30 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
     paddingTop: 24,
-    paddingHorizontal: 20,
-    paddingBottom: 32,
+    paddingHorizontal: 24,
+    paddingBottom: 40,
   },
   title: {
     textAlign: 'center',
     fontSize: 16,
     fontWeight: '600',
     color: colors.textPrimary,
-    marginBottom: 20,
+    marginBottom: 24,
   },
-  optionsRow: {
-    flexDirection: 'row',
-    gap: 12,
-  },
-  option: {
-    flex: 1,
-    backgroundColor: colors.beige,
-    borderRadius: 16,
-    paddingVertical: 16,
-    paddingHorizontal: 8,
+  confirmButton: {
+    marginTop: 20,
+    backgroundColor: colors.deepGreen,
+    borderRadius: 14,
+    paddingVertical: 14,
     alignItems: 'center',
   },
-  optionLabel: {
-    fontSize: 16,
+  confirmText: {
+    fontSize: 15,
     fontWeight: '600',
+    color: colors.white,
   },
   skipButton: {
-    marginTop: 16,
+    marginTop: 12,
     paddingVertical: 12,
     alignItems: 'center',
   },

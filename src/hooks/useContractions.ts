@@ -2,7 +2,7 @@ import { useState, useCallback, useEffect, useRef } from 'react';
 import { Vibration, Platform } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import * as Notifications from 'expo-notifications';
-import type { Contraction, Settings, Session, Intensity } from '../types';
+import type { Contraction, Settings, Session } from '../types';
 import {
   loadContractions, saveContractions,
   loadSettings, saveSettings,
@@ -177,7 +177,7 @@ export function useContractions() {
     });
   }, []);
 
-  const setIntensity = useCallback((id: string, intensity: Intensity) => {
+  const setIntensity = useCallback((id: string, intensity: number) => {
     setContractions((prev) =>
       prev.map((c) => (c.id === id ? { ...c, intensity } : c))
     );

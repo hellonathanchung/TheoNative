@@ -3,7 +3,8 @@ import { View, Text, Pressable, Modal, StyleSheet, Platform } from 'react-native
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { formatDuration, formatInterval } from '../utils/format';
 import { useTheme, type ThemeColors } from '../theme';
-import type { Contraction, Intensity } from '../types';
+import type { Contraction } from '../types';
+import { IntensitySlider } from './IntensitySlider';
 
 interface Props {
   contraction: Contraction | null;
@@ -17,14 +18,6 @@ interface Props {
 export function ContractionDetailModal({ contraction: c, contractions, onClose, onUpdate, onDelete, readOnly }: Props) {
   const { colors } = useTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
-  const intensities: { id: Intensity; label: string; color: string }[] = useMemo(
-    () => [
-      { id: 'mild', label: 'Mild', color: colors.intensityMild },
-      { id: 'moderate', label: 'Moderate', color: colors.intensityModerate },
-      { id: 'strong', label: 'Strong', color: colors.intensityStrong },
-    ],
-    [colors],
-  );
   const [confirmDelete, setConfirmDelete] = useState(false);
 
   if (!c) return null;
@@ -117,26 +110,17 @@ export function ContractionDetailModal({ contraction: c, contractions, onClose, 
 
           <View style={styles.section}>
             <Text style={styles.sectionLabel}>INTENSITY</Text>
-            <View style={styles.intensityRow}>
-              {intensities.map((item) => (
-                <Pressable
-                  key={item.id}
-                  onPress={() => !readOnly && onUpdate(c.id, { intensity: item.id })}
-                  style={styles.intensityBtn}
-                >
-                  <Text style={[
-                    styles.intensityText,
-                    {
-                      color: item.color,
-                      fontWeight: c.intensity === item.id ? '700' : '400',
-                      opacity: c.intensity === item.id ? 1 : 0.5,
-                    },
-                  ]}>
-                    {item.label}
-                  </Text>
-                </Pressable>
-              ))}
-            </View>
+            {c.intensity != null ? (
+              <IntensitySlider
+                value={c.intensity}
+                onChange={(v) => !readOnly && onUpdate(c.id, { intensity: v })}
+                readOnly={readOnly}
+              />
+            ) : !readOnly ? (
+              <Pressable onPress={() => onUpdate(c.id, { intensity: 25 })}>
+                <Text style={styles.addIntensity}>Tap to add intensity</Text>
+              </Pressable>
+            ) : null}
           </View>
 
           {!readOnly && (
@@ -183,9 +167,7 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   fieldValue: { fontSize: 15, fontWeight: '500', color: colors.textPrimary },
   pickerContainer: { alignItems: 'center', marginVertical: -8 },
   timePicker: { height: 100, width: 280 },
-  intensityRow: { flexDirection: 'row', gap: 8 },
-  intensityBtn: { flex: 1, paddingVertical: 10, paddingHorizontal: 8, alignItems: 'center' },
-  intensityText: { fontSize: 15 },
+  addIntensity: { fontSize: 13, color: colors.textMuted, paddingVertical: 8 },
   confirmRow: { alignItems: 'center', gap: 8 },
   deleteBtn: { width: '100%', padding: 12, borderRadius: 12, borderWidth: 1, borderColor: colors.danger, alignItems: 'center' },
   deleteBtnText: { fontSize: 14, fontWeight: '500', color: colors.danger },
