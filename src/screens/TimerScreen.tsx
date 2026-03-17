@@ -1,16 +1,29 @@
-import React, { useState, useRef, useEffect, useMemo } from 'react';
-import { View, Text, Pressable, FlatList, StyleSheet, Animated, Modal } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useTimer, useTimeSinceLast } from '../hooks/useTimer';
-import { formatDuration, formatTime, formatInterval, groupWithDaySeparators } from '../utils/format';
-import { useTheme, type ThemeColors } from '../theme';
-import { DaySeparator } from '../components/DaySeparator';
-import type { Contraction } from '../types';
-import type { useContractions } from '../hooks/useContractions';
-import { getIntensityBorderStyle } from '../utils/intensity';
-import { IntensityPicker } from '../components/IntensityPicker';
-import { ContractionDetailModal } from '../components/ContractionDetailModal';
-import { useSharing, type MergedContraction } from '../contexts/SharingContext';
+import React, { useState, useRef, useEffect, useMemo } from "react";
+import {
+  View,
+  Text,
+  Pressable,
+  FlatList,
+  StyleSheet,
+  Animated,
+  Modal,
+} from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useTimer, useTimeSinceLast } from "../hooks/useTimer";
+import {
+  formatDuration,
+  formatTime,
+  formatInterval,
+  groupWithDaySeparators,
+} from "../utils/format";
+import { useTheme, type ThemeColors } from "../theme";
+import { DaySeparator } from "../components/DaySeparator";
+import type { Contraction } from "../types";
+import type { useContractions } from "../hooks/useContractions";
+import { getIntensityBorderStyle } from "../utils/intensity";
+import { IntensityPicker } from "../components/IntensityPicker";
+import { ContractionDetailModal } from "../components/ContractionDetailModal";
+import { useSharing, type MergedContraction } from "../contexts/SharingContext";
 
 interface Props {
   app: ReturnType<typeof useContractions>;
@@ -24,13 +37,18 @@ export function TimerScreen({ app }: Props) {
   const sharing = useSharing();
   const merged = sharing.mergedContractions;
   const lastContraction = merged[merged.length - 1] ?? null;
-  const timeSinceLast = useTimeSinceLast(app.isActive, lastContraction?.endTime ?? null);
+  const timeSinceLast = useTimeSinceLast(
+    app.isActive,
+    lastContraction?.endTime ?? null
+  );
   const recent = useMemo(
     () => groupWithDaySeparators(merged.slice(-5).reverse()),
-    [merged],
+    [merged]
   );
-  const partnerInitial = sharing.partner?.email?.[0]?.toUpperCase() ?? 'P';
-  const [selectedContractionId, setSelectedContractionId] = useState<string | null>(null);
+  const partnerInitial = sharing.partner?.email?.[0]?.toUpperCase() ?? "P";
+  const [selectedContractionId, setSelectedContractionId] = useState<
+    string | null
+  >(null);
   const [selectedIsPartner, setSelectedIsPartner] = useState(false);
   const [showAutoPause, setShowAutoPause] = useState(false);
   const selectedContraction = selectedContractionId
@@ -45,7 +63,7 @@ export function TimerScreen({ app }: Props) {
 
   const urgency = app.getUrgencyState();
   const buttonTone = useRef(new Animated.Value(0)).current;
-  const targetTone = app.isActive ? 2 : urgency === 'approaching' ? 1 : 0;
+  const targetTone = app.isActive ? 2 : urgency === "approaching" ? 1 : 0;
   const buttonBg = buttonTone.interpolate({
     inputRange: [0, 1, 2],
     outputRange: [colors.warmAmber, colors.softCoral, colors.terracotta],
@@ -62,16 +80,30 @@ export function TimerScreen({ app }: Props) {
       // loop between 1.05 and 1.08
       animRef.current = Animated.loop(
         Animated.sequence([
-          Animated.timing(scale, { toValue: 1.08, duration: 1000, useNativeDriver: true }),
-          Animated.timing(scale, { toValue: 1.05, duration: 1000, useNativeDriver: true }),
-        ]),
+          Animated.timing(scale, {
+            toValue: 1.08,
+            duration: 1000,
+            useNativeDriver: true,
+          }),
+          Animated.timing(scale, {
+            toValue: 1.05,
+            duration: 1000,
+            useNativeDriver: true,
+          }),
+        ])
       );
       animRef.current.start();
     } else {
       animRef.current?.stop?.();
-      Animated.timing(scale, { toValue: 1, duration: 150, useNativeDriver: true }).start();
+      Animated.timing(scale, {
+        toValue: 1,
+        duration: 150,
+        useNativeDriver: true,
+      }).start();
     }
-    return () => { animRef.current?.stop?.(); };
+    return () => {
+      animRef.current?.stop?.();
+    };
   }, [app.isActive, scale]);
 
   useEffect(() => {
@@ -104,23 +136,23 @@ export function TimerScreen({ app }: Props) {
       {/* Counter */}
       {merged.length > 0 && (
         <Text style={styles.counter}>
-          {merged.length} contraction{merged.length !== 1 ? 's' : ''}
+          {merged.length} contraction{merged.length !== 1 ? "s" : ""}
         </Text>
       )}
 
       {/* Timer display */}
       <View style={styles.timerSection}>
         <Text style={styles.timerLabel}>
-          {app.isActive ? 'CONTRACTION DURATION' : 'TIME SINCE LAST'}
+          {app.isActive ? "CONTRACTION DURATION" : "TIME SINCE LAST"}
         </Text>
         <Text style={styles.timerValue}>
           {app.isActive
             ? formatDuration(elapsed)
             : lastContraction?.endTime
-              ? timeSinceLast >= 3600
-                ? formatInterval(timeSinceLast)
-                : formatDuration(timeSinceLast)
-              : '--:--'}
+            ? timeSinceLast >= 3600
+              ? formatInterval(timeSinceLast)
+              : formatDuration(timeSinceLast)
+            : "--:--"}
         </Text>
       </View>
 
@@ -141,24 +173,25 @@ export function TimerScreen({ app }: Props) {
               data={recent}
               keyExtractor={(item) => item.key}
               renderItem={({ item }) => {
-                if (item.type === 'separator') {
+                if (item.type === "separator") {
                   return <DaySeparator label={item.label} />;
                 }
                 const c = item.contraction as MergedContraction;
                 const interval = getInterval(c);
                 const durationLabel = c.duration
                   ? formatDuration(c.duration)
-                  : '--';
+                  : "--";
                 const intervalLabel =
-                  interval !== null ? formatInterval(interval) : '--';
-                const borderStyle = c.intensity != null
-                  ? getIntensityBorderStyle(c.intensity)
-                  : { borderColor: colors.beige, borderWidth: 1 };
+                  interval !== null ? formatInterval(interval) : "--";
+                const borderStyle =
+                  c.intensity != null
+                    ? getIntensityBorderStyle(c.intensity)
+                    : { borderColor: colors.beige, borderWidth: 1 };
                 return (
                   <Pressable
                     accessibilityRole="button"
                     accessibilityLabel={`Contraction at ${formatTime(
-                      c.startTime,
+                      c.startTime
                     )}, duration ${durationLabel}, ${intervalLabel} apart.`}
                     onPress={() => {
                       setSelectedContractionId(c.id);
@@ -168,16 +201,21 @@ export function TimerScreen({ app }: Props) {
                     <View style={[styles.row, borderStyle]}>
                       {c.isPartner && (
                         <View style={styles.partnerBadge}>
-                          <Text style={styles.partnerBadgeText}>{partnerInitial}</Text>
+                          <Text style={styles.partnerBadgeText}>
+                            {partnerInitial}
+                          </Text>
+                        </View>
+                      )}
+                      {c.flagged && (
+                        <View style={styles.flagBadge}>
+                          <Text style={styles.flagBadgeText}>?</Text>
                         </View>
                       )}
                       <Text style={styles.rowTime}>
                         {formatTime(c.startTime)}
                       </Text>
                       <View style={styles.rowDetail}>
-                        <Text style={styles.rowValue}>
-                          {durationLabel}
-                        </Text>
+                        <Text style={styles.rowValue}>{durationLabel}</Text>
                         <Text style={styles.rowLabel}>duration</Text>
                       </View>
                       <View style={styles.rowDetail}>
@@ -225,14 +263,24 @@ export function TimerScreen({ app }: Props) {
             ]}
           >
             <Pressable
-              style={{ flex: 1, alignItems: 'center', justifyContent: 'center', borderRadius: 80, backgroundColor: 'transparent' }}
+              style={{
+                flex: 1,
+                alignItems: "center",
+                justifyContent: "center",
+                borderRadius: 80,
+                backgroundColor: "transparent",
+              }}
               accessibilityRole="button"
-              accessibilityLabel={app.isActive ? 'Stop contraction' : 'Start contraction'}
-              onPress={app.isActive ? app.stopContraction : app.startContraction}
+              accessibilityLabel={
+                app.isActive ? "Stop contraction" : "Start contraction"
+              }
+              onPress={
+                app.isActive ? app.stopContraction : app.startContraction
+              }
             >
               <Text style={styles.bigButtonLabel}>TAP TO</Text>
               <Text style={styles.bigButtonAction}>
-                {app.isActive ? 'Stop' : 'Start'}
+                {app.isActive ? "Stop" : "Start"}
               </Text>
             </Pressable>
           </Animated.View>
@@ -251,7 +299,10 @@ export function TimerScreen({ app }: Props) {
       <ContractionDetailModal
         contraction={selectedContraction}
         contractions={merged}
-        onClose={() => { setSelectedContractionId(null); setSelectedIsPartner(false); }}
+        onClose={() => {
+          setSelectedContractionId(null);
+          setSelectedIsPartner(false);
+        }}
         onUpdate={app.updateContraction}
         onDelete={app.deleteContraction}
         readOnly={selectedIsPartner}
@@ -287,203 +338,205 @@ export function TimerScreen({ app }: Props) {
   );
 }
 
-const createStyles = (colors: ThemeColors) => StyleSheet.create({
-  container: {
-    flex: 1,
-    paddingHorizontal: 0,
-  },
-  counter: {
-    textAlign: 'center',
-    fontSize: 13,
-    color: colors.textMuted,
-    letterSpacing: 1,
-    paddingBottom: 4,
-  },
-  timerSection: {
-    alignItems: 'center',
-    paddingVertical: 16,
-  },
-  timerLabel: {
-    fontSize: 12,
-    color: colors.textSecondary,
-    letterSpacing: 1.5,
-    marginBottom: 4,
-  },
-  timerValue: {
-    fontSize: 56,
-    fontWeight: '200',
-    color: colors.textPrimary,
-    fontVariant: ['tabular-nums'],
-  },
-  recentSection: {
-    flex: 1,
-    paddingHorizontal: 20,
-  },
-  emptyState: {
-    alignItems: 'center',
-    marginTop: 24,
-    paddingHorizontal: 16,
-  },
-  emptyTitle: {
-    fontSize: 16,
-    color: colors.textSecondary,
-    fontWeight: '500',
-    marginBottom: 6,
-  },
-  emptyDesc: {
-    fontSize: 13,
-    color: colors.textMuted,
-    lineHeight: 20,
-    textAlign: 'center',
-  },
-  sectionHeader: {
-    fontSize: 11,
-    color: colors.textMuted,
-    letterSpacing: 1.5,
-    marginBottom: 8,
-  },
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 12,
-    paddingHorizontal: 12,
-    backgroundColor: colors.cream,
-    borderRadius: 14,
-    marginBottom: 10,
-    overflow: 'visible' as const,
-  },
-  rowTime: {
-    width: 84,
-    fontSize: 14,
-    color: colors.textSecondary,
-    textAlign: 'center',
-  },
-  rowDetail: {
-    flex: 1,
-    alignItems: 'center',
-  },
-  rowValue: {
-    fontSize: 16,
-    fontWeight: '500',
-    color: colors.textPrimary,
-  },
-  rowLabel: {
-    fontSize: 10,
-    color: colors.textMuted,
-    marginTop: 1,
-  },
-  partnerBadge: {
-    position: 'absolute',
-    top: 2,
-    left: 2,
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-    backgroundColor: colors.deepGreen,
-    alignItems: 'center',
-    justifyContent: 'center',
-    zIndex: 1,
-  },
-  partnerBadgeText: {
-    fontSize: 10,
-    fontWeight: '700',
-    color: colors.cream,
-  },
-  newSessionWrapper: {
-    paddingHorizontal: 20,
-    paddingTop: 8,
-  },
-  newSessionBtn: {
-    width: '100%',
-    padding: 12,
-    backgroundColor: colors.beige,
-    borderRadius: 12,
-    alignItems: 'center',
-  },
-  newSessionText: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: colors.textSecondary,
-  },
-  buttonWrapper: {
-    alignItems: 'center',
-    paddingTop: 8,
-    paddingBottom: 12,
-  },
-  bigButton: {
-    width: 160,
-    height: 160,
-    borderRadius: 80,
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: colors.warmAmber,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 16,
-    elevation: 8,
-  },
-  bigButtonLabel: {
-    fontSize: 14,
-    color: colors.white,
-    opacity: 0.9,
-    letterSpacing: 1,
-  },
-  bigButtonAction: {
-    fontSize: 28,
-    fontWeight: '600',
-    color: colors.white,
-    marginTop: 4,
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(46, 59, 46, 0.4)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 24,
-  },
-  modalCard: {
-    backgroundColor: colors.cream,
-    borderRadius: 20,
-    padding: 28,
-    width: '100%',
-    maxWidth: 320,
-    alignItems: 'center',
-  },
-  modalTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: colors.textPrimary,
-    marginBottom: 6,
-  },
-  modalBody: {
-    fontSize: 14,
-    color: colors.textSecondary,
-    lineHeight: 21,
-    textAlign: 'center',
-    marginBottom: 18,
-  },
-  modalPrimaryBtn: {
-    width: '100%',
-    padding: 14,
-    borderRadius: 12,
-    backgroundColor: colors.terracotta,
-    alignItems: 'center',
-    marginBottom: 10,
-  },
-  modalPrimaryText: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: colors.white,
-  },
-  modalSecondaryBtn: {
-    width: '100%',
-    padding: 12,
-    borderRadius: 12,
-    alignItems: 'center',
-  },
-  modalSecondaryText: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: colors.textMuted,
-  },
-});
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
+    container: {
+      flex: 1,
+      paddingHorizontal: 0,
+    },
+    counter: {
+      textAlign: "center",
+      fontSize: 13,
+      color: colors.textMuted,
+      letterSpacing: 1,
+      paddingBottom: 4,
+    },
+    timerSection: {
+      alignItems: "center",
+      paddingVertical: 16,
+    },
+    timerLabel: {
+      fontSize: 12,
+      color: colors.textSecondary,
+      letterSpacing: 1.5,
+      marginBottom: 4,
+    },
+    timerValue: {
+      fontSize: 56,
+      fontWeight: "200",
+      color: colors.textPrimary,
+      fontVariant: ["tabular-nums"],
+    },
+    recentSection: {
+      flex: 1,
+      paddingHorizontal: 20,
+    },
+    emptyState: {
+      alignItems: "center",
+      marginTop: 24,
+      paddingHorizontal: 16,
+    },
+    emptyTitle: {
+      fontSize: 16,
+      color: colors.textSecondary,
+      fontWeight: "500",
+      marginBottom: 6,
+    },
+    emptyDesc: {
+      fontSize: 13,
+      color: colors.textMuted,
+      lineHeight: 20,
+      textAlign: "center",
+    },
+    sectionHeader: {
+      fontSize: 11,
+      color: colors.textMuted,
+      letterSpacing: 1.5,
+      marginBottom: 8,
+    },
+    row: {
+      flexDirection: "row",
+      alignItems: "center",
+      paddingVertical: 12,
+      paddingHorizontal: 12,
+      backgroundColor: colors.cream,
+      borderRadius: 14,
+      marginBottom: 10,
+      overflow: "visible" as const,
+    },
+    rowTime: {
+      width: 84,
+      fontSize: 14,
+      color: colors.textSecondary,
+      textAlign: "center",
+    },
+    rowDetail: {
+      flex: 1,
+    },
+    rowValue: {
+      fontSize: 16,
+      fontWeight: "500",
+      color: colors.textPrimary,
+      textAlign: "center",
+    },
+    rowLabel: {
+      fontSize: 10,
+      color: colors.textMuted,
+      marginTop: 1,
+      textAlign: "center",
+    },
+    partnerBadge: {
+      position: "absolute",
+      top: 2,
+      left: 2,
+      width: 20,
+      height: 20,
+      borderRadius: 10,
+      backgroundColor: colors.deepGreen,
+      alignItems: "center",
+      justifyContent: "center",
+      zIndex: 1,
+    },
+    partnerBadgeText: {
+      fontSize: 10,
+      fontWeight: "700",
+      color: colors.cream,
+    },
+    newSessionWrapper: {
+      paddingHorizontal: 20,
+      paddingTop: 8,
+    },
+    newSessionBtn: {
+      width: "100%",
+      padding: 12,
+      backgroundColor: colors.beige,
+      borderRadius: 12,
+      alignItems: "center",
+    },
+    newSessionText: {
+      fontSize: 14,
+      fontWeight: "500",
+      color: colors.textSecondary,
+    },
+    buttonWrapper: {
+      alignItems: "center",
+      paddingTop: 8,
+      paddingBottom: 12,
+    },
+    bigButton: {
+      width: 160,
+      height: 160,
+      borderRadius: 80,
+      alignItems: "center",
+      justifyContent: "center",
+      shadowColor: colors.warmAmber,
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.3,
+      shadowRadius: 16,
+      elevation: 8,
+    },
+    bigButtonLabel: {
+      fontSize: 14,
+      color: colors.white,
+      opacity: 0.9,
+      letterSpacing: 1,
+    },
+    bigButtonAction: {
+      fontSize: 28,
+      fontWeight: "600",
+      color: colors.white,
+      marginTop: 4,
+    },
+    modalOverlay: {
+      flex: 1,
+      backgroundColor: "rgba(46, 59, 46, 0.4)",
+      alignItems: "center",
+      justifyContent: "center",
+      padding: 24,
+    },
+    modalCard: {
+      backgroundColor: colors.cream,
+      borderRadius: 20,
+      padding: 28,
+      width: "100%",
+      maxWidth: 320,
+      alignItems: "center",
+    },
+    modalTitle: {
+      fontSize: 18,
+      fontWeight: "600",
+      color: colors.textPrimary,
+      marginBottom: 6,
+    },
+    modalBody: {
+      fontSize: 14,
+      color: colors.textSecondary,
+      lineHeight: 21,
+      textAlign: "center",
+      marginBottom: 18,
+    },
+    modalPrimaryBtn: {
+      width: "100%",
+      padding: 14,
+      borderRadius: 12,
+      backgroundColor: colors.terracotta,
+      alignItems: "center",
+      marginBottom: 10,
+    },
+    modalPrimaryText: {
+      fontSize: 15,
+      fontWeight: "600",
+      color: colors.white,
+    },
+    modalSecondaryBtn: {
+      width: "100%",
+      padding: 12,
+      borderRadius: 12,
+      alignItems: "center",
+    },
+    modalSecondaryText: {
+      fontSize: 14,
+      fontWeight: "500",
+      color: colors.textMuted,
+    },
+  });

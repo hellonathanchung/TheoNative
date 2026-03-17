@@ -16,7 +16,7 @@ export const DEFAULT_SETTINGS: Settings = {
   timeWindowMinutes: 60,
   notificationsEnabled: true,
   hapticEnabled: true,
-  intensityEnabled: true,
+  intensityEnabled: false,
   dinoDifficulty: 'normal',
   bubbleDifficulty: 'normal',
   themeMode: 'light',

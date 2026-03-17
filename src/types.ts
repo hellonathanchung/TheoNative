@@ -6,6 +6,7 @@ export interface Contraction {
   endTime: number | null;
   duration: number | null;
   intensity?: Intensity;
+  flagged?: boolean;
 }
 
 export type Preset = '5-1-1' | '4-1-1' | '3-1-1' | 'custom';

@@ -45,3 +45,18 @@ Bottom tab navigator (`src/navigation/TabNavigator.tsx`) with 4 tabs: Track, His
 
 ### Onboarding
 `src/components/Onboarding.tsx` is a 3-screen flow shown once (tracked via `theo_onboarding_complete` in MMKV). It presents welcome, preset selection, and how-it-works screens.
+
+### Partner Sharing (Supabase)
+The sharing feature is opt-in and layered on top of the offline-first local state:
+
+- `src/contexts/SharingContext.tsx` — `SharingProvider` composes `useAuth` + `usePartnership` + `useSync` into one context consumed via `useSharing()`
+- `src/hooks/useAuth.ts` — Supabase magic-link auth (OTP email + deep-link handling); also handles switching accounts mid-session
+- `src/hooks/usePartnership.ts` — CRUD for the `partnerships` table; handles invite/accept/decline/disconnect with edge cases (reciprocal invites, already-connected guards, re-inviting after decline)
+- `src/hooks/useSync.ts` — debounced upsert of local contractions to Supabase `contractions` table; polls partner's contractions on foreground; `SharingContext` merges them as `MergedContraction[]` (adds `isPartner: boolean` flag)
+
+Supabase tables: `partnerships` (inviter/invitee relationship), `contractions` (per-user sync), `profiles` (email + display_name).
+
+### Node / EAS
+- Requires Node ≥20 (use Node 25 via nvm)
+- EAS preview profile targets internal iOS distribution: `npx eas-cli build --profile preview --platform ios --non-interactive`
+- Required env vars: `EXPO_PUBLIC_SUPABASE_URL`, `EXPO_PUBLIC_SUPABASE_ANON_KEY`, `POSTHOG_API_KEY`
