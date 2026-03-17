@@ -12,6 +12,9 @@ export interface Partnership {
   status: 'pending' | 'accepted' | 'declined';
   created_at: string;
   accepted_at: string | null;
+  // Enriched inviter profile (populated via join in fetchPartnerships)
+  inviter_email?: string;
+  inviter_display_name?: string | null;
 }
 
 interface PartnerProfile {
@@ -37,14 +40,21 @@ export function usePartnership(user: User | null) {
 
     setLoading(true);
     try {
+      // Join with inviter profile to get their email/display_name
       const { data, error } = await supabase
         .from('partnerships')
-        .select('*')
+        .select('*, inviter:profiles!inviter_id(email, display_name)')
         .or(`inviter_id.eq.${user.id},invitee_id.eq.${user.id},invitee_email.eq.${user.email}`);
 
       if (error) throw error;
 
-      const partnerships = (data ?? []) as Partnership[];
+      // Flatten the nested inviter profile into the partnership object
+      const partnerships: Partnership[] = (data ?? []).map((p: any) => ({
+        ...p,
+        inviter_email: p.inviter?.email,
+        inviter_display_name: p.inviter?.display_name ?? null,
+        inviter: undefined,
+      }));
 
       // Find accepted partnership
       const accepted = partnerships.find((p) => p.status === 'accepted');
@@ -136,17 +146,50 @@ export function usePartnership(user: User | null) {
       if (!user) return;
       const targetEmail = email.toLowerCase().trim();
 
-      // Check if there's already a pending invite FROM that email to us
+      // Guard: can't invite yourself
+      if (targetEmail === user.email?.toLowerCase()) {
+        throw new Error("You can't invite yourself.");
+      }
+
+      // Guard: already connected to a partner
+      if (partnerId) {
+        throw new Error(
+          'You are already connected to a partner. Disconnect first to invite someone new.',
+        );
+      }
+
+      // Look up target user's profile to enable reciprocal and already-connected checks
+      const { data: targetProfile } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('email', targetEmail)
+        .maybeSingle();
+
+      // Check if the target user is already in an accepted partnership
+      if (targetProfile) {
+        const { data: theirPartnership } = await supabase
+          .from('partnerships')
+          .select('id')
+          .or(`inviter_id.eq.${targetProfile.id},invitee_id.eq.${targetProfile.id}`)
+          .eq('status', 'accepted')
+          .maybeSingle();
+
+        if (theirPartnership) {
+          throw new Error('That person is already connected to a partner.');
+        }
+      }
+
+      // Check if there's already a pending invite FROM that email to us (reciprocal)
       const { data: existing } = await supabase
         .from('partnerships')
         .select('*')
         .eq('invitee_email', user.email)
         .eq('status', 'pending');
 
-      // Find a reciprocal invite (they already invited us)
-      const reciprocal = (existing ?? []).find(
-        (p: any) => p.invitee_email.toLowerCase() === user.email?.toLowerCase(),
-      );
+      // Reciprocal: find a pending invite specifically from the target user
+      const reciprocal = targetProfile
+        ? (existing ?? []).find((p: any) => p.inviter_id === targetProfile.id)
+        : null;
 
       if (reciprocal) {
         // Auto-accept their invite instead of creating a duplicate
@@ -161,27 +204,50 @@ export function usePartnership(user: User | null) {
         if (error) throw error;
         analytics.partnerInviteAccepted();
       } else {
-        const { error } = await supabase.from('partnerships').insert({
-          inviter_id: user.id,
-          invitee_email: targetEmail,
-        });
-        if (error) {
-          if (error.code === '23505') {
-            throw new Error('You already have a pending invite to this person');
+        // Check if we previously sent a declined invite to this person — reset it to pending
+        const { data: prior } = await supabase
+          .from('partnerships')
+          .select('id, status')
+          .eq('inviter_id', user.id)
+          .eq('invitee_email', targetEmail)
+          .maybeSingle();
+
+        if (prior?.status === 'declined') {
+          const { error } = await supabase
+            .from('partnerships')
+            .update({ status: 'pending', accepted_at: null })
+            .eq('id', prior.id);
+          if (error) throw error;
+          analytics.partnerInviteSent();
+        } else {
+          const { error } = await supabase.from('partnerships').insert({
+            inviter_id: user.id,
+            invitee_email: targetEmail,
+          });
+          if (error) {
+            if (error.code === '23505') {
+              throw new Error('You already have a pending invite to this person');
+            }
+            throw error;
           }
-          throw error;
+          analytics.partnerInviteSent();
         }
-        analytics.partnerInviteSent();
       }
 
       await fetchPartnerships();
     },
-    [user, fetchPartnerships],
+    [user, partnerId, fetchPartnerships],
   );
 
   const acceptInvite = useCallback(
     async (partnershipId: string) => {
       if (!user) return;
+
+      // Guard: already connected to a different partner
+      if (partnerId) {
+        throw new Error('ALREADY_CONNECTED');
+      }
+
       const { error } = await supabase
         .from('partnerships')
         .update({
@@ -194,7 +260,7 @@ export function usePartnership(user: User | null) {
       analytics.partnerInviteAccepted();
       await fetchPartnerships();
     },
-    [user, fetchPartnerships],
+    [user, partnerId, fetchPartnerships],
   );
 
   const declineInvite = useCallback(

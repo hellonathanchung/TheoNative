@@ -1,30 +1,33 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
+import { Alert } from 'react-native';
 import * as Linking from 'expo-linking';
 import { supabase } from '../utils/supabase';
 import { analytics } from '../utils/analytics';
 import type { User } from '@supabase/supabase-js';
 
-const createSessionFromUrl = async (url: string) => {
-  const parsed = Linking.parse(url);
-  const params = parsed.queryParams ?? {};
-  const errorCode = params.error_code as string | undefined;
-  if (errorCode) throw new Error(errorCode);
-
-  const access_token = params.access_token as string | undefined;
-  const refresh_token = params.refresh_token as string | undefined;
-  if (!access_token || !refresh_token) return;
-
-  const { data, error } = await supabase.auth.setSession({
-    access_token,
-    refresh_token,
-  });
-  if (error) throw error;
-  return data.session;
-};
+/** Decode the email claim from a JWT payload without signature verification (display-only). */
+function getEmailFromJwt(token: string): string | undefined {
+  try {
+    const [, payloadB64] = token.split('.');
+    // Replace URL-safe base64 chars and pad if needed
+    const padded = payloadB64.replace(/-/g, '+').replace(/_/g, '/');
+    const json = atob(padded);
+    const payload = JSON.parse(json);
+    return payload.email as string | undefined;
+  } catch {
+    return undefined;
+  }
+}
 
 export function useAuth() {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+
+  // Keep a ref so the deep-link handler always sees the latest user without stale closure
+  const userRef = useRef<User | null>(null);
+  useEffect(() => {
+    userRef.current = user;
+  }, [user]);
 
   useEffect(() => {
     // Check existing session
@@ -43,16 +46,66 @@ export function useAuth() {
     return () => subscription.unsubscribe();
   }, []);
 
-  // Handle incoming deep links for magic link auth
-  const url = Linking.useURL();
-  useEffect(() => {
-    if (url) {
-      createSessionFromUrl(url);
+  /** Process a magic-link URL and establish a Supabase session from its tokens. */
+  const processDeepLink = useCallback(async (url: string) => {
+    const parsed = Linking.parse(url);
+    const params = parsed.queryParams ?? {};
+    const errorCode = params.error_code as string | undefined;
+    if (errorCode) {
+      Alert.alert('Sign-In Error', errorCode.replace(/_/g, ' '));
+      return;
     }
-  }, [url]);
+
+    const access_token = params.access_token as string | undefined;
+    const refresh_token = params.refresh_token as string | undefined;
+    if (!access_token || !refresh_token) return;
+
+    const { error } = await supabase.auth.setSession({ access_token, refresh_token });
+    if (error) {
+      Alert.alert('Sign-In Error', error.message);
+    }
+  }, []);
+
+  // Track the last URL we processed to avoid double-handling the same link
+  const processedUrlRef = useRef<string | null>(null);
+  const url = Linking.useURL();
+
+  useEffect(() => {
+    if (!url || url === processedUrlRef.current) return;
+
+    const parsed = Linking.parse(url);
+    const params = parsed.queryParams ?? {};
+    const access_token = params.access_token as string | undefined;
+
+    // Only act on URLs that carry auth tokens
+    if (!access_token) return;
+
+    processedUrlRef.current = url;
+
+    const currentUser = userRef.current;
+    const linkEmail = getEmailFromJwt(access_token);
+
+    if (currentUser && linkEmail && currentUser.email !== linkEmail) {
+      // Magic link is for a different account — ask before switching
+      Alert.alert(
+        'Switch Account?',
+        `You're signed in as ${currentUser.email}.\n\nThis link signs you in as ${linkEmail}. Switch accounts?`,
+        [
+          { text: 'Cancel', style: 'cancel' },
+          {
+            text: 'Switch',
+            style: 'destructive',
+            onPress: () => processDeepLink(url),
+          },
+        ],
+      );
+    } else {
+      processDeepLink(url);
+    }
+  }, [url, processDeepLink]);
 
   const signInWithOtp = useCallback(async (email: string) => {
-    const { data, error } = await supabase.auth.signInWithOtp({
+    const { error } = await supabase.auth.signInWithOtp({
       email: email.toLowerCase(),
     });
     if (error) throw error;
@@ -60,7 +113,7 @@ export function useAuth() {
   }, []);
 
   const verifyOtp = useCallback(async (email: string, token: string) => {
-    const { data, error } = await supabase.auth.verifyOtp({
+    const { error } = await supabase.auth.verifyOtp({
       email: email.toLowerCase(),
       token,
       type: 'email',

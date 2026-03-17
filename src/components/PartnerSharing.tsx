@@ -5,6 +5,7 @@ import {
   TextInput,
   Pressable,
   ActivityIndicator,
+  Alert,
   StyleSheet,
   KeyboardAvoidingView,
   Platform,
@@ -84,6 +85,47 @@ export function PartnerSharing() {
     } finally {
       setBusy(false);
     }
+  };
+
+  const handleAcceptInvite = async (inviteId: string, inviterName: string) => {
+    try {
+      await acceptInvite(inviteId);
+    } catch (e: any) {
+      if (e.message === 'ALREADY_CONNECTED') {
+        Alert.alert(
+          'Already Connected',
+          `You're already connected to ${partner?.display_name || partner?.email}. Disconnect from them and accept this invite instead?`,
+          [
+            { text: 'Cancel', style: 'cancel' },
+            {
+              text: 'Switch Partner',
+              style: 'destructive',
+              onPress: async () => {
+                try {
+                  await disconnect();
+                  await acceptInvite(inviteId);
+                } catch (err: any) {
+                  setError(err.message ?? 'Failed to switch partner');
+                }
+              },
+            },
+          ],
+        );
+      } else {
+        setError(e.message ?? 'Failed to accept invite');
+      }
+    }
+  };
+
+  const handleDisconnect = () => {
+    Alert.alert(
+      'Disconnect Partner?',
+      `This will stop sharing data with ${partner?.display_name || partner?.email}.`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Disconnect', style: 'destructive', onPress: disconnect },
+      ],
+    );
   };
 
   if (authLoading) {
@@ -183,7 +225,7 @@ export function PartnerSharing() {
           <Text style={s.connectedText}>Connected to {partner.display_name || partner.email}</Text>
         </View>
         <Text style={s.signedInAs}>Signed in as {user.email}</Text>
-        <Pressable style={s.disconnectBtn} onPress={disconnect}>
+        <Pressable style={s.disconnectBtn} onPress={handleDisconnect}>
           <Text style={s.disconnectText}>Disconnect</Text>
         </Pressable>
         <Pressable style={s.linkBtn} onPress={signOut}>
@@ -200,30 +242,30 @@ export function PartnerSharing() {
       <Text style={s.signedInAs}>Signed in as {user?.email}</Text>
 
       {/* Pending invites received */}
-      {pendingInvites.map((invite) => (
-        <View key={invite.id} style={s.inviteCard}>
-          <Text style={s.inviteText}>
-            {invite.invitee_email === user?.email
-              ? 'Someone'
-              : invite.invitee_email}{' '}
-            wants to share with you
-          </Text>
-          <View style={s.inviteActions}>
-            <Pressable
-              style={s.acceptBtn}
-              onPress={() => acceptInvite(invite.id)}
-            >
-              <Text style={s.acceptText}>Accept</Text>
-            </Pressable>
-            <Pressable
-              style={s.declineBtn}
-              onPress={() => declineInvite(invite.id)}
-            >
-              <Text style={s.declineText}>Decline</Text>
-            </Pressable>
+      {pendingInvites.map((invite) => {
+        const inviterName = invite.inviter_display_name || invite.inviter_email || 'Someone';
+        return (
+          <View key={invite.id} style={s.inviteCard}>
+            <Text style={s.inviteText}>
+              {inviterName} wants to share with you
+            </Text>
+            <View style={s.inviteActions}>
+              <Pressable
+                style={s.acceptBtn}
+                onPress={() => handleAcceptInvite(invite.id, inviterName)}
+              >
+                <Text style={s.acceptText}>Accept</Text>
+              </Pressable>
+              <Pressable
+                style={s.declineBtn}
+                onPress={() => declineInvite(invite.id)}
+              >
+                <Text style={s.declineText}>Decline</Text>
+              </Pressable>
+            </View>
           </View>
-        </View>
-      ))}
+        );
+      })}
 
       {/* Sent invite pending */}
       {sentInvite && (
