@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, useRef } from 'react';
+import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
 import { Vibration, Platform } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import * as Notifications from 'expo-notifications';
@@ -319,7 +319,10 @@ export function useContractions() {
     saveActiveState(false, null);
   }, []);
 
-  const completed = contractions.filter((c) => c.endTime !== null);
+  const completed = useMemo(
+    () => contractions.filter((c) => c.endTime !== null),
+    [contractions]
+  );
 
   const getUrgencyState = useCallback((): 'resting' | 'active' | 'approaching' => {
     if (isActive) return 'active';

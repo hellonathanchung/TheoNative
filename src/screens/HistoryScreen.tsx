@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, useCallback } from "react";
 import {
   View,
   Text,
@@ -41,8 +41,13 @@ export function HistoryScreen({ app }: Props) {
     string | null
   >(null);
   const [selectedIsPartner, setSelectedIsPartner] = useState(false);
+  const mergedIndexMap = useMemo(() => {
+    const map = new Map<string, number>();
+    merged.forEach((c, i) => map.set(c.id, i));
+    return map;
+  }, [merged]);
   const selectedContraction = selectedContractionId
-    ? merged.find((c) => c.id === selectedContractionId) ?? null
+    ? merged[mergedIndexMap.get(selectedContractionId) ?? -1] ?? null
     : null;
 
   // Past hour stats
@@ -125,7 +130,7 @@ export function HistoryScreen({ app }: Props) {
                   return <DaySeparator key={item.key} label={item.label} />;
                 }
                 const c = item.contraction as MergedContraction;
-                const originalIndex = merged.indexOf(c);
+                const originalIndex = mergedIndexMap.get(c.id) ?? -1;
                 const number = originalIndex + 1;
                 const prev =
                   originalIndex > 0 ? merged[originalIndex - 1] : null;
@@ -429,6 +434,7 @@ const createStyles = (colors: ThemeColors) =>
       backgroundColor: colors.cream,
       borderRadius: 14,
       marginBottom: 10,
+      overflow: "visible",
     },
     rowNumber: {
       width: 36,
@@ -477,11 +483,11 @@ const createStyles = (colors: ThemeColors) =>
     },
     flagBadge: {
       position: "absolute" as const,
-      top: -6,
-      right: -10,
-      width: 40,
-      height: 40,
-      transform: [{ rotate: "15deg" }],
+      top: -2,
+      right: -2,
+      width: 36,
+      height: 36,
+      transform: [{ rotate: "15deg" }, { translateX: 4 }, { translateY: -4 }],
       zIndex: 1,
     },
     emptyState: {

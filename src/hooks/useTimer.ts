@@ -13,7 +13,7 @@ export function useTimer(isActive: boolean, activeStart: number | null) {
 
     const interval = setInterval(() => {
       setElapsed((Date.now() - activeStart) / 1000);
-    }, 100);
+    }, 1000);
 
     return () => clearInterval(interval);
   }, [isActive, activeStart]);

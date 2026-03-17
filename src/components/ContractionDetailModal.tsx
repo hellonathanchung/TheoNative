@@ -93,36 +93,82 @@ export function ContractionDetailModal({
           <View style={styles.section}>
             <View style={styles.fieldRow}>
               <Text style={styles.fieldLabel}>Started</Text>
-              <Text style={styles.fieldValue}>
-                {formatTimeOfDay(c.startTime)}
-              </Text>
+              {Platform.OS === "web" && (
+                <Text style={styles.fieldValue}>
+                  {formatTimeOfDay(c.startTime)}
+                </Text>
+              )}
             </View>
             {!readOnly && Platform.OS !== "web" && (
-              <DateTimePicker
-                value={new Date(c.startTime)}
-                mode="time"
-                display="compact"
-                onChange={(_, date) => handleTimeChange("startTime", date)}
-                accentColor={colors.terracotta}
-              />
+              <View style={styles.timePickerRow}>
+                <DateTimePicker
+                  value={new Date(c.startTime)}
+                  mode="time"
+                  display="compact"
+                  onChange={(_, date) => handleTimeChange("startTime", date)}
+                  accentColor={colors.terracotta}
+                />
+                <View style={styles.secondsStepper}>
+                  <Text style={styles.secondsLabel}>
+                    :{String(new Date(c.startTime).getSeconds()).padStart(2, "0")}
+                  </Text>
+                  <View style={styles.secondsBtns}>
+                    <Pressable
+                      onPress={() => onUpdate(c.id, { startTime: c.startTime + 1000 })}
+                      style={styles.secondsBtn}
+                    >
+                      <Text style={styles.secondsBtnText}>+</Text>
+                    </Pressable>
+                    <Pressable
+                      onPress={() => onUpdate(c.id, { startTime: c.startTime - 1000 })}
+                      style={styles.secondsBtn}
+                    >
+                      <Text style={styles.secondsBtnText}>−</Text>
+                    </Pressable>
+                  </View>
+                </View>
+              </View>
             )}
 
             {c.endTime && (
               <>
                 <View style={styles.fieldRow}>
                   <Text style={styles.fieldLabel}>Ended</Text>
-                  <Text style={styles.fieldValue}>
-                    {formatTimeOfDay(c.endTime)}
-                  </Text>
+                  {Platform.OS === "web" && (
+                    <Text style={styles.fieldValue}>
+                      {formatTimeOfDay(c.endTime)}
+                    </Text>
+                  )}
                 </View>
                 {!readOnly && Platform.OS !== "web" && (
-                  <DateTimePicker
-                    value={new Date(c.endTime)}
-                    mode="time"
-                    display="compact"
-                    onChange={(_, date) => handleTimeChange("endTime", date)}
-                    accentColor={colors.terracotta}
-                  />
+                  <View style={styles.timePickerRow}>
+                    <DateTimePicker
+                      value={new Date(c.endTime)}
+                      mode="time"
+                      display="compact"
+                      onChange={(_, date) => handleTimeChange("endTime", date)}
+                      accentColor={colors.terracotta}
+                    />
+                    <View style={styles.secondsStepper}>
+                      <Text style={styles.secondsLabel}>
+                        :{String(new Date(c.endTime).getSeconds()).padStart(2, "0")}
+                      </Text>
+                      <View style={styles.secondsBtns}>
+                        <Pressable
+                          onPress={() => onUpdate(c.id, { endTime: c.endTime! + 1000 })}
+                          style={styles.secondsBtn}
+                        >
+                          <Text style={styles.secondsBtnText}>+</Text>
+                        </Pressable>
+                        <Pressable
+                          onPress={() => onUpdate(c.id, { endTime: c.endTime! - 1000 })}
+                          style={styles.secondsBtn}
+                        >
+                          <Text style={styles.secondsBtnText}>−</Text>
+                        </Pressable>
+                      </View>
+                    </View>
+                  </View>
                 )}
               </>
             )}
@@ -349,4 +395,38 @@ const createStyles = (colors: ThemeColors) =>
       alignItems: "center",
     },
     deleteBtnText: { fontSize: 14, fontWeight: "500", color: colors.danger },
+    timePickerRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 8,
+    },
+    secondsStepper: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 4,
+    },
+    secondsLabel: {
+      fontSize: 15,
+      fontWeight: "500",
+      color: colors.textPrimary,
+      minWidth: 24,
+    },
+    secondsBtns: {
+      flexDirection: "column",
+      gap: 2,
+    },
+    secondsBtn: {
+      width: 24,
+      height: 18,
+      borderRadius: 6,
+      backgroundColor: colors.beige,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    secondsBtnText: {
+      fontSize: 14,
+      fontWeight: "600",
+      color: colors.deepGreen,
+      lineHeight: 16,
+    },
   });

@@ -14,6 +14,11 @@ export function useSync(
   const [partnerContractions, setPartnerContractions] = useState<Contraction[]>([]);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastSyncedRef = useRef<string>('');
+  const mountedRef = useRef(true);
+
+  useEffect(() => {
+    return () => { mountedRef.current = false; };
+  }, []);
 
   // Upload local contractions to Supabase (debounced)
   useEffect(() => {
@@ -63,7 +68,7 @@ export function useSync(
         .eq('user_id', partnerId)
         .order('start_time', { ascending: true });
 
-      if (!error && data) {
+      if (!error && data && mountedRef.current) {
         setPartnerContractions(
           data.map((row: any) => ({
             id: row.id,

@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, useRef, useEffect } from "react";
 import {
   View,
   Text,
@@ -74,28 +74,18 @@ const PRESETS: {
   },
 ];
 
-export function SettingsScreen({ app }: Props) {
-  const { colors, mode, setMode } = useTheme();
-  const s = useMemo(
-    () => createStyles(colors, mode === "dark"),
-    [colors, mode]
-  );
-  const insets = useSafeAreaInsets();
-  const { settings, updateSettings, contractions, sessions } = app;
-  const [showClearConfirm, setShowClearConfirm] = useState(false);
-  const [showPreview, setShowPreview] = useState(false);
-  const [previewMessage] = useState(() => getAlertMessage());
-  const [exported, setExported] = useState(false);
-
-  const SettingRow = ({
-    label,
-    desc,
-    children,
-  }: {
-    label: string;
-    desc: string;
-    children: React.ReactNode;
-  }) => (
+function SettingRow({
+  label,
+  desc,
+  children,
+  s,
+}: {
+  label: string;
+  desc: string;
+  children: React.ReactNode;
+  s: ReturnType<typeof createStyles>;
+}) {
+  return (
     <View style={s.settingRow}>
       <View style={{ flex: 1, marginRight: 16 }}>
         <Text style={s.settingLabel}>{label}</Text>
@@ -104,20 +94,24 @@ export function SettingsScreen({ app }: Props) {
       {children}
     </View>
   );
+}
 
-  const Stepper = ({
-    value,
-    unit,
-    disabled,
-    onDec,
-    onInc,
-  }: {
-    value: number;
-    unit: string;
-    disabled?: boolean;
-    onDec: () => void;
-    onInc: () => void;
-  }) => (
+function Stepper({
+  value,
+  unit,
+  disabled,
+  onDec,
+  onInc,
+  s,
+}: {
+  value: number;
+  unit: string;
+  disabled?: boolean;
+  onDec: () => void;
+  onInc: () => void;
+  s: ReturnType<typeof createStyles>;
+}) {
+  return (
     <View style={[s.stepperRow, disabled && { opacity: 0.5 }]}>
       <Pressable onPress={disabled ? undefined : onDec} style={s.stepBtn}>
         <Text style={s.stepBtnText}>−</Text>
@@ -131,6 +125,27 @@ export function SettingsScreen({ app }: Props) {
       </Pressable>
     </View>
   );
+}
+
+export function SettingsScreen({ app }: Props) {
+  const { colors, mode, setMode } = useTheme();
+  const s = useMemo(
+    () => createStyles(colors, mode === "dark"),
+    [colors, mode]
+  );
+  const insets = useSafeAreaInsets();
+  const { settings, updateSettings, contractions, sessions } = app;
+  const [showClearConfirm, setShowClearConfirm] = useState(false);
+  const [showPreview, setShowPreview] = useState(false);
+  const [previewMessage] = useState(() => getAlertMessage());
+  const [exported, setExported] = useState(false);
+  const exportedTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (exportedTimeoutRef.current) clearTimeout(exportedTimeoutRef.current);
+    };
+  }, []);
 
   const selectPreset = (p: (typeof PRESETS)[number]) => {
     if (p.id === "custom") {
@@ -210,8 +225,9 @@ export function SettingsScreen({ app }: Props) {
     }
 
     await Clipboard.setStringAsync(rows.join("\n"));
+    if (exportedTimeoutRef.current) clearTimeout(exportedTimeoutRef.current);
     setExported(true);
-    setTimeout(() => setExported(false), 2000);
+    exportedTimeoutRef.current = setTimeout(() => setExported(false), 2000);
   };
 
   return (
@@ -268,10 +284,12 @@ export function SettingsScreen({ app }: Props) {
       {/* Thresholds */}
       <Text style={s.sectionLabel}>THRESHOLDS</Text>
       <SettingRow
+        s={s}
         label="Contractions apart"
         desc="How many minutes between contractions"
       >
         <Stepper
+          s={s}
           value={settings.frequencyMinutes}
           unit="min"
           disabled={settings.preset !== "custom"}
@@ -288,10 +306,12 @@ export function SettingsScreen({ app }: Props) {
         />
       </SettingRow>
       <SettingRow
+        s={s}
         label="Contraction duration"
         desc="How long each contraction lasts"
       >
         <Stepper
+          s={s}
           value={settings.durationSeconds}
           unit="sec"
           disabled={settings.preset !== "custom"}
@@ -307,8 +327,9 @@ export function SettingsScreen({ app }: Props) {
           }
         />
       </SettingRow>
-      <SettingRow label="Time window" desc="How long the pattern must hold">
+      <SettingRow s={s} label="Time window" desc="How long the pattern must hold">
         <Stepper
+          s={s}
           value={settings.timeWindowMinutes}
           unit="min"
           disabled={settings.preset !== "custom"}
@@ -328,6 +349,7 @@ export function SettingsScreen({ app }: Props) {
       {/* Toggles */}
       <Text style={[s.sectionLabel, { marginTop: 24 }]}>PREFERENCES</Text>
       <SettingRow
+        s={s}
         label="Notifications"
         desc="Alert when your pattern threshold is met"
       >
@@ -343,7 +365,7 @@ export function SettingsScreen({ app }: Props) {
           }
         />
       </SettingRow>
-      <SettingRow label="Vibration" desc="Haptic feedback on tap">
+      <SettingRow s={s} label="Vibration" desc="Haptic feedback on tap">
         <Switch
           value={settings.hapticEnabled}
           onValueChange={(v) => updateSettings({ hapticEnabled: v })}
@@ -354,6 +376,7 @@ export function SettingsScreen({ app }: Props) {
         />
       </SettingRow>
       <SettingRow
+        s={s}
         label="Track intensity"
         desc="Rate each contraction's intensity after it ends"
       >
@@ -379,7 +402,7 @@ export function SettingsScreen({ app }: Props) {
       </View>
 
       <Text style={[s.sectionLabel, { marginTop: 24 }]}>APPEARANCE</Text>
-      <SettingRow label="Theme" desc="Light or dark appearance">
+      <SettingRow s={s} label="Theme" desc="Light or dark appearance">
         <View style={s.themeToggle}>
           <Pressable
             style={[s.themeOption, mode === "light" && s.themeOptionActive]}

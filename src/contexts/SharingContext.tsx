@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useMemo } from 'react';
+import React, { createContext, useContext, useMemo, useCallback } from 'react';
 import { useAuth } from '../hooks/useAuth';
 import { usePartnership } from '../hooks/usePartnership';
 import { useSync } from '../hooks/useSync';
@@ -52,7 +52,7 @@ export function SharingProvider({ localContractions, children }: Props) {
     return [...local, ...partner].sort((a, b) => a.startTime - b.startTime);
   }, [localContractions, sync.partnerContractions]);
 
-  const value: SharingContextValue = {
+  const value = useMemo<SharingContextValue>(() => ({
     user: auth.user,
     authLoading: auth.loading,
     signInWithOtp: auth.signInWithOtp,
@@ -73,7 +73,14 @@ export function SharingProvider({ localContractions, children }: Props) {
     partnerContractions: sync.partnerContractions,
     mergedContractions,
     clearSyncedContractions: sync.clearSyncedContractions,
-  };
+  }), [
+    auth.user, auth.loading, auth.signInWithOtp, auth.verifyOtp, auth.signOut,
+    partnership.partner, partnership.partnerId, partnership.pendingInvites,
+    partnership.sentInvite, partnership.loading, partnership.invitePartner,
+    partnership.acceptInvite, partnership.declineInvite, partnership.disconnect,
+    partnership.cancelInvite,
+    sync.partnerContractions, mergedContractions, sync.clearSyncedContractions,
+  ]);
 
   return (
     <SharingContext.Provider value={value}>

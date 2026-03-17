@@ -57,7 +57,7 @@ export function SwipeableRow({ children, onDelete, onFlag, colors }: Props) {
   };
 
   return (
-    <View style={{ marginBottom: 10, overflow: "hidden", borderRadius: 14 }}>
+    <View style={{ marginBottom: 10, overflow: "visible", borderRadius: 14 }}>
       {/* Action buttons behind */}
       <View
         style={{
@@ -114,6 +114,7 @@ export function SwipeableRow({ children, onDelete, onFlag, colors }: Props) {
           transform: [{ translateX }],
           backgroundColor: colors.cream,
           borderRadius: 14,
+          overflow: "visible",
         }}
         {...pan.panHandlers}
       >
