@@ -8,6 +8,7 @@ import { useTheme, type ThemeColors } from '../theme';
 import type { Preset } from '../types';
 import type { useContractions } from '../hooks/useContractions';
 import { PartnerSharing } from '../components/PartnerSharing';
+import { getAlertMessage } from '../utils/alerts';
 
 interface Props {
   app: ReturnType<typeof useContractions>;
@@ -16,17 +17,17 @@ interface Props {
 const PRESETS: { id: Preset; label: string; shortDesc: string; longDesc: string; freq: number; dur: number; window: number }[] = [
   {
     id: '5-1-1', label: '5-1-1', shortDesc: '5m / 1m / 1hr',
-    longDesc: 'Contractions 5 minutes apart, lasting 1 minute, for 1 hour. Most common guideline for first-time parents.',
+    longDesc: 'Contractions 5 minutes apart, lasting 1 minute, for 1 hour. A commonly referenced pattern. Your care provider can advise what\u2019s right for you.',
     freq: 5, dur: 60, window: 60,
   },
   {
     id: '4-1-1', label: '4-1-1', shortDesc: '4m / 1m / 1hr',
-    longDesc: 'Contractions 4 minutes apart, lasting 1 minute, for 1 hour. Often recommended for second+ pregnancies.',
+    longDesc: 'Contractions 4 minutes apart, lasting 1 minute, for 1 hour. Another commonly referenced pattern. Always follow your care provider\u2019s guidance.',
     freq: 4, dur: 60, window: 60,
   },
   {
     id: '3-1-1', label: '3-1-1', shortDesc: '3m / 1m / 1hr',
-    longDesc: 'Contractions 3 minutes apart, lasting 1 minute, for 1 hour. Used when your healthcare provider advises closer monitoring.',
+    longDesc: 'Contractions 3 minutes apart, lasting 1 minute, for 1 hour. A tighter pattern some providers suggest. Check with yours for personalized guidance.',
     freq: 3, dur: 60, window: 60,
   },
   {
@@ -42,6 +43,8 @@ export function SettingsScreen({ app }: Props) {
   const insets = useSafeAreaInsets();
   const { settings, updateSettings, contractions, sessions } = app;
   const [showClearConfirm, setShowClearConfirm] = useState(false);
+  const [showPreview, setShowPreview] = useState(false);
+  const [previewMessage] = useState(() => getAlertMessage());
   const [exported, setExported] = useState(false);
 
   const SettingRow = ({ label, desc, children }: { label: string; desc: string; children: React.ReactNode }) => (
@@ -220,7 +223,7 @@ export function SettingsScreen({ app }: Props) {
 
       {/* Toggles */}
       <Text style={[s.sectionLabel, { marginTop: 24 }]}>PREFERENCES</Text>
-      <SettingRow label="Notifications" desc="Alert when it's time to go">
+      <SettingRow label="Notifications" desc="Notify when your pattern is consistent">
         <Switch
           value={settings.notificationsEnabled}
           onValueChange={(v) => {
@@ -247,6 +250,16 @@ export function SettingsScreen({ app }: Props) {
           thumbColor={settings.intensityEnabled ? colors.deepGreen : colors.textMuted}
         />
       </SettingRow>
+
+      <Text style={[s.sectionLabel, { marginTop: 24 }]}>WHAT TO EXPECT</Text>
+      <View style={s.supportSection}>
+        <Text style={s.supportDesc}>
+          See what the notification looks like when your contraction pattern is consistent.
+        </Text>
+        <Pressable style={s.donateBtn} onPress={() => setShowPreview(true)}>
+          <Text style={s.donateBtnText}>Preview Alert</Text>
+        </Pressable>
+      </View>
 
       <Text style={[s.sectionLabel, { marginTop: 24 }]}>APPEARANCE</Text>
       <SettingRow label="Theme" desc="Light or dark appearance">
@@ -306,9 +319,42 @@ export function SettingsScreen({ app }: Props) {
 
       {/* Disclaimer */}
       <Text style={s.disclaimer}>
-        Theo is a timing tool, not medical advice.{'\n'}Always consult your care provider.
+        Theo is an informational timing tool — not medical advice.{'\n'}Contraction patterns vary and only your care provider can advise on labor and delivery decisions.{'\n'}Always consult your care provider.
       </Text>
       <Text style={s.version}>Theo v1.1.0</Text>
+
+      {/* Preview alert modal */}
+      <Modal visible={showPreview} transparent animationType="fade">
+        <View style={s.modalOverlay}>
+          <View style={s.modalCard}>
+            <Ionicons name="notifications-outline" size={28} color={colors.deepGreen} />
+            <Text style={s.modalTitle}>Alert Preview</Text>
+            <Text style={s.modalBody}>{previewMessage}</Text>
+            <Text style={[s.modalBody, { fontSize: 11, fontStyle: 'italic', marginBottom: 16 }]}>
+              This is only a preview. Theo provides timing information and does not provide medical advice.
+            </Text>
+            <Pressable
+              style={[s.modalDeleteBtn, { backgroundColor: colors.deepGreen }]}
+              onPress={async () => {
+                try {
+                  await Notifications.scheduleNotificationAsync({
+                    content: { title: 'Theo', body: previewMessage },
+                    trigger: null,
+                  });
+                } catch {}
+              }}
+            >
+              <Text style={s.modalDeleteText}>Send Test Notification</Text>
+            </Pressable>
+            <Pressable
+              style={s.modalCancelBtn}
+              onPress={() => setShowPreview(false)}
+            >
+              <Text style={s.modalCancelText}>Close</Text>
+            </Pressable>
+          </View>
+        </View>
+      </Modal>
 
       {/* Clear data confirmation */}
       <Modal visible={showClearConfirm} transparent animationType="fade">

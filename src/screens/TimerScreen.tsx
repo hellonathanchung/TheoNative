@@ -167,6 +167,11 @@ export function TimerScreen({ app }: Props) {
                           <Text style={styles.partnerBadgeText}>{partnerInitial}</Text>
                         </View>
                       )}
+                      {c.flagged && (
+                        <View style={styles.flagBadge}>
+                          <Text style={styles.flagBadgeText}>?</Text>
+                        </View>
+                      )}
                       <Text style={styles.rowTime}>
                         {formatTime(c.startTime)}
                       </Text>
@@ -184,21 +189,6 @@ export function TimerScreen({ app }: Props) {
                         </Text>
                         <Text style={styles.rowLabel}>apart</Text>
                       </View>
-                      {c.intensity && (
-                        <View
-                          style={[
-                            styles.intensityDot,
-                            {
-                              backgroundColor:
-                                c.intensity === 'mild'
-                                  ? colors.intensityMild
-                                  : c.intensity === 'moderate'
-                                    ? colors.intensityModerate
-                                    : colors.intensityStrong,
-                            },
-                          ]}
-                        />
-                      )}
                     </View>
                   </Pressable>
                 );
@@ -373,23 +363,35 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   },
   rowDetail: {
     flex: 1,
-    alignItems: 'center',
   },
   rowValue: {
     fontSize: 16,
     fontWeight: '500',
     color: colors.textPrimary,
+    textAlign: 'center',
   },
   rowLabel: {
     fontSize: 10,
     color: colors.textMuted,
     marginTop: 1,
+    textAlign: 'center',
   },
-  intensityDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    marginLeft: 12,
+  flagBadge: {
+    position: 'absolute' as const,
+    right: 6,
+    bottom: 6,
+    width: 18,
+    height: 18,
+    borderRadius: 9,
+    backgroundColor: colors.warmAmber,
+    alignItems: 'center' as const,
+    justifyContent: 'center' as const,
+    zIndex: 1,
+  },
+  flagBadgeText: {
+    fontSize: 11,
+    fontWeight: '700' as const,
+    color: colors.white,
   },
   partnerBadge: {
     position: 'absolute',

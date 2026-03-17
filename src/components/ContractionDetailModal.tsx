@@ -67,16 +67,13 @@ export function ContractionDetailModal({ contraction: c, contractions, onClose, 
               <Text style={styles.fieldValue}>{formatTimeOfDay(c.startTime)}</Text>
             </View>
             {!readOnly && Platform.OS !== 'web' && (
-              <View style={styles.pickerContainer}>
-                <DateTimePicker
-                  value={new Date(c.startTime)}
-                  mode="time"
-                  display="spinner"
-                  onChange={(_, date) => handleTimeChange('startTime', date)}
-                  style={styles.timePicker}
-                  textColor={colors.textPrimary}
-                />
-              </View>
+              <DateTimePicker
+                value={new Date(c.startTime)}
+                mode="time"
+                display="compact"
+                onChange={(_, date) => handleTimeChange('startTime', date)}
+                accentColor={colors.terracotta}
+              />
             )}
 
             {c.endTime && (
@@ -86,16 +83,13 @@ export function ContractionDetailModal({ contraction: c, contractions, onClose, 
                   <Text style={styles.fieldValue}>{formatTimeOfDay(c.endTime)}</Text>
                 </View>
                 {!readOnly && Platform.OS !== 'web' && (
-                  <View style={styles.pickerContainer}>
-                    <DateTimePicker
-                      value={new Date(c.endTime)}
-                      mode="time"
-                      display="spinner"
-                      onChange={(_, date) => handleTimeChange('endTime', date)}
-                      style={styles.timePicker}
-                      textColor={colors.textPrimary}
-                    />
-                  </View>
+                  <DateTimePicker
+                    value={new Date(c.endTime)}
+                    mode="time"
+                    display="compact"
+                    onChange={(_, date) => handleTimeChange('endTime', date)}
+                    accentColor={colors.terracotta}
+                  />
                 )}
               </>
             )}
@@ -113,6 +107,30 @@ export function ContractionDetailModal({ contraction: c, contractions, onClose, 
                 </Text>
               </View>
             )}
+          </View>
+
+          <View style={styles.section}>
+            <Text style={styles.sectionLabel}>FLAG</Text>
+            <Pressable
+              style={[
+                styles.flagToggle,
+                { backgroundColor: c.flagged ? colors.warmAmber : colors.beige },
+              ]}
+              onPress={() => !readOnly && onUpdate(c.id, { flagged: !c.flagged })}
+            >
+              <Text style={[
+                styles.flagToggleText,
+                { color: c.flagged ? colors.white : colors.textMuted },
+              ]}>
+                ?
+              </Text>
+              <Text style={[
+                styles.flagLabel,
+                { color: c.flagged ? colors.white : colors.textMuted },
+              ]}>
+                {c.flagged ? 'Flagged' : 'Tap to flag'}
+              </Text>
+            </Pressable>
           </View>
 
           <View style={styles.section}>
@@ -181,8 +199,9 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   timeFieldRow: { paddingVertical: 4 },
   fieldLabel: { fontSize: 14, color: colors.textSecondary },
   fieldValue: { fontSize: 15, fontWeight: '500', color: colors.textPrimary },
-  pickerContainer: { alignItems: 'center', marginVertical: -8 },
-  timePicker: { height: 100, width: 280 },
+  flagToggle: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 10, paddingHorizontal: 14, borderRadius: 12, alignSelf: 'flex-start' },
+  flagToggleText: { fontSize: 18, fontWeight: '700' },
+  flagLabel: { fontSize: 14, fontWeight: '500' },
   intensityRow: { flexDirection: 'row', gap: 8 },
   intensityBtn: { flex: 1, paddingVertical: 10, paddingHorizontal: 8, alignItems: 'center' },
   intensityText: { fontSize: 15 },

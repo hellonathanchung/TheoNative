@@ -30,18 +30,27 @@ export function evaluateContractions(
   }
 
   const approaching =
-    avgFreq <= settings.frequencyMinutes * 1.3 &&
-    avgDur >= settings.durationSeconds * 0.7;
+    avgFreq <= settings.frequencyMinutes * 1.5 &&
+    avgDur >= settings.durationSeconds * 0.6;
 
   return { triggered: false, approaching };
 }
 
 const messages = [
-  'Your contractions are following a consistent pattern. It may be time to head to your birthing center.',
-  'Things are progressing steadily. Consider calling your care provider.',
-  "You're doing great. Your contractions have been regular \u2014 it might be time to go.",
+  'Your contractions are following a consistent pattern. Consider contacting your care provider for guidance.',
+  'Your contractions have been steady. Check in with your care provider about next steps.',
+  "You're doing great. Your contractions have been regular \u2014 talk to your care provider about timing.",
+];
+
+const approachingMessages = [
+  'Your contractions are getting closer together. Keep timing and check in with your care provider.',
+  'Things are picking up \u2014 contractions are becoming more frequent. This is informational only.',
 ];
 
 export function getAlertMessage(): string {
   return messages[Math.floor(Math.random() * messages.length)];
+}
+
+export function getApproachingMessage(): string {
+  return approachingMessages[Math.floor(Math.random() * approachingMessages.length)];
 }

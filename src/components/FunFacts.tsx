@@ -25,7 +25,7 @@ const FACTS: { icon: IoniconsName; text: string; source: string }[] = [
   { icon: 'bed-outline', text: 'Newborns sleep 14\u201317 hours a day, but rarely more than 2\u20133 hours at a stretch.', source: 'Hirshkowitz et al., Sleep Health, 2015' },
   { icon: 'eye-outline', text: 'Most babies are born with blue or grey eyes. Permanent color can take up to a year.', source: 'Sturm & Larsson, Experimental Dermatology, 2009' },
   { icon: 'hand-left-outline', text: 'A baby\'s grip is strong enough to support their own body weight!', source: 'AAP Pediatrics, Palmar Reflex' },
-  { icon: 'leaf-outline', text: 'Deep, slow breathing during contractions helps deliver more oxygen to your baby.', source: 'Lothian, J. Perinatal Education, 2011' },
+  { icon: 'leaf-outline', text: 'Deep, slow breathing during contractions may help you stay relaxed.', source: 'Lothian, J. Perinatal Education, 2011' },
   { icon: 'globe-outline', text: 'About 385,000 babies are born every day worldwide.', source: 'UNICEF, State of the World\'s Children, 2023' },
   { icon: 'happy-outline', text: 'Baby teeth start forming in the womb \u2014 they\'re hidden under the gums at birth.', source: 'AAPD Perinatal Oral Health Guideline' },
   { icon: 'code-outline', text: 'Your baby has their own unique DNA from the moment of conception.', source: 'Alberts et al., Molecular Biology of the Cell, 7th Ed.' },

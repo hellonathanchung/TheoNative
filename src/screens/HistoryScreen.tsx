@@ -59,30 +59,6 @@ export function HistoryScreen({ app }: Props) {
       ? recentIntervals.reduce((a, b) => a + b, 0) / recentIntervals.length
       : 0;
 
-  const recentStart = recentContractions[0]?.startTime ?? null;
-  const recentEnd =
-    recentContractions.length > 0
-      ? recentContractions[recentContractions.length - 1].endTime ?? null
-      : null;
-  const recentSpan =
-    recentStart && recentEnd ? (recentEnd - recentStart) / 1000 : 0;
-  const lastDuration =
-    recentContractions.length > 0 ? recentContractions[recentContractions.length - 1].duration ?? 0 : 0;
-  const lastInterval =
-    recentIntervals.length > 0 ? recentIntervals[recentIntervals.length - 1] : 0;
-
-  // Timeline uses all merged contractions
-  const intervals: number[] = [];
-  for (let i = 1; i < merged.length; i++) {
-    const prev = merged[i - 1];
-    if (prev.endTime) {
-      intervals.push((merged[i].startTime - prev.endTime) / 1000);
-    }
-  }
-  const timelineDurations = merged.map((c) => c.duration ?? 0);
-  const maxDuration = Math.max(60, ...timelineDurations);
-  const maxInterval = Math.max(60, ...intervals);
-
   const reversedContractions = useMemo(() => [...merged].reverse(), [merged]);
   const groupedContractions = useMemo(
     () => groupWithDaySeparators(reversedContractions),
@@ -121,29 +97,6 @@ export function HistoryScreen({ app }: Props) {
                 <Text style={s.statLabel}>avg apart</Text>
               </View>
             </View>
-
-            <View style={s.statsRow}>
-              <View style={s.statCol}>
-                <Text style={s.statValue}>
-                  {recentSpan > 0 ? formatInterval(recentSpan) : "--"}
-                </Text>
-                <Text style={s.statLabel}>span</Text>
-              </View>
-              <View style={s.statDivider} />
-              <View style={s.statCol}>
-                <Text style={s.statValue}>
-                  {lastDuration > 0 ? formatDuration(lastDuration) : "--"}
-                </Text>
-                <Text style={s.statLabel}>last duration</Text>
-              </View>
-              <View style={s.statDivider} />
-              <View style={s.statCol}>
-                <Text style={s.statValue}>
-                  {lastInterval > 0 ? formatInterval(lastInterval) : "--"}
-                </Text>
-                <Text style={s.statLabel}>last apart</Text>
-              </View>
-            </View>
           </>
         )}
         </View>
@@ -154,44 +107,6 @@ export function HistoryScreen({ app }: Props) {
         >
           {merged.length > 0 ? (
             <>
-              <View style={s.sectionWrap}>
-                <Text style={s.sectionLabel}>TIMELINE</Text>
-              </View>
-              <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                contentContainerStyle={s.timelineRow}
-              >
-                {merged.map((c, i) => {
-                  const duration = c.duration ?? 0;
-                  const prev = i > 0 ? merged[i - 1] : null;
-                  const gap = prev?.endTime
-                    ? (c.startTime - prev.endTime) / 1000
-                    : 0;
-                  const height = 10 + (duration / maxDuration) * 36;
-                  const spacing = 6 + (gap / maxInterval) * 18;
-                  return (
-                    <View
-                      key={c.id}
-                      style={{
-                        alignItems: "center",
-                        marginRight: Math.min(24, spacing),
-                      }}
-                    >
-                      <View
-                        style={[
-                          s.timelineBar,
-                          {
-                            height: Math.min(46, Math.max(10, height)),
-                            backgroundColor: c.isPartner ? colors.deepGreen : colors.terracotta,
-                          },
-                        ]}
-                      />
-                    </View>
-                  );
-                })}
-              </ScrollView>
-
               {/* Current contractions list (reversed) */}
               <View style={s.listSection}>
                 {groupedContractions.map((item) => {
@@ -221,6 +136,11 @@ export function HistoryScreen({ app }: Props) {
                           <Text style={s.partnerBadgeText}>{partnerInitial}</Text>
                         </View>
                       )}
+                      {c.flagged && (
+                        <View style={s.flagBadge}>
+                          <Text style={s.flagBadgeText}>?</Text>
+                        </View>
+                      )}
                       <Text style={s.rowNumber}>#{number}</Text>
                       <Text style={s.rowTime}>{formatTime(c.startTime)}</Text>
                       <View style={s.rowDetail}>
@@ -244,8 +164,8 @@ export function HistoryScreen({ app }: Props) {
                                 c.intensity === "mild"
                                   ? colors.intensityMild
                                   : c.intensity === "moderate"
-                                  ? colors.intensityModerate
-                                  : colors.intensityStrong,
+                                    ? colors.intensityModerate
+                                    : colors.intensityStrong,
                             },
                           ]}
                         />
@@ -394,6 +314,11 @@ function SessionCard({
               : null;
             return (
               <View key={item.key} style={styles.row}>
+                {c.flagged && (
+                  <View style={styles.flagBadge}>
+                    <Text style={styles.flagBadgeText}>?</Text>
+                  </View>
+                )}
                 <Text style={styles.rowNumber}>#{i + 1}</Text>
                 <Text style={styles.rowTime}>{formatTime(c.startTime)}</Text>
                 <View style={styles.rowDetail}>
@@ -417,8 +342,8 @@ function SessionCard({
                           c.intensity === "mild"
                             ? colors.intensityMild
                             : c.intensity === "moderate"
-                            ? colors.intensityModerate
-                            : colors.intensityStrong,
+                              ? colors.intensityModerate
+                              : colors.intensityStrong,
                       },
                     ]}
                   />
@@ -496,17 +421,6 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     marginTop: 4,
     letterSpacing: 0.5,
   },
-  timelineRow: {
-    paddingHorizontal: 20,
-    paddingBottom: 12,
-    paddingTop: 4,
-    alignItems: "flex-end",
-  },
-  timelineBar: {
-    width: 12,
-    borderRadius: 6,
-    backgroundColor: colors.terracotta,
-  },
   row: {
     flexDirection: "row",
     alignItems: "center",
@@ -534,23 +448,43 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   },
   rowDetail: {
     flex: 1,
-    alignItems: "center",
   },
   rowValue: {
     fontSize: 16,
     fontWeight: "500",
     color: colors.textPrimary,
+    textAlign: "center" as const,
   },
   rowLabel: {
     fontSize: 10,
     color: colors.textMuted,
     marginTop: 1,
+    textAlign: "center" as const,
   },
   intensityDot: {
+    position: 'absolute' as const,
+    right: 6,
+    top: 6,
     width: 8,
     height: 8,
     borderRadius: 4,
-    marginLeft: 12,
+  },
+  flagBadge: {
+    position: 'absolute' as const,
+    right: 6,
+    bottom: 6,
+    width: 18,
+    height: 18,
+    borderRadius: 9,
+    backgroundColor: colors.warmAmber,
+    alignItems: 'center' as const,
+    justifyContent: 'center' as const,
+    zIndex: 1,
+  },
+  flagBadgeText: {
+    fontSize: 11,
+    fontWeight: '700' as const,
+    color: colors.white,
   },
   partnerBadge: {
     position: 'absolute' as const,
