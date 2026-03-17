@@ -16,22 +16,22 @@ interface Props {
 const PRESETS: { id: Preset; label: string; shortDesc: string; longDesc: string; freq: number; dur: number; window: number }[] = [
   {
     id: '5-1-1', label: '5-1-1', shortDesc: '5m / 1m / 1hr',
-    longDesc: 'Contractions 5 minutes apart, lasting 1 minute, for 1 hour. Most common guideline for first-time parents.',
+    longDesc: 'Contractions 5 minutes apart, lasting 1 minute, for 1 hour \u2014 a pattern generally recommended by care providers for first-time parents.',
     freq: 5, dur: 60, window: 60,
   },
   {
     id: '4-1-1', label: '4-1-1', shortDesc: '4m / 1m / 1hr',
-    longDesc: 'Contractions 4 minutes apart, lasting 1 minute, for 1 hour. Often recommended for second+ pregnancies.',
+    longDesc: 'Contractions 4 minutes apart, lasting 1 minute, for 1 hour \u2014 a pattern generally recommended by care providers for second+ pregnancies.',
     freq: 4, dur: 60, window: 60,
   },
   {
     id: '3-1-1', label: '3-1-1', shortDesc: '3m / 1m / 1hr',
-    longDesc: 'Contractions 3 minutes apart, lasting 1 minute, for 1 hour. Used when your healthcare provider advises closer monitoring.',
+    longDesc: 'Contractions 3 minutes apart, lasting 1 minute, for 1 hour \u2014 a closer-interval pattern generally used per provider instruction.',
     freq: 3, dur: 60, window: 60,
   },
   {
     id: 'custom', label: 'Custom', shortDesc: 'Your rules',
-    longDesc: 'Adjust each threshold below to match your care provider\'s guidance.',
+    longDesc: 'Set each threshold below to match your care provider\'s instructions.',
     freq: 0, dur: 0, window: 0,
   },
 ];
@@ -220,7 +220,7 @@ export function SettingsScreen({ app }: Props) {
 
       {/* Toggles */}
       <Text style={[s.sectionLabel, { marginTop: 24 }]}>PREFERENCES</Text>
-      <SettingRow label="Notifications" desc="Alert when it's time to go">
+      <SettingRow label="Notifications" desc="Alert when your pattern threshold is met">
         <Switch
           value={settings.notificationsEnabled}
           onValueChange={(v) => {
