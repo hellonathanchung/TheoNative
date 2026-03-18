@@ -109,23 +109,21 @@ export function ContractionDetailModal({
                   accentColor={colors.terracotta}
                 />
                 <View style={styles.secondsStepper}>
+                  <Pressable
+                    onPress={() => onUpdate(c.id, { startTime: c.startTime - 15000 })}
+                    style={styles.secondsBtn}
+                  >
+                    <Text style={styles.secondsBtnText}>−</Text>
+                  </Pressable>
                   <Text style={styles.secondsLabel}>
                     :{String(new Date(c.startTime).getSeconds()).padStart(2, "0")}
                   </Text>
-                  <View style={styles.secondsBtns}>
-                    <Pressable
-                      onPress={() => onUpdate(c.id, { startTime: c.startTime + 1000 })}
-                      style={styles.secondsBtn}
-                    >
-                      <Text style={styles.secondsBtnText}>+</Text>
-                    </Pressable>
-                    <Pressable
-                      onPress={() => onUpdate(c.id, { startTime: c.startTime - 1000 })}
-                      style={styles.secondsBtn}
-                    >
-                      <Text style={styles.secondsBtnText}>−</Text>
-                    </Pressable>
-                  </View>
+                  <Pressable
+                    onPress={() => onUpdate(c.id, { startTime: c.startTime + 15000 })}
+                    style={styles.secondsBtn}
+                  >
+                    <Text style={styles.secondsBtnText}>+</Text>
+                  </Pressable>
                 </View>
               </View>
             )}
@@ -150,23 +148,21 @@ export function ContractionDetailModal({
                       accentColor={colors.terracotta}
                     />
                     <View style={styles.secondsStepper}>
+                      <Pressable
+                        onPress={() => onUpdate(c.id, { endTime: c.endTime! - 15000 })}
+                        style={styles.secondsBtn}
+                      >
+                        <Text style={styles.secondsBtnText}>−</Text>
+                      </Pressable>
                       <Text style={styles.secondsLabel}>
                         :{String(new Date(c.endTime).getSeconds()).padStart(2, "0")}
                       </Text>
-                      <View style={styles.secondsBtns}>
-                        <Pressable
-                          onPress={() => onUpdate(c.id, { endTime: c.endTime! + 1000 })}
-                          style={styles.secondsBtn}
-                        >
-                          <Text style={styles.secondsBtnText}>+</Text>
-                        </Pressable>
-                        <Pressable
-                          onPress={() => onUpdate(c.id, { endTime: c.endTime! - 1000 })}
-                          style={styles.secondsBtn}
-                        >
-                          <Text style={styles.secondsBtnText}>−</Text>
-                        </Pressable>
-                      </View>
+                      <Pressable
+                        onPress={() => onUpdate(c.id, { endTime: c.endTime! + 15000 })}
+                        style={styles.secondsBtn}
+                      >
+                        <Text style={styles.secondsBtnText}>+</Text>
+                      </Pressable>
                     </View>
                   </View>
                 )}
@@ -403,30 +399,27 @@ const createStyles = (colors: ThemeColors) =>
     secondsStepper: {
       flexDirection: "row",
       alignItems: "center",
-      gap: 4,
+      gap: 6,
     },
     secondsLabel: {
-      fontSize: 15,
-      fontWeight: "500",
+      fontSize: 20,
+      fontWeight: "600",
       color: colors.textPrimary,
-      minWidth: 24,
-    },
-    secondsBtns: {
-      flexDirection: "column",
-      gap: 2,
+      minWidth: 36,
+      textAlign: "center",
     },
     secondsBtn: {
-      width: 24,
-      height: 18,
-      borderRadius: 6,
+      width: 36,
+      height: 36,
+      borderRadius: 18,
       backgroundColor: colors.beige,
       alignItems: "center",
       justifyContent: "center",
     },
     secondsBtnText: {
-      fontSize: 14,
+      fontSize: 20,
       fontWeight: "600",
       color: colors.deepGreen,
-      lineHeight: 16,
+      lineHeight: 22,
     },
   });
