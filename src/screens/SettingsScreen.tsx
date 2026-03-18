@@ -137,6 +137,7 @@ export function SettingsScreen({ app }: Props) {
   const { settings, updateSettings, contractions, sessions } = app;
   const [showClearConfirm, setShowClearConfirm] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
+  const [showDisclaimer, setShowDisclaimer] = useState(false);
   const [previewMessage] = useState(() => getAlertMessage());
   const [exported, setExported] = useState(false);
   const exportedTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -393,15 +394,15 @@ export function SettingsScreen({ app }: Props) {
       </SettingRow>
       <SettingRow
         s={s}
-        label="Analytics opt-out"
-        desc="Stop sharing anonymous usage data with Theo"
+        label="Anonymous analytics"
+        desc={settings.analyticsOptOut ? "Not sharing data" : "Sharing anonymous data to improve Theo"}
       >
         <Switch
-          value={settings.analyticsOptOut ?? false}
-          onValueChange={(v) => updateSettings({ analyticsOptOut: v })}
+          value={!(settings.analyticsOptOut ?? false)}
+          onValueChange={(v) => updateSettings({ analyticsOptOut: !v })}
           trackColor={{ false: colors.beige, true: colors.green }}
           thumbColor={
-            settings.analyticsOptOut ?? false ? colors.white : colors.textMuted
+            !(settings.analyticsOptOut ?? false) ? colors.white : colors.textMuted
           }
         />
       </SettingRow>
@@ -491,15 +492,19 @@ export function SettingsScreen({ app }: Props) {
       </View>
 
       {/* Disclaimer */}
-      <Text style={s.disclaimer}>
-        Theo is a timing tool — not a medical device and not a substitute for
-        professional medical care.{"\n\n"}
-        Theo cannot determine whether you are in true labor. Contractions may be
-        Braxton Hicks (practice contractions). If you are under 37 weeks
-        pregnant, contact your care provider immediately if you experience
-        regular contractions — do not wait for a pattern.{"\n\n"}
-        Always follow your healthcare provider's guidance.
-      </Text>
+      <Text style={[s.sectionLabel, { marginTop: 24 }]}>LEGAL</Text>
+      <View style={s.supportSection}>
+        <Text style={s.supportDesc}>
+          Theo is a contraction timing tool — not a medical device. Your data
+          will never be sold.
+        </Text>
+        <Pressable
+          style={s.donateBtn}
+          onPress={() => setShowDisclaimer(true)}
+        >
+          <Text style={s.donateBtnText}>View Full Disclaimer</Text>
+        </Pressable>
+      </View>
       <Text style={s.version}>Theo v1.1.0</Text>
 
       {/* Preview alert modal */}
@@ -569,6 +574,37 @@ export function SettingsScreen({ app }: Props) {
               onPress={() => setShowClearConfirm(false)}
             >
               <Text style={s.modalCancelText}>Cancel</Text>
+            </Pressable>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Disclaimer modal */}
+      <Modal visible={showDisclaimer} transparent animationType="fade">
+        <View style={s.modalOverlay}>
+          <View style={s.modalCard}>
+            <Ionicons name="medical-outline" size={28} color={colors.terracotta} />
+            <Text style={s.modalTitle}>Disclaimer</Text>
+            <Text style={[s.modalBody, { textAlign: "left" }]}>
+              Theo is a contraction timing tool — not a medical device and not a
+              substitute for professional medical care.{"\n\n"}
+              Theo cannot determine whether you are in true labor. Regular-looking
+              contractions may be Braxton Hicks (practice contractions) and do not
+              always indicate labor.{"\n\n"}
+              If you are under 37 weeks pregnant and experiencing regular
+              contractions, contact your care provider right away — do not wait
+              for a pattern.{"\n\n"}
+              Always follow your healthcare provider's guidance over anything
+              shown in this app.{"\n\n"}
+              Theo collects anonymous usage data solely to improve the app. Your
+              data will never be sold. You can opt out at any time using the
+              Anonymous analytics toggle in Settings.
+            </Text>
+            <Pressable
+              style={s.modalCancel}
+              onPress={() => setShowDisclaimer(false)}
+            >
+              <Text style={s.modalCancelText}>Close</Text>
             </Pressable>
           </View>
         </View>

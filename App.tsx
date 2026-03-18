@@ -59,6 +59,7 @@ class ErrorBoundary extends React.Component<
 
 export default function App() {
   const [disclaimerAccepted, setDisclaimerAccepted] = useState(loadDisclaimerAccepted);
+  const [analyticsConsent, setAnalyticsConsent] = useState(true);
   const [showStalePrompt, setShowStalePrompt] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const toastOpacity = useRef(new Animated.Value(0)).current;
@@ -156,12 +157,24 @@ export default function App() {
                   {'\n\n'}
                   Always follow your healthcare provider's guidance over anything shown in this app.
                 </Text>
-                <Text style={styles.disclaimerAnalytics}>
-                  By continuing, you agree that Theo may collect anonymous usage data to improve the app. You can opt out at any time in Settings.
-                </Text>
+                <Pressable
+                  style={styles.analyticsRow}
+                  onPress={() => setAnalyticsConsent((v) => !v)}
+                >
+                  <Ionicons
+                    name={analyticsConsent ? 'checkbox' : 'square-outline'}
+                    size={22}
+                    color={analyticsConsent ? '#81C784' : 'rgba(255,255,255,0.4)'}
+                  />
+                  <Text style={styles.disclaimerAnalytics}>
+                    Allow Theo to collect anonymous usage data to improve the app. Your data will never be sold.
+                  </Text>
+                </Pressable>
                 <Pressable
                   style={styles.disclaimerBtn}
                   onPress={() => {
+                    setAnalyticsOptOut(!analyticsConsent);
+                    app.updateSettings({ analyticsOptOut: !analyticsConsent });
                     saveDisclaimerAccepted();
                     setDisclaimerAccepted(true);
                   }}
@@ -275,13 +288,18 @@ const createStyles = (colors: typeof LightColors, isDark: boolean) => StyleSheet
     fontWeight: '700',
     color: colors.textPrimary,
   },
+  analyticsRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 10,
+    marginBottom: 24,
+    paddingHorizontal: 4,
+  },
   disclaimerAnalytics: {
+    flex: 1,
     fontSize: 12,
     color: colors.textMuted,
     lineHeight: 18,
-    textAlign: 'center',
-    marginBottom: 24,
-    paddingHorizontal: 8,
   },
   disclaimerBtn: {
     width: '100%',
