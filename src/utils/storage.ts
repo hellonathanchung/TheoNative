@@ -20,6 +20,7 @@ export const DEFAULT_SETTINGS: Settings = {
   dinoDifficulty: 'normal',
   bubbleDifficulty: 'normal',
   themeMode: 'light',
+  analyticsOptOut: false,
 };
 
 export function loadContractions(): Contraction[] {
@@ -115,6 +116,16 @@ export function loadBubbleHigh(): number {
 
 export function saveBubbleHigh(score: number): void {
   storage.set('theo_bubble_high', String(score));
+}
+
+const DISCLAIMER_KEY = 'theo_disclaimer_accepted';
+
+export function loadDisclaimerAccepted(): boolean {
+  return storage.contains(DISCLAIMER_KEY);
+}
+
+export function saveDisclaimerAccepted(): void {
+  storage.set(DISCLAIMER_KEY, '1');
 }
 
 export function clearAllData(): void {

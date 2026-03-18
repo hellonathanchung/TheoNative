@@ -25,6 +25,7 @@ export interface Settings {
   dinoDifficulty: GameDifficulty;
   bubbleDifficulty: GameDifficulty;
   themeMode: ThemeMode;
+  analyticsOptOut: boolean;
 }
 
 export interface Session {

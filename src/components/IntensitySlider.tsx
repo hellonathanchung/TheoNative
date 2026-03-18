@@ -10,7 +10,7 @@ const THUMB_SIZE = 28;
 const THUMB_RADIUS = THUMB_SIZE / 2;
 
 interface Props {
-  value: number; // 1–100
+  value: number; // 1–5
   onChange: (v: number) => void;
   readOnly?: boolean;
 }
@@ -36,7 +36,7 @@ export function IntensitySlider({ value, onChange, readOnly = false }: Props) {
   // Sync thumb when value prop or trackWidth changes
   useEffect(() => {
     if (trackWidthRef.current > 0) {
-      const x = ((value - 1) / 99) * trackWidthRef.current;
+      const x = ((value - 1) / 4) * trackWidthRef.current;
       setThumbPosition(x);
       setDisplayValue(value);
     }
@@ -47,16 +47,16 @@ export function IntensitySlider({ value, onChange, readOnly = false }: Props) {
   const xToValue = (x: number): number => {
     const w = trackWidthRef.current;
     if (w === 0) return 1;
-    return Math.round((clamp(x) / w) * 99) + 1;
+    return Math.round((clamp(x) / w) * 4) + 1;
   };
 
   const triggerHapticForValue = async (v: number) => {
     if (v === lastHapticValueRef.current) return;
     lastHapticValueRef.current = v;
     try {
-      if (v <= 33) {
+      if (v <= 2) {
         await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-      } else if (v <= 66) {
+      } else if (v <= 3) {
         await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
       } else {
         await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
@@ -111,7 +111,7 @@ export function IntensitySlider({ value, onChange, readOnly = false }: Props) {
           const w = e.nativeEvent.layout.width;
           trackWidthRef.current = w;
           setTrackWidth(w);
-          const initialX = ((value - 1) / 99) * w;
+          const initialX = ((value - 1) / 4) * w;
           setThumbPosition(initialX);
           setDisplayValue(value);
         }}
@@ -159,7 +159,7 @@ export function IntensitySlider({ value, onChange, readOnly = false }: Props) {
       <View style={styles.labelRow}>
         <Text style={styles.labelEdge}>1</Text>
         <Text style={[styles.labelCenter, { color: thumbColor }]}>{displayValue}</Text>
-        <Text style={styles.labelEdge}>100</Text>
+        <Text style={styles.labelEdge}>5</Text>
       </View>
     </View>
   );

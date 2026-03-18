@@ -389,6 +389,20 @@ export function SettingsScreen({ app }: Props) {
           }
         />
       </SettingRow>
+      <SettingRow
+        s={s}
+        label="Analytics opt-out"
+        desc="Stop sharing anonymous usage data with Theo"
+      >
+        <Switch
+          value={settings.analyticsOptOut ?? false}
+          onValueChange={(v) => updateSettings({ analyticsOptOut: v })}
+          trackColor={{ false: colors.beige, true: colors.green }}
+          thumbColor={
+            (settings.analyticsOptOut ?? false) ? colors.white : colors.textMuted
+          }
+        />
+      </SettingRow>
 
       <Text style={[s.sectionLabel, { marginTop: 24 }]}>WHAT TO EXPECT</Text>
       <View style={s.supportSection}>
@@ -475,9 +489,9 @@ export function SettingsScreen({ app }: Props) {
 
       {/* Disclaimer */}
       <Text style={s.disclaimer}>
-        Theo is an informational timing tool — not medical advice.{"\n"}
-        Contraction patterns vary and only your care provider can advise on
-        labor and delivery decisions.{"\n"}Always consult your care provider.
+        Theo is a timing tool — not a medical device and not a substitute for professional medical care.{"\n\n"}
+        Theo cannot determine whether you are in true labor. Contractions may be Braxton Hicks (practice contractions). If you are under 37 weeks pregnant, contact your care provider immediately if you experience regular contractions — do not wait for a pattern.{"\n\n"}
+        Always follow your healthcare provider's guidance.
       </Text>
       <Text style={s.version}>Theo v1.1.0</Text>
 

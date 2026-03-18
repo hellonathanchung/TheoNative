@@ -9,7 +9,8 @@ import { TabNavigator } from './src/navigation/TabNavigator';
 import { AlertBanner } from './src/components/AlertBanner';
 import { useContractions } from './src/hooks/useContractions';
 import { DarkColors, LightColors, ThemeProvider } from './src/theme';
-import { analytics } from './src/utils/analytics';
+import { analytics, enableAnalytics, setAnalyticsOptOut } from './src/utils/analytics';
+import { loadDisclaimerAccepted, saveDisclaimerAccepted } from './src/utils/storage';
 import { SharingProvider } from './src/contexts/SharingContext';
 
 // Portrait lock handled by orientation: 'portrait' in app.config.ts
@@ -57,6 +58,7 @@ class ErrorBoundary extends React.Component<
 }
 
 export default function App() {
+  const [disclaimerAccepted, setDisclaimerAccepted] = useState(loadDisclaimerAccepted);
   const [showStalePrompt, setShowStalePrompt] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const toastOpacity = useRef(new Animated.Value(0)).current;
@@ -66,6 +68,14 @@ export default function App() {
   const mode = app.settings.themeMode ?? 'light';
   const colors = mode === 'dark' ? DarkColors : LightColors;
   const styles = useMemo(() => createStyles(colors, mode === 'dark'), [colors, mode]);
+
+  // Enable analytics once disclaimer is accepted, respecting opt-out
+  useEffect(() => {
+    if (disclaimerAccepted) {
+      enableAnalytics();
+      setAnalyticsOptOut(app.settings.analyticsOptOut ?? false);
+    }
+  }, [disclaimerAccepted, app.settings.analyticsOptOut]);
 
   // Request notification permission on mount
   useEffect(() => {
@@ -130,6 +140,37 @@ export default function App() {
         <SafeAreaProvider>
           <SharingProvider localContractions={app.contractions}>
           <View style={styles.container}>
+
+          {/* First-launch disclaimer — blocks app until accepted */}
+          <Modal visible={!disclaimerAccepted} transparent={false} animationType="fade">
+            <View style={styles.disclaimerScreen}>
+              <View style={styles.disclaimerCard}>
+                <Ionicons name="medical-outline" size={36} color={colors.terracotta} />
+                <Text style={styles.disclaimerTitle}>Before You Begin</Text>
+                <Text style={styles.disclaimerBody}>
+                  Theo is a contraction timing tool — <Text style={styles.disclaimerBold}>not a medical device</Text> and not a substitute for professional medical care.
+                  {'\n\n'}
+                  Theo cannot determine whether you are in true labor. Regular-looking contractions may be Braxton Hicks (practice contractions) and do not always indicate labor.
+                  {'\n\n'}
+                  <Text style={styles.disclaimerBold}>If you are under 37 weeks pregnant</Text> and experiencing regular contractions, contact your care provider right away — do not wait for a pattern.
+                  {'\n\n'}
+                  Always follow your healthcare provider's guidance over anything shown in this app.
+                </Text>
+                <Text style={styles.disclaimerAnalytics}>
+                  By continuing, you agree that Theo may collect anonymous usage data to improve the app. You can opt out at any time in Settings.
+                </Text>
+                <Pressable
+                  style={styles.disclaimerBtn}
+                  onPress={() => {
+                    saveDisclaimerAccepted();
+                    setDisclaimerAccepted(true);
+                  }}
+                >
+                  <Text style={styles.disclaimerBtnText}>I Understand — Continue</Text>
+                </Pressable>
+              </View>
+            </View>
+          </Modal>
 
           {/* Alert banner */}
           {app.alertMessage && (
@@ -202,6 +243,57 @@ const createStyles = (colors: typeof LightColors, isDark: boolean) => StyleSheet
   container: {
     flex: 1,
     backgroundColor: colors.cream,
+  },
+  disclaimerScreen: {
+    flex: 1,
+    backgroundColor: colors.cream,
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 24,
+  },
+  disclaimerCard: {
+    width: '100%',
+    maxWidth: 380,
+    alignItems: 'center',
+  },
+  disclaimerTitle: {
+    fontSize: 22,
+    fontWeight: '700',
+    color: colors.textPrimary,
+    marginTop: 16,
+    marginBottom: 16,
+    textAlign: 'center',
+  },
+  disclaimerBody: {
+    fontSize: 14,
+    color: colors.textSecondary,
+    lineHeight: 22,
+    textAlign: 'left',
+    marginBottom: 16,
+  },
+  disclaimerBold: {
+    fontWeight: '700',
+    color: colors.textPrimary,
+  },
+  disclaimerAnalytics: {
+    fontSize: 12,
+    color: colors.textMuted,
+    lineHeight: 18,
+    textAlign: 'center',
+    marginBottom: 24,
+    paddingHorizontal: 8,
+  },
+  disclaimerBtn: {
+    width: '100%',
+    paddingVertical: 16,
+    borderRadius: 14,
+    backgroundColor: colors.terracotta,
+    alignItems: 'center',
+  },
+  disclaimerBtnText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: colors.white,
   },
   modalOverlay: {
     flex: 1,

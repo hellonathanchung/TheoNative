@@ -27,7 +27,21 @@ if (Platform.OS !== 'web' && POSTHOG_API_KEY) {
 }
 export { posthogClient };
 
+// Analytics is disabled until the user has accepted the disclaimer.
+// Call enableAnalytics() once they do. Call setAnalyticsOptOut(true) if they opt out in settings.
+let _enabled = false;
+let _optedOut = false;
+
+export function enableAnalytics() {
+  _enabled = true;
+}
+
+export function setAnalyticsOptOut(optOut: boolean) {
+  _optedOut = optOut;
+}
+
 const capture = (event: string, props?: Record<string, string | number | boolean | null>) => {
+  if (!_enabled || _optedOut) return;
   posthogClient?.capture(event, props);
 };
 

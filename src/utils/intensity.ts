@@ -14,9 +14,9 @@ function toHex(n: number): string {
   return n.toString(16).padStart(2, '0');
 }
 
-/** Returns a hex color for intensity value 1–100. */
+/** Returns a hex color for intensity value 1–5. */
 export function getIntensityColor(value: number): string {
-  const t = (Math.min(100, Math.max(1, value)) - 1) / 99;
+  const t = (Math.min(5, Math.max(1, value)) - 1) / 4;
 
   for (let i = 0; i < STOPS.length - 1; i++) {
     const a = STOPS[i];
@@ -31,11 +31,11 @@ export function getIntensityColor(value: number): string {
   return `#${toHex(last.r)}${toHex(last.g)}${toHex(last.b)}`;
 }
 
-/** Returns border style for a contraction row based on intensity 1–100. */
+/** Returns border style for a contraction row based on intensity 1–5. */
 export function getIntensityBorderStyle(value: number): { borderColor: string; borderWidth: number } {
   return {
     borderColor: getIntensityColor(value),
-    borderWidth: 1 + (value - 1) / 99, // 1.0 at value 1 → 2.0 at value 100
+    borderWidth: 1 + (value - 1) / 4, // 1.0 at value 1 → 2.0 at value 5
   };
 }
 
@@ -46,16 +46,17 @@ export function getIntensityBgStyle(value: number): { backgroundColor: string } 
   return { backgroundColor: `${color}26` };
 }
 
-/** Migrates legacy string/1-50 intensity values to the 1–100 numeric scale. */
+/** Migrates legacy string/1-50/1-100 intensity values to the 1–5 numeric scale. */
 export function migrateIntensity(raw: unknown): number | undefined {
   if (raw === undefined || raw === null) return undefined;
   if (typeof raw === 'number') {
     const clamped = Math.max(1, Math.round(raw));
-    // If stored value is in old 1–50 range, scale up to 1–100
-    return Math.min(100, clamped <= 50 ? clamped * 2 - 1 : clamped);
+    if (clamped <= 5) return clamped; // already 1–5
+    // Old 1–100 scale: map to 1–5
+    return Math.round((clamped - 1) / 99 * 4) + 1;
   }
-  if (raw === 'mild') return 33;
-  if (raw === 'moderate') return 50;
-  if (raw === 'strong') return 83;
+  if (raw === 'mild') return 2;
+  if (raw === 'moderate') return 3;
+  if (raw === 'strong') return 4;
   return undefined;
 }
