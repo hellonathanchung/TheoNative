@@ -35,12 +35,29 @@ const supabaseAnonKey =
   process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ||
   '';
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
-  auth: {
-    storage: mmkvStorage,
-    storageKey: SUPABASE_AUTH_KEY,
-    autoRefreshToken: true,
-    persistSession: true,
-    detectSessionInUrl: false,
-  },
-});
+let supabase: ReturnType<typeof createClient>;
+try {
+  supabase = createClient(supabaseUrl, supabaseAnonKey, {
+    auth: {
+      storage: mmkvStorage,
+      storageKey: SUPABASE_AUTH_KEY,
+      autoRefreshToken: true,
+      persistSession: true,
+      detectSessionInUrl: false,
+    },
+  });
+} catch (e) {
+  console.warn('Supabase init failed (missing env vars?):', e);
+  // Placeholder client so the module doesn't crash the import chain.
+  // API calls will fail gracefully; all consumers already handle errors.
+  supabase = createClient('https://placeholder.supabase.co', 'placeholder', {
+    auth: {
+      storage: mmkvStorage,
+      storageKey: SUPABASE_AUTH_KEY,
+      autoRefreshToken: false,
+      persistSession: false,
+      detectSessionInUrl: false,
+    },
+  });
+}
+export { supabase };

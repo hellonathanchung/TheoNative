@@ -4,7 +4,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   ...config,
   name: 'Theo',
   slug: 'theo-native',
-  version: '1.0.0',
+  version: '1.2.0',
   scheme: 'theo',
   orientation: 'portrait',
   icon: './assets/icon.png',
@@ -39,7 +39,6 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   plugins: [
     'expo-notifications',
     'expo-localization',
-    'expo-screen-orientation',
     '@react-native-community/datetimepicker',
   ],
   extra: {

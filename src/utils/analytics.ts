@@ -8,8 +8,10 @@ const POSTHOG_HOST = 'https://us.i.posthog.com';
 
 // PostHog requires native file storage (expo-file-system) which isn't available on web.
 // Skip initialization on web so the dev server doesn't crash.
-export const posthogClient = Platform.OS !== 'web'
-  ? new PostHog(POSTHOG_API_KEY, {
+let posthogClient: PostHog | null = null;
+if (Platform.OS !== 'web' && POSTHOG_API_KEY) {
+  try {
+    posthogClient = new PostHog(POSTHOG_API_KEY, {
       host: POSTHOG_HOST,
       flushAt: 20,
       flushInterval: 30000,
@@ -18,8 +20,12 @@ export const posthogClient = Platform.OS !== 'web'
       autocapture: {
         captureScreens: false,
       },
-    })
-  : null;
+    });
+  } catch (e) {
+    console.warn('PostHog init failed:', e);
+  }
+}
+export { posthogClient };
 
 const capture = (event: string, props?: Record<string, string | number | boolean | null>) => {
   posthogClient?.capture(event, props);

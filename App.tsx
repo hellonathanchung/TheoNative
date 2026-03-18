@@ -4,7 +4,6 @@ import { NavigationContainer } from '@react-navigation/native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import * as Notifications from 'expo-notifications';
-import * as ScreenOrientation from 'expo-screen-orientation';
 import { Ionicons } from '@expo/vector-icons';
 import { TabNavigator } from './src/navigation/TabNavigator';
 import { AlertBanner } from './src/components/AlertBanner';
@@ -13,21 +12,49 @@ import { DarkColors, LightColors, ThemeProvider } from './src/theme';
 import { analytics } from './src/utils/analytics';
 import { SharingProvider } from './src/contexts/SharingContext';
 
-// Lock to portrait
-ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.PORTRAIT_UP);
+// Portrait lock handled by orientation: 'portrait' in app.config.ts
 
 // Configure notification handler
-Notifications.setNotificationHandler({
-  handleNotification: async () => ({
-    shouldShowAlert: true,
-    shouldPlaySound: true,
-    shouldSetBadge: false,
-    shouldShowBanner: true,
-    shouldShowList: true,
-  }),
-});
+try {
+  Notifications.setNotificationHandler({
+    handleNotification: async () => ({
+      shouldShowAlert: true,
+      shouldPlaySound: true,
+      shouldSetBadge: false,
+      shouldShowBanner: true,
+      shouldShowList: true,
+    }),
+  });
+} catch (e) {
+  console.warn('Notifications.setNotificationHandler failed:', e);
+}
 
 const TWENTY_FOUR_HOURS = 24 * 60 * 60 * 1000;
+
+class ErrorBoundary extends React.Component<
+  { children: React.ReactNode },
+  { hasError: boolean; error: Error | null }
+> {
+  state = { hasError: false, error: null as Error | null };
+
+  static getDerivedStateFromError(error: Error) {
+    return { hasError: true, error };
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: 24, backgroundColor: '#F5FAF5' }}>
+          <Text style={{ fontSize: 18, fontWeight: '600', color: '#2E3B2E' }}>Something went wrong</Text>
+          <Text style={{ fontSize: 13, color: '#666', marginTop: 8, textAlign: 'center' }}>
+            {this.state.error?.message}
+          </Text>
+        </View>
+      );
+    }
+    return this.props.children;
+  }
+}
 
 export default function App() {
   const [showStalePrompt, setShowStalePrompt] = useState(false);
@@ -95,6 +122,7 @@ export default function App() {
     undoState?.type === 'session' ? 'Session deleted' : 'Contraction deleted';
 
   return (
+    <ErrorBoundary>
     <ThemeProvider
         mode={mode}
         setMode={(nextMode) => app.updateSettings({ themeMode: nextMode })}
@@ -166,6 +194,7 @@ export default function App() {
           </SharingProvider>
         </SafeAreaProvider>
       </ThemeProvider>
+    </ErrorBoundary>
   );
 }
 

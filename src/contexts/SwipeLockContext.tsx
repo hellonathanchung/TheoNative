@@ -19,8 +19,11 @@ export function SwipeLockProvider({ children }: { children: React.ReactNode }) {
   );
 }
 
+const FALLBACK_REF = { current: 0 };
+const noop = () => {};
+
 export function useSwipeLock() {
   const ctx = useContext(SwipeLockContext);
-  if (!ctx) throw new Error("useSwipeLock must be used within SwipeLockProvider");
+  if (!ctx) return { lockRef: FALLBACK_REF, lock: noop, unlock: noop };
   return ctx;
 }
