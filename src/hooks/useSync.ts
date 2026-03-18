@@ -106,6 +106,31 @@ export function useSync(
     return () => sub.remove();
   }, [partnerId, fetchPartnerData]);
 
+  // Realtime subscription: re-fetch partner contractions whenever they change in Supabase
+  useEffect(() => {
+    if (!partnerId) return;
+
+    const channel = supabase
+      .channel(`partner-contractions-${partnerId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'contractions',
+          filter: `user_id=eq.${partnerId}`,
+        },
+        () => {
+          fetchPartnerData();
+        },
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [partnerId, fetchPartnerData]);
+
   // Clean up synced contractions when starting a new session
   const clearSyncedContractions = useCallback(async () => {
     if (!user) return;
