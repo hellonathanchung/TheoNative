@@ -35,6 +35,17 @@ const supabaseAnonKey =
   process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ||
   '';
 
+if (__DEV__) {
+  console.log('[Supabase] expoConfig.extra:', JSON.stringify(extra));
+  console.log('[Supabase] resolved URL:', supabaseUrl ? supabaseUrl.substring(0, 40) + '...' : '(empty)');
+  console.log('[Supabase] anon key:', supabaseAnonKey ? `SET (${supabaseAnonKey.length} chars)` : '(empty)');
+} else if (!supabaseUrl || !supabaseAnonKey) {
+  console.warn('[Supabase] MISSING env vars in production build!',
+    'url:', !!supabaseUrl, 'key:', !!supabaseAnonKey,
+    'expoConfig:', !!Constants.expoConfig,
+    'extra keys:', Object.keys(extra));
+}
+
 let supabase: ReturnType<typeof createClient>;
 try {
   supabase = createClient(supabaseUrl, supabaseAnonKey, {

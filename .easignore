@@ -1,0 +1,42 @@
+# Same as .gitignore but WITHOUT excluding .env files,
+# so EAS builds can read env vars via dotenv/config in app.config.ts
+
+# dependencies
+node_modules/
+
+*.ipa
+# Expo
+.expo/
+dist/
+web-build/
+expo-env.d.ts
+credentials.json
+# Native
+.kotlin/
+*.orig.*
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+
+# Metro
+.metro-health-check*
+
+# debug
+npm-debug.*
+yarn-debug.*
+yarn-error.*
+
+# macOS
+.DS_Store
+*.pem
+
+# typescript
+*.tsbuildinfo
+
+settings.local.json
+
+# generated native folders
+/ios
+/android
