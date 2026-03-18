@@ -392,20 +392,6 @@ export function SettingsScreen({ app }: Props) {
           }
         />
       </SettingRow>
-      <SettingRow
-        s={s}
-        label="Anonymous analytics"
-        desc={settings.analyticsOptOut ? "Not sharing data" : "Sharing anonymous data to improve Theo"}
-      >
-        <Switch
-          value={!(settings.analyticsOptOut ?? false)}
-          onValueChange={(v) => updateSettings({ analyticsOptOut: !v })}
-          trackColor={{ false: colors.beige, true: colors.green }}
-          thumbColor={
-            !(settings.analyticsOptOut ?? false) ? colors.white : colors.textMuted
-          }
-        />
-      </SettingRow>
 
       <Text style={[s.sectionLabel, { marginTop: 24 }]}>WHAT TO EXPECT</Text>
       <View style={s.supportSection}>
@@ -596,9 +582,8 @@ export function SettingsScreen({ app }: Props) {
               for a pattern.{"\n\n"}
               Always follow your healthcare provider's guidance over anything
               shown in this app.{"\n\n"}
-              Theo collects anonymous usage data solely to improve the app. Your
-              data will never be sold. You can opt out at any time using the
-              Anonymous analytics toggle in Settings.
+              All your data stays on your device (or with your partner if you
+              opt into sharing). Your data will never be sold.
             </Text>
             <Pressable
               style={s.modalCancel}

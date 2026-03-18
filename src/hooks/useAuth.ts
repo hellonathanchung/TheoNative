@@ -2,7 +2,6 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { Alert } from 'react-native';
 import * as Linking from 'expo-linking';
 import { supabase } from '../utils/supabase';
-import { analytics } from '../utils/analytics';
 import type { User } from '@supabase/supabase-js';
 
 /** Decode the email claim from a JWT payload without signature verification (display-only). */
@@ -111,7 +110,6 @@ export function useAuth() {
       email: email.toLowerCase(),
     });
     if (error) throw error;
-    analytics.sharingSignInStarted();
   }, []);
 
   const verifyOtp = useCallback(async (email: string, token: string) => {
@@ -121,13 +119,11 @@ export function useAuth() {
       type: 'email',
     });
     if (error) throw error;
-    analytics.sharingSignInCompleted();
   }, []);
 
   const signOut = useCallback(async () => {
     const { error } = await supabase.auth.signOut();
     if (error) throw error;
-    analytics.sharingSignedOut();
   }, []);
 
   return { user, loading, signInWithOtp, verifyOtp, signOut };

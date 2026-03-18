@@ -59,4 +59,4 @@ Supabase tables: `partnerships` (inviter/invitee relationship), `contractions` (
 ### Node / EAS
 - Requires Node ≥20 (use Node 25 via nvm)
 - EAS preview profile targets internal iOS distribution: `npx eas-cli build --profile preview --platform ios --non-interactive`
-- Required env vars: `EXPO_PUBLIC_SUPABASE_URL`, `EXPO_PUBLIC_SUPABASE_ANON_KEY`, `POSTHOG_API_KEY`
+- Required env vars: `EXPO_PUBLIC_SUPABASE_URL`, `EXPO_PUBLIC_SUPABASE_ANON_KEY`

@@ -9,7 +9,6 @@ import { TabNavigator } from './src/navigation/TabNavigator';
 import { AlertBanner } from './src/components/AlertBanner';
 import { useContractions } from './src/hooks/useContractions';
 import { DarkColors, LightColors, ThemeProvider } from './src/theme';
-import { analytics, enableAnalytics, setAnalyticsOptOut } from './src/utils/analytics';
 import { loadDisclaimerAccepted, saveDisclaimerAccepted } from './src/utils/storage';
 import { SharingProvider } from './src/contexts/SharingContext';
 
@@ -59,7 +58,6 @@ class ErrorBoundary extends React.Component<
 
 export default function App() {
   const [disclaimerAccepted, setDisclaimerAccepted] = useState(loadDisclaimerAccepted);
-  const [analyticsConsent, setAnalyticsConsent] = useState(true);
   const [showStalePrompt, setShowStalePrompt] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const toastOpacity = useRef(new Animated.Value(0)).current;
@@ -69,14 +67,6 @@ export default function App() {
   const mode = app.settings.themeMode ?? 'light';
   const colors = mode === 'dark' ? DarkColors : LightColors;
   const styles = useMemo(() => createStyles(colors, mode === 'dark'), [colors, mode]);
-
-  // Enable analytics once disclaimer is accepted, respecting opt-out
-  useEffect(() => {
-    if (disclaimerAccepted) {
-      enableAnalytics();
-      setAnalyticsOptOut(app.settings.analyticsOptOut ?? false);
-    }
-  }, [disclaimerAccepted, app.settings.analyticsOptOut]);
 
   // Request notification permission on mount
   useEffect(() => {
@@ -125,7 +115,6 @@ export default function App() {
     const lastTime = lastContraction.endTime ?? lastContraction.startTime;
     if (Date.now() - lastTime > TWENTY_FOUR_HOURS) {
       setShowStalePrompt(true);
-      analytics.staleSessionPromptShown();
     }
   }, []);
 
@@ -158,23 +147,8 @@ export default function App() {
                   Always follow your healthcare provider's guidance over anything shown in this app.
                 </Text>
                 <Pressable
-                  style={styles.analyticsRow}
-                  onPress={() => setAnalyticsConsent((v) => !v)}
-                >
-                  <Ionicons
-                    name={analyticsConsent ? 'checkbox' : 'square-outline'}
-                    size={22}
-                    color={analyticsConsent ? '#81C784' : 'rgba(255,255,255,0.4)'}
-                  />
-                  <Text style={styles.disclaimerAnalytics}>
-                    Allow Theo to collect anonymous usage data to improve the app. Your data will never be sold.
-                  </Text>
-                </Pressable>
-                <Pressable
                   style={styles.disclaimerBtn}
                   onPress={() => {
-                    setAnalyticsOptOut(!analyticsConsent);
-                    app.updateSettings({ analyticsOptOut: !analyticsConsent });
                     saveDisclaimerAccepted();
                     setDisclaimerAccepted(true);
                   }}
@@ -205,13 +179,13 @@ export default function App() {
                 </Text>
                 <Pressable
                   style={styles.modalPrimaryBtn}
-                  onPress={() => { app.newSession(); setShowStalePrompt(false); analytics.staleSessionAction('new_session'); }}
+                  onPress={() => { app.newSession(); setShowStalePrompt(false); }}
                 >
                   <Text style={styles.modalPrimaryText}>Start New Session</Text>
                 </Pressable>
                 <Pressable
                   style={styles.modalSecondaryBtn}
-                  onPress={() => { setShowStalePrompt(false); analytics.staleSessionAction('keep_session'); }}
+                  onPress={() => { setShowStalePrompt(false); }}
                 >
                   <Text style={styles.modalSecondaryText}>Keep Current Session</Text>
                 </Pressable>
@@ -287,19 +261,6 @@ const createStyles = (colors: typeof LightColors, isDark: boolean) => StyleSheet
   disclaimerBold: {
     fontWeight: '700',
     color: colors.textPrimary,
-  },
-  analyticsRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: 10,
-    marginBottom: 24,
-    paddingHorizontal: 4,
-  },
-  disclaimerAnalytics: {
-    flex: 1,
-    fontSize: 12,
-    color: colors.textMuted,
-    lineHeight: 18,
   },
   disclaimerBtn: {
     width: '100%',

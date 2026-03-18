@@ -1,7 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { AppState } from 'react-native';
 import { supabase } from '../utils/supabase';
-import { analytics } from '../utils/analytics';
 import type { User } from '@supabase/supabase-js';
 
 export interface Partnership {
@@ -207,7 +206,6 @@ export function usePartnership(user: User | null) {
           })
           .eq('id', reciprocal.id);
         if (error) throw error;
-        analytics.partnerInviteAccepted();
       } else {
         // Check if we previously sent a declined invite to this person — reset it to pending
         const { data: prior } = await supabase
@@ -223,7 +221,6 @@ export function usePartnership(user: User | null) {
             .update({ status: 'pending', accepted_at: null })
             .eq('id', prior.id);
           if (error) throw error;
-          analytics.partnerInviteSent();
         } else {
           const { error } = await supabase.from('partnerships').insert({
             inviter_id: user.id,
@@ -235,7 +232,6 @@ export function usePartnership(user: User | null) {
             }
             throw error;
           }
-          analytics.partnerInviteSent();
         }
       }
 
@@ -262,7 +258,6 @@ export function usePartnership(user: User | null) {
         })
         .eq('id', partnershipId);
       if (error) throw error;
-      analytics.partnerInviteAccepted();
       await fetchPartnerships();
     },
     [user, partnerId, fetchPartnerships],
@@ -288,7 +283,6 @@ export function usePartnership(user: User | null) {
       .delete()
       .or(`inviter_id.eq.${user.id},invitee_id.eq.${user.id},invitee_email.eq.${user.email}`);
     if (error) throw error;
-    analytics.partnerDisconnected();
     setPartner(null);
     setPartnerId(null);
     setSentInvite(null);

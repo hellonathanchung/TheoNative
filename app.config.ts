@@ -43,7 +43,6 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     '@react-native-community/datetimepicker',
   ],
   extra: {
-    posthogApiKey: process.env.POSTHOG_API_KEY ?? '',
     supabaseUrl: process.env.SUPABASE_URL ?? '',
     supabaseAnonKey: process.env.SUPABASE_ANON_KEY ?? '',
     eas: {
