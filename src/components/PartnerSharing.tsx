@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState } from "react";
 import {
   View,
   Text,
@@ -7,11 +7,9 @@ import {
   ActivityIndicator,
   Alert,
   StyleSheet,
-  KeyboardAvoidingView,
-  Platform,
-} from 'react-native';
-import { useSharing } from '../contexts/SharingContext';
-import { useTheme, type ThemeColors } from '../theme';
+} from "react-native";
+import { useSharing } from "../contexts/SharingContext";
+import { useTheme, type ThemeColors } from "../theme";
 
 export function PartnerSharing() {
   const { colors } = useTheme();
@@ -34,10 +32,10 @@ export function PartnerSharing() {
     cancelInvite,
   } = sharing;
 
-  const [email, setEmail] = useState('');
-  const [otpEmail, setOtpEmail] = useState('');
-  const [otp, setOtp] = useState('');
-  const [partnerEmail, setPartnerEmail] = useState('');
+  const [email, setEmail] = useState("");
+  const [otpEmail, setOtpEmail] = useState("");
+  const [otp, setOtp] = useState("");
+  const [partnerEmail, setPartnerEmail] = useState("");
   const [showOtp, setShowOtp] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -51,7 +49,7 @@ export function PartnerSharing() {
       setOtpEmail(email.trim());
       setShowOtp(true);
     } catch (e: any) {
-      setError(e.message ?? 'Failed to send code');
+      setError(e.message ?? "Failed to send code");
     } finally {
       setBusy(false);
     }
@@ -64,10 +62,10 @@ export function PartnerSharing() {
     try {
       await verifyOtp(otpEmail, otp.trim());
       setShowOtp(false);
-      setEmail('');
-      setOtp('');
+      setEmail("");
+      setOtp("");
     } catch (e: any) {
-      setError(e.message ?? 'Invalid code');
+      setError(e.message ?? "Invalid code");
     } finally {
       setBusy(false);
     }
@@ -79,9 +77,9 @@ export function PartnerSharing() {
     setError(null);
     try {
       await invitePartner(partnerEmail.trim());
-      setPartnerEmail('');
+      setPartnerEmail("");
     } catch (e: any) {
-      setError(e.message ?? 'Failed to send invite');
+      setError(e.message ?? "Failed to send invite");
     } finally {
       setBusy(false);
     }
@@ -91,40 +89,44 @@ export function PartnerSharing() {
     try {
       await acceptInvite(inviteId);
     } catch (e: any) {
-      if (e.message === 'ALREADY_CONNECTED') {
+      if (e.message === "ALREADY_CONNECTED") {
         Alert.alert(
-          'Already Connected',
-          `You're already connected to ${partner?.display_name || partner?.email}. Disconnect from them and accept this invite instead?`,
+          "Already Connected",
+          `You're already connected to ${
+            partner?.display_name || partner?.email
+          }. Disconnect from them and accept this invite instead?`,
           [
-            { text: 'Cancel', style: 'cancel' },
+            { text: "Cancel", style: "cancel" },
             {
-              text: 'Switch Partner',
-              style: 'destructive',
+              text: "Switch Partner",
+              style: "destructive",
               onPress: async () => {
                 try {
                   await disconnect();
                   await acceptInvite(inviteId);
                 } catch (err: any) {
-                  setError(err.message ?? 'Failed to switch partner');
+                  setError(err.message ?? "Failed to switch partner");
                 }
               },
             },
-          ],
+          ]
         );
       } else {
-        setError(e.message ?? 'Failed to accept invite');
+        setError(e.message ?? "Failed to accept invite");
       }
     }
   };
 
   const handleDisconnect = () => {
     Alert.alert(
-      'Disconnect Partner?',
-      `This will stop sharing data with ${partner?.display_name || partner?.email}.`,
+      "Disconnect Partner?",
+      `This will stop sharing data with ${
+        partner?.display_name || partner?.email
+      }.`,
       [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Disconnect', style: 'destructive', onPress: disconnect },
-      ],
+        { text: "Cancel", style: "cancel" },
+        { text: "Disconnect", style: "destructive", onPress: disconnect },
+      ]
     );
   };
 
@@ -139,46 +141,41 @@ export function PartnerSharing() {
   // State: Not signed in — show email input
   if (!user && !showOtp) {
     return (
-      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-        <View style={s.container}>
-          <Text style={s.desc}>
-            Sign in to share contraction data with your partner in real time.
-          </Text>
-          <TextInput
-            style={s.input}
-            placeholder="Email address"
-            placeholderTextColor={colors.textMuted}
-            value={email}
-            onChangeText={setEmail}
-            autoCapitalize="none"
-            keyboardType="email-address"
-            autoCorrect={false}
-          />
-          {error && <Text style={s.error}>{error}</Text>}
-          <Pressable
-            style={[s.primaryBtn, busy && { opacity: 0.6 }]}
-            onPress={handleSendOtp}
-            disabled={busy}
-          >
-            {busy ? (
-              <ActivityIndicator color={colors.cream} size="small" />
-            ) : (
-              <Text style={s.primaryBtnText}>Send Sign-In Code</Text>
-            )}
-          </Pressable>
-        </View>
-      </KeyboardAvoidingView>
+      <View style={s.container}>
+        <Text style={s.desc}>
+          Sign in to share contraction data with your partner in real time.
+        </Text>
+        <TextInput
+          style={s.input}
+          placeholder="mnkyDluffy@onepiece.com"
+          placeholderTextColor={colors.textMuted}
+          value={email}
+          onChangeText={setEmail}
+          autoCapitalize="none"
+          keyboardType="email-address"
+          autoCorrect={false}
+        />
+        {error && <Text style={s.error}>{error}</Text>}
+        <Pressable
+          style={[s.primaryBtn, busy && { opacity: 0.6 }]}
+          onPress={handleSendOtp}
+          disabled={busy}
+        >
+          {busy ? (
+            <ActivityIndicator color={colors.deepGreen} size="small" />
+          ) : (
+            <Text style={s.primaryBtnText}>Sign in</Text>
+          )}
+        </Pressable>
+      </View>
     );
   }
 
   // State: OTP entry
   if (!user && showOtp) {
     return (
-      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <View style={s.container}>
-        <Text style={s.desc}>
-          Enter the 8-digit code sent to {otpEmail}
-        </Text>
+        <Text style={s.desc}>Enter the 8-digit code sent to {otpEmail}</Text>
         <TextInput
           style={s.input}
           placeholder="8-digit code"
@@ -196,7 +193,7 @@ export function PartnerSharing() {
           disabled={busy}
         >
           {busy ? (
-            <ActivityIndicator color={colors.cream} size="small" />
+            <ActivityIndicator color={colors.deepGreen} size="small" />
           ) : (
             <Text style={s.primaryBtnText}>Verify</Text>
           )}
@@ -205,14 +202,13 @@ export function PartnerSharing() {
           style={s.linkBtn}
           onPress={() => {
             setShowOtp(false);
-            setOtp('');
+            setOtp("");
             setError(null);
           }}
         >
           <Text style={s.linkText}>Use different email</Text>
         </Pressable>
       </View>
-      </KeyboardAvoidingView>
     );
   }
 
@@ -222,7 +218,9 @@ export function PartnerSharing() {
       <View style={s.container}>
         <View style={s.connectedRow}>
           <View style={s.statusDot} />
-          <Text style={s.connectedText}>Connected to {partner.display_name || partner.email}</Text>
+          <Text style={s.connectedText}>
+            Connected to {partner.display_name || partner.email}
+          </Text>
         </View>
         <Text style={s.signedInAs}>Signed in as {user.email}</Text>
         <Pressable style={s.disconnectBtn} onPress={handleDisconnect}>
@@ -237,13 +235,13 @@ export function PartnerSharing() {
 
   // State: Signed in — show pending invites, sent invite, or invite form
   return (
-    <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
     <View style={s.container}>
       <Text style={s.signedInAs}>Signed in as {user?.email}</Text>
 
       {/* Pending invites received */}
       {pendingInvites.map((invite) => {
-        const inviterName = invite.inviter_display_name || invite.inviter_email || 'Someone';
+        const inviterName =
+          invite.inviter_display_name || invite.inviter_email || "Someone";
         return (
           <View key={invite.id} style={s.inviteCard}>
             <Text style={s.inviteText}>
@@ -302,7 +300,7 @@ export function PartnerSharing() {
             disabled={busy}
           >
             {busy ? (
-              <ActivityIndicator color={colors.cream} size="small" />
+              <ActivityIndicator color={colors.deepGreen} size="small" />
             ) : (
               <Text style={s.primaryBtnText}>Invite Partner</Text>
             )}
@@ -314,7 +312,6 @@ export function PartnerSharing() {
         <Text style={s.linkText}>Sign out</Text>
       </Pressable>
     </View>
-    </KeyboardAvoidingView>
   );
 }
 
@@ -342,19 +339,19 @@ const createStyles = (colors: ThemeColors) =>
     primaryBtn: {
       paddingVertical: 12,
       paddingHorizontal: 24,
-      backgroundColor: colors.terracotta,
+      backgroundColor: colors.beige,
       borderRadius: 12,
-      alignItems: 'center',
+      alignItems: "center",
       marginBottom: 8,
     },
     primaryBtnText: {
       fontSize: 14,
-      fontWeight: '600',
-      color: colors.cream,
+      fontWeight: "600",
+      color: colors.deepGreen,
     },
     linkBtn: {
       paddingVertical: 8,
-      alignItems: 'center',
+      alignItems: "center",
     },
     linkText: {
       fontSize: 13,
@@ -371,8 +368,8 @@ const createStyles = (colors: ThemeColors) =>
       marginBottom: 12,
     },
     connectedRow: {
-      flexDirection: 'row',
-      alignItems: 'center',
+      flexDirection: "row",
+      alignItems: "center",
       marginBottom: 4,
     },
     statusDot: {
@@ -384,7 +381,7 @@ const createStyles = (colors: ThemeColors) =>
     },
     connectedText: {
       fontSize: 14,
-      fontWeight: '500',
+      fontWeight: "500",
       color: colors.textPrimary,
     },
     disconnectBtn: {
@@ -392,12 +389,12 @@ const createStyles = (colors: ThemeColors) =>
       paddingHorizontal: 24,
       backgroundColor: colors.beige,
       borderRadius: 12,
-      alignSelf: 'flex-start',
+      alignSelf: "flex-start",
       marginBottom: 8,
     },
     disconnectText: {
       fontSize: 14,
-      fontWeight: '500',
+      fontWeight: "500",
       color: colors.danger,
     },
     inviteCard: {
@@ -412,19 +409,19 @@ const createStyles = (colors: ThemeColors) =>
       marginBottom: 8,
     },
     inviteActions: {
-      flexDirection: 'row',
+      flexDirection: "row",
       gap: 8,
     },
     acceptBtn: {
       paddingVertical: 8,
       paddingHorizontal: 16,
-      backgroundColor: colors.terracotta,
+      backgroundColor: colors.beige,
       borderRadius: 10,
     },
     acceptText: {
       fontSize: 13,
-      fontWeight: '600',
-      color: colors.cream,
+      fontWeight: "600",
+      color: colors.deepGreen,
     },
     declineBtn: {
       paddingVertical: 8,
@@ -440,7 +437,7 @@ const createStyles = (colors: ThemeColors) =>
       paddingHorizontal: 16,
       backgroundColor: colors.beige,
       borderRadius: 10,
-      alignSelf: 'flex-start',
+      alignSelf: "flex-start",
     },
     cancelText: {
       fontSize: 13,

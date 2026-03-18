@@ -115,12 +115,23 @@ function TabNavigatorInner({ app }: Props) {
       onPanResponderRelease: (_, gesture) => {
         const min = -(tabs.length - 1) * width;
         const max = 0;
-        const nextOffset = clamp(offsetX.current + gesture.dx, min, max);
-        const nextIndex = clamp(
-          Math.round(-nextOffset / width),
-          0,
-          tabs.length - 1,
-        );
+        const currentIndex = Math.round(-offsetX.current / width);
+
+        let nextIndex: number;
+        // Fast flick — move one tab in swipe direction
+        if (Math.abs(gesture.vx) > 0.3) {
+          const direction = gesture.vx > 0 ? -1 : 1;
+          nextIndex = clamp(currentIndex + direction, 0, tabs.length - 1);
+        } else {
+          // Slow drag — snap to nearest tab by position
+          const nextOffset = clamp(offsetX.current + gesture.dx, min, max);
+          nextIndex = clamp(
+            Math.round(-nextOffset / width),
+            0,
+            tabs.length - 1,
+          );
+        }
+
         setIndex(nextIndex);
         animateToIndex(nextIndex);
       },

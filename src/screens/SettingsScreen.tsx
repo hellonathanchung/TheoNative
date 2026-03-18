@@ -361,7 +361,7 @@ export function SettingsScreen({ app }: Props) {
           }}
           trackColor={{ false: colors.beige, true: colors.green }}
           thumbColor={
-            settings.notificationsEnabled ? colors.deepGreen : colors.textMuted
+            settings.notificationsEnabled ? colors.white : colors.textMuted
           }
         />
       </SettingRow>
@@ -371,7 +371,7 @@ export function SettingsScreen({ app }: Props) {
           onValueChange={(v) => updateSettings({ hapticEnabled: v })}
           trackColor={{ false: colors.beige, true: colors.green }}
           thumbColor={
-            settings.hapticEnabled ? colors.deepGreen : colors.textMuted
+            settings.hapticEnabled ? colors.white : colors.textMuted
           }
         />
       </SettingRow>
@@ -385,7 +385,7 @@ export function SettingsScreen({ app }: Props) {
           onValueChange={(v) => updateSettings({ intensityEnabled: v })}
           trackColor={{ false: colors.beige, true: colors.green }}
           thumbColor={
-            settings.intensityEnabled ? colors.deepGreen : colors.textMuted
+            settings.intensityEnabled ? colors.white : colors.textMuted
           }
         />
       </SettingRow>
