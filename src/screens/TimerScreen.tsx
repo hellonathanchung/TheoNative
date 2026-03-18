@@ -13,6 +13,7 @@ import {
   Image,
   StyleSheet,
   Animated,
+  Easing,
   Modal,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -94,13 +95,15 @@ export function TimerScreen({ app }: Props) {
       animRef.current = Animated.loop(
         Animated.sequence([
           Animated.timing(scale, {
-            toValue: 1.08,
-            duration: 1000,
+            toValue: 1.06,
+            duration: 1200,
+            easing: Easing.inOut(Easing.ease),
             useNativeDriver: true,
           }),
           Animated.timing(scale, {
-            toValue: 1.05,
-            duration: 1000,
+            toValue: 1,
+            duration: 1200,
+            easing: Easing.inOut(Easing.ease),
             useNativeDriver: true,
           }),
         ])
@@ -110,7 +113,8 @@ export function TimerScreen({ app }: Props) {
       animRef.current?.stop?.();
       Animated.timing(scale, {
         toValue: 1,
-        duration: 150,
+        duration: 200,
+        easing: Easing.out(Easing.ease),
         useNativeDriver: true,
       }).start();
     }

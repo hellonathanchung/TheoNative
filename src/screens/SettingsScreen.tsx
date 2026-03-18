@@ -327,7 +327,11 @@ export function SettingsScreen({ app }: Props) {
           }
         />
       </SettingRow>
-      <SettingRow s={s} label="Time window" desc="How long the pattern must hold">
+      <SettingRow
+        s={s}
+        label="Time window"
+        desc="How long the pattern must hold"
+      >
         <Stepper
           s={s}
           value={settings.timeWindowMinutes}
@@ -370,9 +374,7 @@ export function SettingsScreen({ app }: Props) {
           value={settings.hapticEnabled}
           onValueChange={(v) => updateSettings({ hapticEnabled: v })}
           trackColor={{ false: colors.beige, true: colors.green }}
-          thumbColor={
-            settings.hapticEnabled ? colors.white : colors.textMuted
-          }
+          thumbColor={settings.hapticEnabled ? colors.white : colors.textMuted}
         />
       </SettingRow>
       <SettingRow
@@ -399,7 +401,7 @@ export function SettingsScreen({ app }: Props) {
           onValueChange={(v) => updateSettings({ analyticsOptOut: v })}
           trackColor={{ false: colors.beige, true: colors.green }}
           thumbColor={
-            (settings.analyticsOptOut ?? false) ? colors.white : colors.textMuted
+            settings.analyticsOptOut ?? false ? colors.white : colors.textMuted
           }
         />
       </SettingRow>
@@ -454,16 +456,17 @@ export function SettingsScreen({ app }: Props) {
       {/* Support */}
       <Text style={[s.sectionLabel, { marginTop: 24 }]}>SUPPORT</Text>
       <View style={s.supportSection}>
-        <Text style={s.supportTitle}>Support Theo</Text>
+        <Text style={s.supportTitle}>Buy Theo a Diaper</Text>
         <Text style={s.supportDesc}>
           Theo is free and ad-free. If it helped during your journey, consider
-          supporting us.
+          buying Theo a diaper as a token of appreciation. Your support helps
+          cover development costs and keeps Theo free for everyone!
         </Text>
         <Pressable
           style={s.donateBtn}
           onPress={() => Linking.openURL("https://venmo.com/hellonathanchung")}
         >
-          <Text style={s.donateBtnText}>Support on Venmo</Text>
+          <Text style={s.donateBtnText}>Send a Diaper</Text>
         </Pressable>
       </View>
 
@@ -489,8 +492,12 @@ export function SettingsScreen({ app }: Props) {
 
       {/* Disclaimer */}
       <Text style={s.disclaimer}>
-        Theo is a timing tool — not a medical device and not a substitute for professional medical care.{"\n\n"}
-        Theo cannot determine whether you are in true labor. Contractions may be Braxton Hicks (practice contractions). If you are under 37 weeks pregnant, contact your care provider immediately if you experience regular contractions — do not wait for a pattern.{"\n\n"}
+        Theo is a timing tool — not a medical device and not a substitute for
+        professional medical care.{"\n\n"}
+        Theo cannot determine whether you are in true labor. Contractions may be
+        Braxton Hicks (practice contractions). If you are under 37 weeks
+        pregnant, contact your care provider immediately if you experience
+        regular contractions — do not wait for a pattern.{"\n\n"}
         Always follow your healthcare provider's guidance.
       </Text>
       <Text style={s.version}>Theo v1.1.0</Text>
