@@ -337,7 +337,7 @@ export function FunFacts({
                     styles.dot,
                     {
                       backgroundColor:
-                        dotIdx === index ? colors.terracotta : colors.beige,
+                        dotIdx === index ? colors.terracotta : colors.textMuted,
                     },
                   ]}
                 />

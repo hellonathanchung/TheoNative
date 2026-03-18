@@ -12,7 +12,7 @@ interface Props {
 export const IntensityPicker: React.FC<Props> = ({ onSelect, onSkip }) => {
   const { colors } = useTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
-  const [value, setValue] = useState(50);
+  const [value, setValue] = useState(3);
   const { lock, unlock } = useSwipeLock();
 
   useEffect(() => {
@@ -29,7 +29,7 @@ export const IntensityPicker: React.FC<Props> = ({ onSelect, onSkip }) => {
           <Pressable
             style={styles.confirmButton}
             accessibilityRole="button"
-            accessibilityLabel={`Log intensity ${value} out of 100`}
+            accessibilityLabel={`Log intensity ${value} out of 5`}
             onPress={() => onSelect(value)}
           >
             <Text style={styles.confirmText}>Log Intensity</Text>

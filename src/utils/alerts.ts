@@ -2,7 +2,6 @@ import type { Contraction, Settings } from '../types';
 
 export interface AlertResult {
   triggered: boolean;
-  approaching: boolean;
 }
 
 // Uses a rolling time window to approximate 5-1-1/4-1-1/3-1-1 style patterns
@@ -16,7 +15,7 @@ export function evaluateContractions(
     (c) => c.startTime >= windowStart && c.endTime !== null && c.duration !== null
   );
 
-  if (recent.length < 3) return { triggered: false, approaching: false };
+  if (recent.length < 3) return { triggered: false };
 
   const intervals: number[] = [];
   for (let i = 1; i < recent.length; i++) {
@@ -26,14 +25,10 @@ export function evaluateContractions(
   const avgDur = recent.reduce((a, c) => a + c.duration!, 0) / recent.length;
 
   if (avgFreq <= settings.frequencyMinutes && avgDur >= settings.durationSeconds) {
-    return { triggered: true, approaching: false };
+    return { triggered: true };
   }
 
-  const approaching =
-    avgFreq <= settings.frequencyMinutes * 1.5 &&
-    avgDur >= settings.durationSeconds * 0.6;
-
-  return { triggered: false, approaching };
+  return { triggered: false };
 }
 
 const messages = [
@@ -45,15 +40,6 @@ const messages = [
   "You're doing great. Your contractions have been regular \u2014 talk to your care provider about timing.",
 ];
 
-const approachingMessages = [
-  'Your contractions are getting closer together. Keep timing and check in with your care provider.',
-  'Things are picking up \u2014 contractions are becoming more frequent. This is informational only.',
-];
-
 export function getAlertMessage(): string {
   return messages[Math.floor(Math.random() * messages.length)];
-}
-
-export function getApproachingMessage(): string {
-  return approachingMessages[Math.floor(Math.random() * approachingMessages.length)];
 }

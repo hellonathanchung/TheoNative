@@ -248,7 +248,7 @@ export function ContractionDetailModal({
                 )}
               </>
             ) : !readOnly ? (
-              <Pressable onPress={() => onUpdate(c.id, { intensity: 50 })}>
+              <Pressable onPress={() => onUpdate(c.id, { intensity: 3 })}>
                 <Text style={styles.addIntensity}>Tap to add intensity</Text>
               </Pressable>
             ) : null}

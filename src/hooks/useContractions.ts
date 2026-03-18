@@ -11,7 +11,7 @@ import {
   clearAllData,
   DEFAULT_SETTINGS,
 } from '../utils/storage';
-import { evaluateContractions, getAlertMessage, getApproachingMessage } from '../utils/alerts';
+import { evaluateContractions, getAlertMessage } from '../utils/alerts';
 import { analytics } from '../utils/analytics';
 
 function generateId(): string {
@@ -54,7 +54,6 @@ export function useContractions() {
   const [activeStart, setActiveStart] = useState<number | null>(null);
   const [alertMessage, setAlertMessage] = useState<string | null>(null);
   const [lastAlertTime, setLastAlertTime] = useState(0);
-  const lastApproachingAlertTime = useRef(0);
   const [pendingIntensityId, setPendingIntensityId] = useState<string | null>(null);
   const [undoState, setUndoState] = useState<{
     type: 'contraction' | 'session';
@@ -125,14 +124,6 @@ export function useContractions() {
         const msg = getAlertMessage();
         setAlertMessage(msg);
         setLastAlertTime(now);
-
-        if (settings.notificationsEnabled) {
-          sendLocalNotification(msg);
-        }
-      } else if (result.approaching && now - lastApproachingAlertTime.current > 30 * 60 * 1000) {
-        const msg = getApproachingMessage();
-        setAlertMessage(msg);
-        lastApproachingAlertTime.current = now;
 
         if (settings.notificationsEnabled) {
           sendLocalNotification(msg);
@@ -328,7 +319,7 @@ export function useContractions() {
     if (isActive) return 'active';
     if (completed.length < 3) return 'resting';
     const result = evaluateContractions(completed, settings);
-    if (result.triggered || result.approaching) return 'approaching';
+    if (result.triggered) return 'approaching';
     return 'resting';
   }, [isActive, completed, settings]);
 
