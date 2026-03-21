@@ -354,7 +354,7 @@ export function TimerScreen({ app }: Props) {
               style={styles.modalPrimaryBtn}
               onPress={() => {
                 setShowNewSessionConfirm(false);
-                app.newSession();
+                sharing.newSession();
               }}
             >
               <Text style={styles.modalPrimaryText}>Start New Session</Text>

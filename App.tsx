@@ -8,9 +8,9 @@ import { Ionicons } from '@expo/vector-icons';
 import { TabNavigator } from './src/navigation/TabNavigator';
 import { AlertBanner } from './src/components/AlertBanner';
 import { useContractions } from './src/hooks/useContractions';
-import { DarkColors, LightColors, ThemeProvider } from './src/theme';
+import { DarkColors, LightColors, ThemeProvider, useTheme } from './src/theme';
 import { loadDisclaimerAccepted, saveDisclaimerAccepted } from './src/utils/storage';
-import { SharingProvider } from './src/contexts/SharingContext';
+import { SharingProvider, useSharing } from './src/contexts/SharingContext';
 
 // Portrait lock handled by orientation: 'portrait' in app.config.ts
 
@@ -54,6 +54,37 @@ class ErrorBoundary extends React.Component<
     }
     return this.props.children;
   }
+}
+
+function StaleSessionModal({ visible, onDismiss }: { visible: boolean; onDismiss: () => void }) {
+  const { newSession } = useSharing();
+  const { mode, colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors, mode === 'dark'), [colors, mode]);
+  return (
+    <Modal visible={visible} transparent animationType="fade">
+      <View style={styles.modalOverlay}>
+        <View style={styles.modalCard}>
+          <Ionicons name="hand-left-outline" size={32} color="#4CAF50" />
+          <Text style={styles.modalTitle}>Welcome back!</Text>
+          <Text style={styles.modalBody}>
+            It has been a while since your last contraction. Would you like to start a new session?
+          </Text>
+          <Pressable
+            style={styles.modalPrimaryBtn}
+            onPress={() => { newSession(); onDismiss(); }}
+          >
+            <Text style={styles.modalPrimaryText}>Start New Session</Text>
+          </Pressable>
+          <Pressable
+            style={styles.modalSecondaryBtn}
+            onPress={onDismiss}
+          >
+            <Text style={styles.modalSecondaryText}>Keep Current Session</Text>
+          </Pressable>
+        </View>
+      </View>
+    </Modal>
+  );
 }
 
 export default function App() {
@@ -128,7 +159,7 @@ export default function App() {
         setMode={(nextMode) => app.updateSettings({ themeMode: nextMode })}
       >
         <SafeAreaProvider>
-          <SharingProvider localContractions={app.contractions}>
+          <SharingProvider localContractions={app.contractions} onNewSession={app.newSession}>
           <View style={styles.container}>
 
           {/* First-launch disclaimer — blocks app until accepted */}
@@ -169,29 +200,7 @@ export default function App() {
           </NavigationContainer>
 
           {/* Stale session modal */}
-          <Modal visible={showStalePrompt} transparent animationType="fade">
-            <View style={styles.modalOverlay}>
-              <View style={styles.modalCard}>
-                <Ionicons name="hand-left-outline" size={32} color="#4CAF50" />
-                <Text style={styles.modalTitle}>Welcome back!</Text>
-                <Text style={styles.modalBody}>
-                  It has been a while since your last contraction. Would you like to start a new session?
-                </Text>
-                <Pressable
-                  style={styles.modalPrimaryBtn}
-                  onPress={() => { app.newSession(); setShowStalePrompt(false); }}
-                >
-                  <Text style={styles.modalPrimaryText}>Start New Session</Text>
-                </Pressable>
-                <Pressable
-                  style={styles.modalSecondaryBtn}
-                  onPress={() => { setShowStalePrompt(false); }}
-                >
-                  <Text style={styles.modalSecondaryText}>Keep Current Session</Text>
-                </Pressable>
-              </View>
-            </View>
-          </Modal>
+          <StaleSessionModal visible={showStalePrompt} onDismiss={() => setShowStalePrompt(false)} />
 
           {toastMessage && (
             <Animated.View style={[styles.toast, { opacity: toastOpacity }]}>

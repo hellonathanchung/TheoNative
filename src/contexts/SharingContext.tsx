@@ -30,6 +30,8 @@ interface SharingContextValue {
   partnerContractions: Contraction[];
   mergedContractions: MergedContraction[];
   clearSyncedContractions: () => Promise<void>;
+  // Coordinates local session archive + Supabase clear so partner sees the reset
+  newSession: () => Promise<void>;
 }
 
 export type MergedContraction = Contraction & { isPartner: boolean };
@@ -38,13 +40,19 @@ const SharingContext = createContext<SharingContextValue | null>(null);
 
 interface Props {
   localContractions: Contraction[];
+  onNewSession: () => void;
   children: React.ReactNode;
 }
 
-export function SharingProvider({ localContractions, children }: Props) {
+export function SharingProvider({ localContractions, onNewSession, children }: Props) {
   const auth = useAuth();
   const partnership = usePartnership(auth.user);
   const sync = useSync(auth.user, partnership.partnerId, localContractions);
+
+  const newSession = useCallback(async () => {
+    onNewSession();
+    await sync.clearSyncedContractions();
+  }, [onNewSession, sync.clearSyncedContractions]);
 
   const mergedContractions = useMemo<MergedContraction[]>(() => {
     const local = localContractions.map((c) => ({ ...c, isPartner: false }));
@@ -73,6 +81,7 @@ export function SharingProvider({ localContractions, children }: Props) {
     partnerContractions: sync.partnerContractions,
     mergedContractions,
     clearSyncedContractions: sync.clearSyncedContractions,
+    newSession,
   }), [
     auth.user, auth.loading, auth.signInWithOtp, auth.verifyOtp, auth.signOut,
     partnership.partner, partnership.partnerId, partnership.pendingInvites,
@@ -80,6 +89,7 @@ export function SharingProvider({ localContractions, children }: Props) {
     partnership.acceptInvite, partnership.declineInvite, partnership.disconnect,
     partnership.cancelInvite,
     sync.partnerContractions, mergedContractions, sync.clearSyncedContractions,
+    newSession,
   ]);
 
   return (
