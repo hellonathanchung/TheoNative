@@ -17,6 +17,7 @@ import { useTheme, type ThemeColors } from "../theme";
 import type { Preset } from "../types";
 import type { useContractions } from "../hooks/useContractions";
 import { PartnerSharing } from "../components/PartnerSharing";
+import { MidwifeSharing } from "../components/MidwifeSharing";
 import { getAlertMessage } from "../utils/alerts";
 
 interface Props {
@@ -439,6 +440,10 @@ export function SettingsScreen({ app }: Props) {
       {/* Partner Sharing */}
       <Text style={[s.sectionLabel, { marginTop: 24 }]}>PARTNER SHARING</Text>
       <PartnerSharing />
+
+      {/* Midwife / Care Team */}
+      <Text style={[s.sectionLabel, { marginTop: 24 }]}>MIDWIFE / CARE TEAM</Text>
+      <MidwifeSharing />
 
       {/* Support */}
       <Text style={[s.sectionLabel, { marginTop: 24 }]}>SUPPORT</Text>

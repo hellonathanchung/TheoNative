@@ -58,5 +58,14 @@ export function migrateIntensity(raw: unknown): number | undefined {
   if (raw === 'mild') return 2;
   if (raw === 'moderate') return 3;
   if (raw === 'strong') return 4;
+  // Handle numeric strings from Supabase (text column stores '3' etc.)
+  if (typeof raw === 'string') {
+    const parsed = Number(raw);
+    if (!isNaN(parsed) && parsed >= 1) {
+      const clamped = Math.round(parsed);
+      if (clamped <= 5) return clamped;
+      return Math.round((clamped - 1) / 99 * 4) + 1;
+    }
+  }
   return undefined;
 }

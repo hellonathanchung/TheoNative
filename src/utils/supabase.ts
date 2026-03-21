@@ -72,3 +72,4 @@ try {
   });
 }
 export { supabase };
+export { supabaseUrl as SUPABASE_URL };

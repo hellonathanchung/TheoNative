@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { AppState } from 'react-native';
 import { supabase } from '../utils/supabase';
+import { migrateIntensity } from '../utils/intensity';
 import type { Contraction } from '../types';
 import type { User } from '@supabase/supabase-js';
 
@@ -77,7 +78,7 @@ export function useSync(
             startTime: row.start_time,
             endTime: row.end_time,
             duration: row.duration,
-            intensity: row.intensity,
+            intensity: migrateIntensity(row.intensity),
           })),
         );
       } else if (error) {
