@@ -47,9 +47,11 @@ export function useSync(
 
         if (!error) {
           lastSyncedRef.current = fingerprint;
+        } else {
+          console.warn('[useSync] upsert error:', error.message, error.code);
         }
-      } catch {
-        // Offline or error — will retry on next change
+      } catch (e) {
+        console.warn('[useSync] upsert exception:', e);
       }
     }, DEBOUNCE_MS);
 
@@ -78,6 +80,8 @@ export function useSync(
             intensity: row.intensity,
           })),
         );
+      } else if (error) {
+        console.warn('[useSync] fetchPartnerData error:', error.message, error.code);
       }
     } catch {
       // Offline
