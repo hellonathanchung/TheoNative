@@ -55,9 +55,9 @@ export function migrateIntensity(raw: unknown): number | undefined {
     // Old 1–100 scale: map to 1–5
     return Math.round((clamped - 1) / 99 * 4) + 1;
   }
-  if (raw === 'mild') return 2;
-  if (raw === 'moderate') return 3;
-  if (raw === 'strong') return 4;
+  if (raw === 'mild') return 1;
+  if (raw === 'moderate') return 2;
+  if (raw === 'strong') return 5;
   // Handle numeric strings from Supabase (text column stores '3' etc.)
   if (typeof raw === 'string') {
     const parsed = Number(raw);
