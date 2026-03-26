@@ -68,29 +68,38 @@
     <p class="subtitle">Last updated: March 26, 2026</p>
 
     <div class="highlight">
-      <strong>Summary:</strong> Theo does not collect, store, or transmit any personal data to external servers. All your data stays on your device.
+      <strong>Summary:</strong> Theo stores most data locally on your device. If you use the optional partner sharing feature, contraction timing data is transmitted and stored securely on our servers to enable real-time sharing.
     </div>
 
     <h2>About Theo</h2>
     <p>Theo is a contraction timer app designed to help monitor labor contractions. The app provides timing tools, pattern alerts, and relaxation features to support you during labor.</p>
 
     <h2>Data Collection</h2>
-    <p>Theo does <strong>not</strong> collect any personal information. Specifically:</p>
+    <p>Theo collects minimal data. Specifically:</p>
     <ul>
-      <li>No personal data is collected, stored, or shared with third parties.</li>
+      <li>No personal identity information (name, email, etc.) is collected.</li>
       <li>No analytics or tracking tools are used.</li>
       <li>No advertising networks or SDKs are integrated.</li>
       <li>No account creation or sign-in is required.</li>
     </ul>
 
     <h2>Data Storage</h2>
-    <p>All data you create in Theo, including contraction records, session history, and app settings, is stored locally on your device using on-device storage. This data never leaves your device and is not accessible to us or any third party.</p>
+    <p>By default, all data you create in Theo, including contraction records, session history, and app settings, is stored locally on your device using on-device storage.</p>
+
+    <h2>Partner Sharing Feature</h2>
+    <p>If you choose to use the optional partner sharing feature, the following data is transmitted to and stored on our secure servers (powered by Supabase):</p>
+    <ul>
+      <li><strong>Contraction timing data:</strong> start time, end time, duration, and intensity of contractions.</li>
+      <li><strong>Session data:</strong> session identifiers used to group contractions.</li>
+      <li><strong>Share codes:</strong> randomly generated codes used to link partners.</li>
+    </ul>
+    <p>This data is used solely to enable real-time sharing of contraction data between partners. It is not used for any other purpose, is not shared with third parties, and is not used for advertising or analytics. You can stop sharing at any time, and shared data can be deleted upon request.</p>
 
     <h2>Notifications</h2>
     <p>Theo may request permission to send local notifications to alert you when contraction patterns meet certain thresholds (such as the 5-1-1 rule). These notifications are generated entirely on your device and do not involve any external servers.</p>
 
     <h2>Third-Party Services</h2>
-    <p>Theo does not use any third-party services that collect user data. The app functions entirely offline.</p>
+    <p>Theo uses Supabase as a backend service solely for the partner sharing feature. Supabase stores contraction timing data securely and does not use this data for any purpose other than providing the sharing functionality. No other third-party services are used.</p>
 
     <h2>Children's Privacy</h2>
     <p>Theo is not directed at children under 13. The app does not knowingly collect any information from anyone, including children.</p>
