@@ -38,287 +38,422 @@
 
 ### High-Level Layer Diagram
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│                        App.tsx                               │
-│  ThemeProvider → SharingProvider → NavigationContainer       │
-│  + global modals: Disclaimer, StaleSession, AlertBanner,     │
-│    Toast, UndoToast                                          │
-└──────────────────────────┬──────────────────────────────────┘
-                           │ app (useContractions)
-                           ▼
-┌─────────────────────────────────────────────────────────────┐
-│                    TabNavigator                              │
-│  SwipeLockProvider + PanResponder swipe nav (4 tabs)         │
-└────┬──────────────┬──────────────┬──────────────┬───────────┘
-     │              │              │              │
-     ▼              ▼              ▼              ▼
-┌─────────┐  ┌──────────┐  ┌──────────┐  ┌──────────────┐
-│  Timer  │  │ History  │  │  Relax   │  │  Settings    │
-│ Screen  │  │ Screen   │  │  Screen  │  │  Screen      │
-└─────────┘  └──────────┘  └──────────┘  └──────────────┘
+```mermaid
+graph TD
+    App["App.tsx\nuseContractions · global modals · theme"]
+
+    App --> TP["ThemeProvider\nmode + colors"]
+    TP --> SAP["SafeAreaProvider"]
+    SAP --> SP["SharingProvider\nuser · partner · sync · newSession"]
+    SP --> NC["NavigationContainer"]
+    NC --> TN["TabNavigator\nSwipeLockProvider · PanResponder swipe nav"]
+
+    TN --> TS["Track\nTimerScreen"]
+    TN --> HS["History\nHistoryScreen"]
+    TN --> RS["Relax\nRelaxScreen"]
+    TN --> SS["Settings\nSettingsScreen"]
+
+    App --> GM["Global Modals\nDisclaimer · StaleSession\nAlertBanner · Toast · UndoToast"]
+
+    style App fill:#4a7c59,color:#fff
+    style TN fill:#4a7c59,color:#fff
+    style TS fill:#6b9e7a,color:#fff
+    style HS fill:#6b9e7a,color:#fff
+    style RS fill:#6b9e7a,color:#fff
+    style SS fill:#6b9e7a,color:#fff
+    style SP fill:#c47c5a,color:#fff
+    style TP fill:#8b6f47,color:#fff
 ```
 
 ### Context & Provider Tree
 
-```
-App
- └── ThemeProvider (mode + colors)
-      └── SafeAreaProvider
-           └── SharingProvider (user, partner, sync, newSession)
-                └── SwipeLockProvider (gesture lock stack)
-                     └── TabNavigator
-                          ├── TimerScreen
-                          ├── HistoryScreen
-                          ├── RelaxScreen
-                          └── SettingsScreen
+```mermaid
+graph TD
+    A["App()"] --> B["ThemeProvider\nmode='light'|'dark'  colors"]
+    B --> C["SafeAreaProvider"]
+    C --> D["SharingProvider\nonNewSession=app.newSession\nlocalContractions=app.contractions"]
+    D --> E["SwipeLockProvider\nlockRef: MutableRefObject‹number›"]
+    E --> F["TabNavigator\napp prop passed down"]
+    F --> G["TimerScreen"]
+    F --> H["HistoryScreen"]
+    F --> I["RelaxScreen"]
+    F --> J["SettingsScreen"]
+
+    D -. "useSharing()" .-> G
+    D -. "useSharing()" .-> H
+    D -. "useSharing()" .-> J
+    E -. "useSwipeLock()" .-> F
+    E -. "useSwipeLock()" .-> G
+    E -. "useSwipeLock()" .-> I
+
+    style D fill:#c47c5a,color:#fff
+    style E fill:#8b6f47,color:#fff
 ```
 
 ### State Ownership
 
+```mermaid
+graph LR
+    subgraph LOCAL["Local State — useContractions (App.tsx)"]
+        C["contractions[]"]
+        SES["sessions[]"]
+        SET["settings"]
+        IA["isActive"]
+        AS["activeStart"]
+        AM["alertMessage"]
+        PI["pendingIntensityId"]
+        US["undoState"]
+    end
+
+    subgraph REMOTE["Remote State — SharingContext (Supabase)"]
+        U["user"]
+        P["partner / partnerId"]
+        MC["mergedContractions[]"]
+        PC["partnerContractions[]"]
+        INV["pendingInvites / sentInvite"]
+    end
+
+    subgraph EPHEMERAL["Ephemeral — SwipeLockContext"]
+        LR["lockRef (modal stack counter)"]
+    end
+
+    LOCAL -- "app prop" --> TN["TabNavigator → Screens"]
+    REMOTE -- "useSharing()" --> TN
+    EPHEMERAL -- "useSwipeLock()" --> TN
+
+    MMKV[("MMKV\npersistence")] --> LOCAL
+    SUPA[("Supabase\nPostgres + Realtime")] --> REMOTE
 ```
-┌──────────────────────────────────────────────────────────────┐
-│  useContractions (App.tsx)  — local, persisted via MMKV      │
-│                                                              │
-│  contractions[]  sessions[]  settings  isActive  activeStart │
-│  alertMessage    pendingIntensityId    undoState             │
-└──────────────────────────────────────────────────────────────┘
-         │ passed as `app` prop to TabNavigator → screens
 
-┌──────────────────────────────────────────────────────────────┐
-│  SharingContext  — remote, Supabase-backed                   │
-│                                                              │
-│  user  partner  partnerId  mergedContractions[]              │
-│  partnerContractions[]     pendingInvites  sentInvite        │
-└──────────────────────────────────────────────────────────────┘
-         │ consumed via useSharing() in any screen
+### Component Hierarchy
 
-┌─────────────────────────────────────────┐
-│  SwipeLockContext  — ephemeral UI state  │
-│  lockRef (modal open count)             │
-└─────────────────────────────────────────┘
-         │ consumed via useSwipeLock() in modals + TabNavigator
+```mermaid
+graph TD
+    subgraph TIMER["TimerScreen"]
+        T_BG["ScreenBackground\nBackgroundLeaves"]
+        T_DISP["Timer Display\nelapsed · timeSinceLast"]
+        T_BTN["Start/Stop Button\nReanimated breathing pulse"]
+        T_NS["New Session Button"]
+        T_LIST["ScrollView → Contraction List"]
+        T_LIST --> T_DAY["DaySeparator"]
+        T_LIST --> T_ROW["SwipeableRow → ContractionCard"]
+        T_ROW --> T_MODAL["ContractionDetailModal"]
+        T_M1["IntensityPicker modal\nif pendingIntensityId"]
+        T_M2["AutoPause modal\nif 5 min elapsed"]
+        T_M3["NewSession confirm modal"]
+    end
+
+    subgraph HISTORY["HistoryScreen"]
+        H_STATS["Stats Cards\ncount · avg duration · avg interval"]
+        H_CUR["Current Session List"]
+        H_CUR --> H_ROW["SwipeableRow → ContractionCard"]
+        H_ROW --> H_MODAL["ContractionDetailModal"]
+        H_PAST["Past Sessions (expandable)"]
+        H_PAST --> H_PAST_ROW["ContractionCard read-only"]
+    end
+
+    subgraph RELAX["RelaxScreen"]
+        R_BAR["Compact Live Timer Bar"]
+        R_FF["FunFacts Carousel\nlocks SwipeLock on drag"]
+        R_DINO["DinoGame\nSkia canvas"]
+        R_DINO --> R_EB1["GameErrorBoundary"]
+        R_DINO --> R_DS1["DifficultySelector"]
+        R_BUBBLE["BubbleGame\nSkia canvas"]
+        R_BUBBLE --> R_EB2["GameErrorBoundary"]
+        R_BUBBLE --> R_DS2["DifficultySelector"]
+    end
+
+    subgraph SETTINGS["SettingsScreen"]
+        S_PRESET["Alert Preset Selector\n5-1-1 · 4-1-1 · 3-1-1 · custom"]
+        S_THRESH["Custom Threshold Steppers"]
+        S_TOGGLE["Toggles\nnotifications · haptics · intensity"]
+        S_THEME["Theme Toggle"]
+        S_PARTNER["PartnerSharing\nauth + invite flow (4 states)"]
+        S_MW["MidwifeSharing\nshare link create/copy/deactivate"]
+        S_EXPORT["Export CSV"]
+        S_CLEAR["Clear All Data\nconfirmation modal"]
+    end
 ```
 
-### Component Hierarchy per Screen
+### Contraction Lifecycle (State Machine)
 
+```mermaid
+stateDiagram-v2
+    [*] --> Resting : app loads
+
+    Resting --> Active : startContraction()\nisActive=true · activeStart=now
+
+    Active --> Resting : stopContraction()\ncreate Contraction · evaluate alerts\n→ intensity prompt if enabled
+
+    Resting --> Archived : newSession()\narchive to Session[]\nclear contractions[]\ndelete from Supabase
+
+    Archived --> Resting : session complete
+
+    Active --> Resting : auto-pause warning\n(5 min elapsed)
+
+    note right of Active
+        useTimer ticks every 1s
+        elapsed displayed in UI
+    end note
+
+    note right of Resting
+        useTimeSinceLast ticks every 1s
+        time-since displayed in UI
+    end note
 ```
-TimerScreen
-├── ScreenBackground (animated leaf backdrop)
-├── BackgroundLeaves
-├── Timer display (elapsed / timeSinceLast)
-├── Start/Stop button (Reanimated breathing pulse)
-├── New Session button
-├── ScrollView → contraction list
-│   ├── DaySeparator (date headers)
-│   └── SwipeableRow → ContractionCard
-│       └── [tap] ContractionDetailModal
-├── IntensityPicker modal    (if pendingIntensityId)
-├── AutoPause warning modal  (if 5 min elapsed while active)
-└── NewSession confirm modal
 
-HistoryScreen
-├── Stats cards (count, avg duration, avg interval)
-├── Current session list
-│   └── SwipeableRow → ContractionCard
-│       └── [tap] ContractionDetailModal
-└── Past sessions (expandable)
-    └── SwipeableRow → ContractionCard (read-only)
+### Partner Sync Flow
 
-RelaxScreen
-├── Compact live timer bar
-├── FunFacts carousel  (locks SwipeLock on horizontal drag)
-├── DinoGame           (Skia canvas — GameErrorBoundary wraps)
-│   └── DifficultySelector
-└── BubbleGame         (Skia canvas — GameErrorBoundary wraps)
-    └── DifficultySelector
+```mermaid
+sequenceDiagram
+    participant A as You (Nathan)
+    participant MMKV as MMKV (local)
+    participant SB as Supabase
+    participant RT as Supabase Realtime
+    participant B as Partner (Yerim)
 
-SettingsScreen
-├── Alert preset selector (5-1-1 / 4-1-1 / 3-1-1 / custom)
-├── Custom threshold steppers
-├── Toggle row: Notifications / Haptics / Intensity tracking
-├── Theme toggle
-├── PartnerSharing   (auth + invite flow — 4 states)
-├── MidwifeSharing   (share link create/copy/deactivate)
-├── Export CSV button
-├── Clear all data   (confirmation modal)
-└── Version badge + disclaimer link
+    Note over A,B: Recording a contraction
+
+    A->>MMKV: stopContraction() → save locally
+    A->>SB: upsert contractions (debounced 500ms)
+    SB->>RT: INSERT event fires
+    RT->>B: postgres_changes subscription
+    B->>SB: fetchPartnerData()
+    SB-->>B: returns new contraction row
+    B->>B: setPartnerContractions()\nmergedContractions updates
+
+    Note over A,B: Starting a new session
+
+    A->>MMKV: newSession() → archive to sessions[]
+    A->>SB: clearSyncedContractions()\nDELETE WHERE user_id=Nathan
+    SB->>RT: DELETE events fire
+    RT->>B: postgres_changes subscription
+    B->>SB: fetchPartnerData()
+    SB-->>B: returns empty []
+    B->>B: partnerContractions=[]\nscreen clears
+```
+
+### Partnership Invite Flow
+
+```mermaid
+sequenceDiagram
+    participant N as Nathan
+    participant SB as Supabase
+    participant Y as Yerim
+
+    N->>SB: invitePartner("hahmyerim@gmail.com")\nINSERT partnerships (status=pending)
+
+    SB-->>Y: Realtime: partnerships INSERT
+    Y->>SB: fetchPartnerships()
+    SB-->>Y: pending invite visible
+
+    Y->>SB: acceptInvite(id)\nUPDATE status=accepted · invitee_id=Yerim.uid
+
+    SB-->>N: Realtime: partnerships UPDATE
+    N->>SB: fetchPartnerships()
+    SB-->>N: partnerId = Yerim.uid
+
+    Note over N,Y: Both now have partnerId set
+    Note over N,Y: useSync begins fetching each other's contractions
 ```
 
 ---
 
 ## D – Data Model
 
-### Local (MMKV)
+### Local Storage (MMKV)
 
-```
-Key                       Type        Description
-─────────────────────────────────────────────────────────────
-theo_contractions         JSON        Contraction[]  (active session)
-theo_sessions             JSON        Session[]      (archived)
-theo_settings             JSON        Settings
-theo_active               JSON        { isActive, activeStart }
-theo_dino_high            string      high score
-theo_bubble_high          string      high score
-theo_disclaimer_accepted  boolean
-theo_onboarding_complete  boolean
-theo_supabase_auth        string      Supabase auth tokens (MMKV adapter)
-```
-
-### Remote (Supabase)
-
-```
-┌────────────────────────────────────────────────────┐
-│  profiles                                          │
-│  id (uuid, FK → auth.users)                        │
-│  email  display_name  created_at                   │
-└────────────────────────────────────────────────────┘
-         ▲ 1                              ▲ 1
-         │ inviter                        │ invitee
-         │                               │
-┌────────────────────────────────────────────────────┐
-│  partnerships                                      │
-│  id (uuid PK)                                      │
-│  inviter_id (FK → auth.users)                      │
-│  invitee_email  invitee_id (FK → auth.users)       │
-│  status: 'pending' | 'accepted' | 'declined'       │
-│  created_at  accepted_at                           │
-└────────────────────────────────────────────────────┘
-
-┌────────────────────────────────────────────────────┐
-│  contractions                                      │
-│  id + user_id (composite PK)                       │
-│  user_id (FK → auth.users)                         │
-│  start_time  end_time  duration  intensity         │
-│  created_at                                        │
-└────────────────────────────────────────────────────┘
-
-┌────────────────────────────────────────────────────┐
-│  share_links                                       │
-│  id (uuid PK)                                      │
-│  user_id (FK → auth.users)                         │
-│  token (unique string)                             │
-│  active  expires_at  created_at                    │
-└────────────────────────────────────────────────────┘
+```mermaid
+graph LR
+    subgraph MMKV["MMKV Store (theo_* keys)"]
+        K1["theo_contractions\nContraction[] — active session"]
+        K2["theo_sessions\nSession[] — archived"]
+        K3["theo_settings\nSettings"]
+        K4["theo_active\n{isActive, activeStart}"]
+        K5["theo_dino_high\ntheo_bubble_high"]
+        K6["theo_disclaimer_accepted\ntheo_onboarding_complete"]
+        K7["theo_supabase_auth\nSupabase tokens (MMKV adapter)"]
+    end
 ```
 
-### Core TypeScript Types
+### Remote Schema (Supabase)
 
-```typescript
-interface Contraction {
-  id: string;                  // client-generated UUID
-  startTime: number;           // Unix ms
-  endTime: number | null;      // null while active
-  duration: number | null;     // seconds, null while active
-  intensity?: number;          // 1–50
-  flagged?: boolean;
-}
+```mermaid
+erDiagram
+    AUTH_USERS {
+        uuid id PK
+        string email
+    }
 
-interface Session {
-  id: string;
-  startedAt: number;           // first contraction startTime
-  endedAt: number;             // last contraction endTime
-  contractions: Contraction[]; // snapshot at archive time
-}
+    PROFILES {
+        uuid id PK
+        string email
+        string display_name
+        timestamp created_at
+    }
 
-type MergedContraction = Contraction & { isPartner: boolean };
+    PARTNERSHIPS {
+        uuid id PK
+        uuid inviter_id FK
+        string invitee_email
+        uuid invitee_id FK
+        string status
+        timestamp created_at
+        timestamp accepted_at
+    }
 
-interface Settings {
-  preset: '5-1-1' | '4-1-1' | '3-1-1' | 'custom';
-  frequencyMinutes: number;
-  durationSeconds: number;
-  timeWindowMinutes: number;
-  notificationsEnabled: boolean;
-  hapticEnabled: boolean;
-  intensityEnabled: boolean;
-  dinoDifficulty: 'easy' | 'normal' | 'hard';
-  bubbleDifficulty: 'easy' | 'normal' | 'hard';
-  themeMode: 'light' | 'dark';
-}
+    CONTRACTIONS {
+        uuid id PK
+        uuid user_id PK
+        bigint start_time
+        bigint end_time
+        int duration
+        int intensity
+        timestamp created_at
+    }
+
+    SHARE_LINKS {
+        uuid id PK
+        uuid user_id FK
+        string token
+        bool active
+        timestamp expires_at
+        timestamp created_at
+    }
+
+    AUTH_USERS ||--|| PROFILES : "has"
+    AUTH_USERS ||--o{ PARTNERSHIPS : "inviter_id"
+    AUTH_USERS ||--o{ PARTNERSHIPS : "invitee_id"
+    AUTH_USERS ||--o{ CONTRACTIONS : "user_id"
+    AUTH_USERS ||--o{ SHARE_LINKS : "user_id"
+```
+
+### RLS Policy Logic
+
+```mermaid
+graph TD
+    Q["SELECT contractions\nWHERE user_id = partnerId"] --> RLS{"RLS Check"}
+
+    RLS --> OWN["auth.uid() = user_id?\n✅ always allowed"]
+    RLS --> PART["EXISTS accepted partnership\nbetween auth.uid() and user_id?\n✅ allowed after fix"]
+    RLS --> NONE["No match\n❌ 0 rows returned silently"]
+
+    OWN --> PASS["Query succeeds"]
+    PART --> PASS
+    NONE --> FAIL["Partner sees nothing\n(was the bug)"]
+
+    style PASS fill:#4a7c59,color:#fff
+    style FAIL fill:#c0392b,color:#fff
+    style PART fill:#c47c5a,color:#fff
 ```
 
 ---
 
 ## I – Interface (Component & Hook APIs)
 
-### Core Hook: `useContractions()`
+### Hook Dependency Graph
 
-```
-startContraction()         → void        Set isActive=true, record activeStart
-stopContraction()          → Promise     Create Contraction, evaluate alerts,
-                                         trigger intensity prompt if enabled
-newSession()               → void        Archive to Session[], clear active list
-deleteContraction(id)      → void        Remove + set undoState (5s window)
-deleteSession(id)          → void        Remove + set undoState (5s window)
-updateContraction(id, Δ)   → void        Clamp times, recalculate duration
-setIntensity(id, n)        → void        Update intensity, clear prompt
-updateSettings(Δ)          → void        Merge into Settings, persist
-getUrgencyState()          → 'resting' | 'active' | 'approaching'
-undoLast()                 → void        Restore from undoState
-resetAllData()             → void        Wipe MMKV + reset all state
-```
+```mermaid
+graph TD
+    UC["useContractions()"]
+    UA["useAuth()"]
+    UP["usePartnership(user)"]
+    US["useSync(user, partnerId, localContractions)"]
+    USL["useShareLink(user)"]
+    UT["useTimer(isActive, activeStart)"]
+    UTL["useTimeSinceLast(isActive, lastEndTime)"]
 
-### Sharing Hook: `useSharing()` (via SharingContext)
+    SC["SharingContext\nSharingProvider"]
 
-```
-// Auth
-signInWithOtp(email)       → Promise     Send OTP magic link
-verifyOtp(email, token)    → Promise     Exchange OTP for session
-signOut()                  → Promise
+    UA --> SC
+    UP --> SC
+    US --> SC
+    UC -- "app.contractions" --> SC
+    UC -- "app.newSession" --> SC
 
-// Partnership
-invitePartner(email)       → Promise     Create partnership row (guard: dupe, self, already connected)
-acceptInvite(id)           → Promise     Update status=accepted, set invitee_id=auth.uid()
-declineInvite(id)          → Promise     Update status=declined
-cancelInvite()             → Promise     Delete sent pending invite
-disconnect()               → Promise     Delete all partnership rows for user
+    SC -. "useSharing()" .-> TS["TimerScreen"]
+    SC -. "useSharing()" .-> HS["HistoryScreen"]
+    SC -. "useSharing()" .-> SS["SettingsScreen"]
 
-// Sync
-newSession()               → Promise     archive locally + delete from Supabase → fires partner Realtime
-clearSyncedContractions()  → Promise     Delete user's rows from Supabase
+    USL -. "useShareLink()" .-> MW["MidwifeSharing"]
 
-// Derived
-mergedContractions         MergedContraction[]   local + partner, sorted by startTime
-partnerContractions        Contraction[]         partner's current-session contractions
+    UT --> TS
+    UTL --> TS
+    UT --> RS["RelaxScreen"]
+
+    style SC fill:#c47c5a,color:#fff
 ```
 
-### Timer Hooks
+### `useContractions()` State Machine
 
-```
-useTimer(isActive, activeStart)
-  → elapsed: number (seconds, updates every 1s while active)
+```mermaid
+graph LR
+    subgraph ACTIONS["Actions"]
+        A1["startContraction()"]
+        A2["stopContraction()"]
+        A3["newSession()"]
+        A4["deleteContraction(id)"]
+        A5["deleteSession(id)"]
+        A6["updateContraction(id,Δ)"]
+        A7["setIntensity(id,n)"]
+        A8["updateSettings(Δ)"]
+        A9["undoLast()"]
+        A10["resetAllData()"]
+    end
 
-useTimeSinceLast(isActive, lastEndTime)
-  → since: number (seconds since last contraction ended, updates every 1s while not active)
-```
+    subgraph STATE["State"]
+        S1["contractions[]"]
+        S2["sessions[]"]
+        S3["settings"]
+        S4["isActive"]
+        S5["activeStart"]
+        S6["alertMessage"]
+        S7["pendingIntensityId"]
+        S8["undoState"]
+    end
 
-### Key Component Props
-
-```typescript
-// ContractionDetailModal
-{ contraction: Contraction | null; contractions?: Contraction[];
-  onClose(): void; onUpdate(id, Δ): void; onDelete(id): void; readOnly?: boolean }
-
-// SwipeableRow
-{ children: ReactNode; onDelete(): void; onFlag(): void; colors: ThemeColors }
-
-// IntensityPicker
-{ onSelect(intensity: number): void; onSkip(): void }
-
-// DifficultySelector
-{ value: GameDifficulty; onChange(d: GameDifficulty): void }
+    A1 --> S4
+    A1 --> S5
+    A2 --> S1
+    A2 --> S4
+    A2 --> S5
+    A2 --> S6
+    A2 --> S7
+    A3 --> S1
+    A3 --> S2
+    A4 --> S1
+    A4 --> S8
+    A5 --> S2
+    A5 --> S8
+    A6 --> S1
+    A7 --> S1
+    A7 --> S7
+    A8 --> S3
+    A9 --> S1
+    A9 --> S2
+    A9 --> S8
+    A10 --> S1
+    A10 --> S2
+    A10 --> S3
 ```
 
 ### Supabase Realtime Subscriptions
 
-```
-Channel: `partner-contractions-{partnerId}`
-  table: contractions, filter: user_id=eq.{partnerId}
-  events: INSERT | UPDATE | DELETE → fetchPartnerData()
+```mermaid
+graph LR
+    subgraph SUBS["Active Realtime Channels"]
+        CH1["partner-contractions-{partnerId}\ntable: contractions\nfilter: user_id=eq.{partnerId}\nevents: INSERT · UPDATE · DELETE"]
+        CH2["partnership-changes\ntable: partnerships\nevents: INSERT · UPDATE · DELETE"]
+    end
 
-Channel: `partnership-changes`
-  table: partnerships (no filter — filtered client-side)
-  events: INSERT | UPDATE | DELETE → fetchPartnerships()
+    CH1 -- "fetchPartnerData()" --> PC["partnerContractions state"]
+    CH2 -- "fetchPartnerships()" --> PS["partnerId · partner · pendingInvites"]
+
+    FA["AppState → foreground"] -- "fetchPartnerData()" --> PC
+    FA -- "fetchPartnerships()" --> PS
+
+    style CH1 fill:#c47c5a,color:#fff
+    style CH2 fill:#c47c5a,color:#fff
 ```
 
 ---
@@ -351,13 +486,29 @@ Channel: `partnership-changes`
 | 15-min alert cooldown | evaluateContractions | Prevents notification spam if threshold stays triggered |
 | FunFacts swipe lock | RelaxScreen | Locks parent scroll + tab swipe during horizontal carousel interaction |
 
-### Tradeoffs / Known Limitations
+### Tradeoffs & Known Limitations
 
-| Issue | Current state | Ideal |
-|---|---|---|
-| Session history is local-only | Sessions never sync to Supabase | Add a `sessions` table; partner sees session boundaries |
-| 1:1 partner model | `partnerships` table has one accepted row per user | Multi-observer support (midwife + partner simultaneously) |
-| No offline queue for sync | Failed upserts retry only on next local change | Persist a sync queue in MMKV; flush on reconnect |
-| Error swallowing in useSync | `catch { // Offline }` hides Supabase errors silently | Expose error state so UI can show "sync failed" indicator |
-| Share link auth | Token-based, no expiry enforcement client-side | Enforce expiry server-side via RLS `expires_at > now()` |
-| Realtime RLS gap | Postgres Changes only fire if subscriber has SELECT access | Partner SELECT RLS policy (now fixed) is required for Realtime to deliver events |
+```mermaid
+graph LR
+    subgraph NOW["Current State"]
+        L1["Sessions local-only\nnever sync to Supabase"]
+        L2["1:1 partner model\none accepted row per user"]
+        L3["No offline sync queue\nfailed upserts lost until next change"]
+        L4["Errors swallowed silently\ncatch  Offline  hides RLS failures"]
+        L5["Share link expiry\nnot enforced server-side"]
+    end
+
+    subgraph IDEAL["Ideal State"]
+        I1["sessions table in Supabase\npartner sees session boundaries"]
+        I2["Multi-observer support\nmidwife + partner simultaneously"]
+        I3["MMKV sync queue\nflush on reconnect"]
+        I4["Expose sync error state\nUI shows sync failed indicator"]
+        I5["RLS: expires_at > now()\nenforced in SELECT policy"]
+    end
+
+    L1 --> I1
+    L2 --> I2
+    L3 --> I3
+    L4 --> I4
+    L5 --> I5
+```
