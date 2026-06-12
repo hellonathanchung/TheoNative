@@ -13,6 +13,7 @@ interface SharingContextValue {
   signInWithOtp: (email: string) => Promise<void>;
   verifyOtp: (email: string, token: string) => Promise<void>;
   signOut: () => Promise<void>;
+  deleteAccount: () => Promise<void>;
 
   // Partnership
   partner: { email: string; display_name: string | null } | null;
@@ -58,6 +59,7 @@ export function SharingProvider({ localContractions, children }: Props) {
     signInWithOtp: auth.signInWithOtp,
     verifyOtp: auth.verifyOtp,
     signOut: auth.signOut,
+    deleteAccount: auth.deleteAccount,
 
     partner: partnership.partner,
     partnerId: partnership.partnerId,
@@ -74,7 +76,7 @@ export function SharingProvider({ localContractions, children }: Props) {
     mergedContractions,
     clearSyncedContractions: sync.clearSyncedContractions,
   }), [
-    auth.user, auth.loading, auth.signInWithOtp, auth.verifyOtp, auth.signOut,
+    auth.user, auth.loading, auth.signInWithOtp, auth.verifyOtp, auth.signOut, auth.deleteAccount,
     partnership.partner, partnership.partnerId, partnership.pendingInvites,
     partnership.sentInvite, partnership.loading, partnership.invitePartner,
     partnership.acceptInvite, partnership.declineInvite, partnership.disconnect,

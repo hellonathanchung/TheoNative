@@ -30,9 +30,11 @@ export function PartnerSharing() {
     declineInvite,
     disconnect,
     cancelInvite,
+    deleteAccount,
   } = sharing;
 
   const [email, setEmail] = useState("");
+  const [deleting, setDeleting] = useState(false);
   const [otpEmail, setOtpEmail] = useState("");
   const [otp, setOtp] = useState("");
   const [partnerEmail, setPartnerEmail] = useState("");
@@ -127,6 +129,43 @@ export function PartnerSharing() {
         { text: "Cancel", style: "cancel" },
         { text: "Disconnect", style: "destructive", onPress: disconnect },
       ]
+    );
+  };
+
+  const handleDeleteAccount = () => {
+    Alert.alert(
+      "Delete Account?",
+      "This will permanently delete your account, all synced contractions, and partnership data from our servers. Local data on this device will not be affected.\n\nThis cannot be undone.",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Delete My Account",
+          style: "destructive",
+          onPress: () => {
+            Alert.alert(
+              "Are you sure?",
+              "All your data on our servers will be permanently deleted.",
+              [
+                { text: "Cancel", style: "cancel" },
+                {
+                  text: "Yes, Delete Everything",
+                  style: "destructive",
+                  onPress: async () => {
+                    setDeleting(true);
+                    try {
+                      await deleteAccount();
+                    } catch (e: any) {
+                      Alert.alert("Error", e.message ?? "Failed to delete account");
+                    } finally {
+                      setDeleting(false);
+                    }
+                  },
+                },
+              ],
+            );
+          },
+        },
+      ],
     );
   };
 
@@ -229,6 +268,11 @@ export function PartnerSharing() {
         <Pressable style={s.linkBtn} onPress={signOut}>
           <Text style={s.linkText}>Sign out</Text>
         </Pressable>
+        <Pressable style={s.linkBtn} onPress={handleDeleteAccount} disabled={deleting}>
+          <Text style={[s.linkText, { color: colors.danger }]}>
+            {deleting ? "Deleting..." : "Delete Account"}
+          </Text>
+        </Pressable>
       </View>
     );
   }
@@ -310,6 +354,11 @@ export function PartnerSharing() {
 
       <Pressable style={s.linkBtn} onPress={signOut}>
         <Text style={s.linkText}>Sign out</Text>
+      </Pressable>
+      <Pressable style={s.linkBtn} onPress={handleDeleteAccount} disabled={deleting}>
+        <Text style={[s.linkText, { color: colors.danger }]}>
+          {deleting ? "Deleting..." : "Delete Account"}
+        </Text>
       </Pressable>
     </View>
   );

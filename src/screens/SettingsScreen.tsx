@@ -6,12 +6,12 @@ import {
   Switch,
   ScrollView,
   Modal,
-  Linking,
   StyleSheet,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as Notifications from "expo-notifications";
 import * as Clipboard from "expo-clipboard";
+import Constants from "expo-constants";
 import { Ionicons } from "@expo/vector-icons";
 import { useTheme, type ThemeColors } from "../theme";
 import type { Preset } from "../types";
@@ -440,23 +440,6 @@ export function SettingsScreen({ app }: Props) {
       <Text style={[s.sectionLabel, { marginTop: 24 }]}>PARTNER SHARING</Text>
       <PartnerSharing />
 
-      {/* Support */}
-      <Text style={[s.sectionLabel, { marginTop: 24 }]}>SUPPORT</Text>
-      <View style={s.supportSection}>
-        <Text style={s.supportTitle}>Buy Theo a Diaper</Text>
-        <Text style={s.supportDesc}>
-          Theo is free and ad-free. If it helped during your journey, consider
-          buying Theo a diaper as a token of appreciation. Your support helps
-          cover development costs and keeps Theo free for everyone!
-        </Text>
-        <Pressable
-          style={s.donateBtn}
-          onPress={() => Linking.openURL("https://venmo.com/hellonathanchung")}
-        >
-          <Text style={s.donateBtnText}>Send a Diaper</Text>
-        </Pressable>
-      </View>
-
       {/* Data management */}
       <Text style={[s.sectionLabel, { marginTop: 24 }]}>DATA</Text>
       <View style={s.supportSection}>
@@ -491,7 +474,9 @@ export function SettingsScreen({ app }: Props) {
           <Text style={s.donateBtnText}>View Full Disclaimer</Text>
         </Pressable>
       </View>
-      <Text style={s.version}>Theo v1.1.0</Text>
+      <Text style={s.version}>
+        Theo v{Constants.expoConfig?.version ?? "1.2.0"}
+      </Text>
 
       {/* Preview alert modal */}
       <Modal visible={showPreview} transparent animationType="fade">
@@ -586,7 +571,7 @@ export function SettingsScreen({ app }: Props) {
               opt into sharing). Your data will never be sold.
             </Text>
             <Pressable
-              style={s.modalCancel}
+              style={s.modalCancelBtn}
               onPress={() => setShowDisclaimer(false)}
             >
               <Text style={s.modalCancelText}>Close</Text>

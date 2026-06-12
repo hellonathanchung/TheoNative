@@ -19,7 +19,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   ios: {
     supportsTablet: false,
     bundleIdentifier: 'com.hellonathanchung.theo',
-    buildNumber: '1',
+    buildNumber: '2',
     config: {
       usesNonExemptEncryption: false,
     },

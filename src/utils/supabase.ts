@@ -26,7 +26,7 @@ const mmkvStorage = {
 const extra = Constants.expoConfig?.extra ?? {};
 // Primary: app.config.ts extra (native builds via EAS)
 // Fallback: EXPO_PUBLIC_ env vars (auto-injected by Metro on all platforms, including web)
-const supabaseUrl =
+export const supabaseUrl =
   (extra.supabaseUrl as string) ||
   process.env.EXPO_PUBLIC_SUPABASE_URL ||
   '';

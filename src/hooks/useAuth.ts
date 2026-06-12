@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { Alert } from 'react-native';
 import * as Linking from 'expo-linking';
-import { supabase } from '../utils/supabase';
+import { supabase, supabaseUrl } from '../utils/supabase';
 import type { User } from '@supabase/supabase-js';
 
 /** Decode the email claim from a JWT payload without signature verification (display-only). */
@@ -126,5 +126,28 @@ export function useAuth() {
     if (error) throw error;
   }, []);
 
-  return { user, loading, signInWithOtp, verifyOtp, signOut };
+  const deleteAccount = useCallback(async () => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.access_token) throw new Error('Not signed in');
+
+    const response = await fetch(
+      `${supabaseUrl}/functions/v1/delete-account`,
+      {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+          'Content-Type': 'application/json',
+        },
+      },
+    );
+
+    if (!response.ok) {
+      const body = await response.json().catch(() => ({}));
+      throw new Error(body.error || 'Failed to delete account');
+    }
+
+    await supabase.auth.signOut();
+  }, []);
+
+  return { user, loading, signInWithOtp, verifyOtp, signOut, deleteAccount };
 }
