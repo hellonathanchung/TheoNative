@@ -22,41 +22,30 @@
 </head>
 <body>
   <h1>Theo — Privacy Policy</h1>
-  <p class="updated">Last updated: March 18, 2026</p>
+  <p class="updated">Last updated: November 20, 2026</p>
 
-  <p>Theo is a contraction timing app built by Nathan Chung. Your privacy matters — here is exactly what Theo does and does not do with your data.</p>
+  <h2>About Theo</h2>
+  <p>Theo is a contraction timing app built by Nathan Chung. You can use its timing, history, and relaxation features without creating an account.</p>
 
   <h2>Data Stored on Your Device</h2>
-  <p>All contraction times, sessions, settings, and game scores are stored locally on your device using on-device storage. This data never leaves your phone unless you choose to enable Partner Sharing.</p>
-
-  <h2>No Analytics or Tracking</h2>
-  <p>Theo does not collect analytics, usage data, or any form of tracking. There are no third-party analytics SDKs in the app.</p>
+  <p>Contraction records, session history, settings, and game scores are stored locally on your device. While Partner Sharing is enabled and you are connected to a partner, contraction records are also sent to Supabase.</p>
 
   <h2>Partner Sharing (Optional)</h2>
-  <p>If you choose to enable Partner Sharing, you sign in with your email address via a one-time code. Theo then stores the following in Supabase (a cloud database) so your partner can see your contractions in real time:</p>
-  <ul>
-    <li>Your email address</li>
-    <li>Your contraction timing data (start time, end time, duration, intensity)</li>
-    <li>Your partner connection (who you are paired with)</li>
-  </ul>
-  <p>This data is only shared with the specific partner you invite. You can disconnect your partner or delete your synced data at any time from within the app.</p>
+  <p>Partner Sharing uses your email address and a one-time code to sign you in. Supabase stores your email address, contraction timing data (start time, end time, duration, and intensity), partner invitation details (including the invited email address), and partner connection. This information supports authentication and sharing contraction records with your connected partner.</p>
+
+  <h2>Sharing Controls and Data Deletion</h2>
+  <p>You can disconnect a partner from Settings → Partner Sharing. Signing out or disconnecting does not delete your account or previously synced records. While signed in, use Settings → Partner Sharing → Delete Account to request deletion of your account, synced contractions, and partnership data. Account deletion does not remove the records stored locally on your device. Use Settings → Clear All Data to remove local records, settings, and game scores; this does not delete your cloud account or previously synced records.</p>
 
   <h2>Notifications</h2>
-  <p>Theo may request permission to send local notifications to alert you when your contractions match a pattern. These notifications are generated entirely on your device — no data is sent to any server.</p>
+  <p>Theo may request permission to send local notifications when contraction patterns match your settings. These notifications are generated on your device. Notification permission is optional and can be changed in your device settings.</p>
 
-  <h2>No Data Sold</h2>
-  <p>Your data will never be sold to third parties. Period.</p>
-
-  <h2>Data Deletion</h2>
-  <p>You can delete all local data at any time from Settings → Clear All Data. If you have Partner Sharing enabled, you can disconnect and clear synced data from the Partner Sharing section in Settings.</p>
+  <h2>No Analytics, Advertising, or Data Sales</h2>
+  <p>Theo does not use advertising SDKs, track your activity for advertising, or sell your data. Optional support purchases require processing transaction information as described below.</p>
 
   <h2>Third-Party Services</h2>
-  <ul>
-    <li><strong>Supabase</strong> — Used only for Partner Sharing (authentication and data sync). Not used unless you opt in. <a href="https://supabase.com/privacy">Supabase Privacy Policy</a></li>
-    <li><strong>Expo / EAS</strong> — Used to build and distribute the app. <a href="https://expo.dev/privacy">Expo Privacy Policy</a></li>
-  </ul>
+  <p>Supabase provides account authentication and cloud storage for optional Partner Sharing. If support purchases are available, Apple or Google processes the payment and RevenueCat processes purchase records, a purchase identifier, and your Theo account identifier (or an anonymous identifier) to recognize and restore your support purchase. No contraction records are sent to RevenueCat, and Theo does not receive your payment card details. Payments are optional and do not restrict any feature. Expo / EAS builds and distributes the app. Provider policies: https://supabase.com/privacy, https://www.revenuecat.com/privacy, and https://expo.dev/privacy.</p>
 
   <h2>Contact</h2>
-  <p>Questions about this policy? Reach out at <a href="mailto:hello@nathanchung.com">hello@nathanchung.com</a>.</p>
+  <p>For privacy questions or help with data deletion, contact hello@nathanchung.com.</p>
 </body>
 </html>
